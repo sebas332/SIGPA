@@ -80,6 +80,34 @@ class AmbienteController extends BaseController {
     }
 
     /**
+     * Procesar subida de múltiples fotos
+     */
+    private function procesarFotos($id_numero_ambiente) {
+        if (!empty($_FILES['fotos']['name'][0])) {
+            $uploadDir = dirname(__DIR__, 2) . '/public/uploads/ambientes/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            foreach ($_FILES['fotos']['name'] as $key => $name) {
+                if ($_FILES['fotos']['error'][$key] === 0) {
+                    $tmpName = $_FILES['fotos']['tmp_name'][$key];
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    $newName = 'amb_' . $id_numero_ambiente . '_' . uniqid() . '.' . $ext;
+                    $dest = $uploadDir . $newName;
+                    if (move_uploaded_file($tmpName, $dest)) {
+                        $url = ASSETROOT . '/uploads/ambientes/' . $newName;
+                        $this->fotoModel->create([
+                            'id_numero_ambiente' => $id_numero_ambiente,
+                            'url' => $url,
+                            'fecha_recarga' => date('Y-m-d')
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Crear un nuevo ambiente (Coordinador)
      */
     public function create() {
@@ -99,6 +127,9 @@ class AmbienteController extends BaseController {
             ];
 
             if ($this->ambienteModel->create($data)) {
+                $db = Database::getInstance();
+                $lastId = $db->lastInsertId();
+                $this->procesarFotos($lastId);
                 $_SESSION['flash_success'] = 'Ambiente registrado exitosamente.';
             } else {
                 $_SESSION['flash_error'] = 'Error al registrar el ambiente.';
@@ -150,6 +181,20 @@ class AmbienteController extends BaseController {
             ];
 
             if ($this->ambienteModel->update($id, $data)) {
+                if (!empty($_FILES['fotos']['name'][0])) {
+                    $fotosAntiguas = $this->fotoModel->getByAmbiente($id);
+                    foreach ($fotosAntiguas as $foto) {
+                        $basename = basename($foto->url);
+                        if (strpos($foto->url, 'uploads/ambientes') !== false) {
+                            $filePath = dirname(__DIR__, 2) . '/public/uploads/ambientes/' . $basename;
+                            if (file_exists($filePath)) {
+                                unlink($filePath);
+                            }
+                        }
+                        $this->fotoModel->delete($foto->id_foto_ambiente);
+                    }
+                }
+                $this->procesarFotos($id);
                 $_SESSION['flash_success'] = 'Ambiente actualizado exitosamente.';
             } else {
                 $_SESSION['flash_error'] = 'Error al actualizar el ambiente.';
@@ -165,6 +210,19 @@ class AmbienteController extends BaseController {
         $this->requireRol('Coordinador');
         $id = $_GET['id'] ?? 0;
         if ($id > 0) {
+            // Eliminar fotos del sistema de archivos antes de borrar (en caso de que la BD haga cascade, los archivos quedarían huérfanos)
+            $fotos = $this->fotoModel->getByAmbiente($id);
+            foreach ($fotos as $foto) {
+                $basename = basename($foto->url);
+                // Evitamos borrar las fotos por defecto de Unsplash eliminando sólo las locales
+                if (strpos($foto->url, 'uploads/ambientes') !== false) {
+                    $filePath = dirname(__DIR__, 2) . '/public/uploads/ambientes/' . $basename;
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                }
+            }
+
             // Eliminar fotos/novedades en cascada manual si es necesario, o depender de la BD
             if ($this->ambienteModel->delete($id)) {
                 $_SESSION['flash_success'] = 'Ambiente eliminado correctamente.';

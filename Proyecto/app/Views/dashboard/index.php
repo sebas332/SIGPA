@@ -1053,8 +1053,15 @@
                         <?php foreach ($ambientes as $amb): ?>
                             <div class="col-12 col-sm-6 col-xl-4">
                                 <div class="card bg-white shadow-sm border-0 rounded-4 overflow-hidden h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                                    <div class="ambiente-img-box bg-light d-flex align-items-center justify-content-center text-muted fw-medium small">
-                                        <i class="fa-solid fa-building me-2"></i> <?= htmlspecialchars($amb->nombre); ?>
+                                    <div class="ambiente-img-box bg-light d-flex align-items-center justify-content-center text-muted fw-medium small" style="position: relative; overflow: hidden; cursor: pointer;" onclick="verGaleria('<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(json_encode($fotos_ambientes[$amb->id_numero_ambiente] ?? []), ENT_QUOTES, 'UTF-8'); ?>')">
+                                        <?php 
+                                        $ambFotos = $fotos_ambientes[$amb->id_numero_ambiente] ?? []; 
+                                        if (!empty($ambFotos)): 
+                                        ?>
+                                            <img src="<?= $ambFotos[0]->url; ?>" class="w-100 h-100 object-fit-cover opacity-75" alt="<?= htmlspecialchars($amb->nombre); ?>" onerror="this.style.display='none';">
+                                        <?php else: ?>
+                                            <i class="fa-solid fa-building me-2"></i> <?= htmlspecialchars($amb->nombre); ?>
+                                        <?php endif; ?>
                                         <span class="badge-amb-top-left">Amb. <?= $amb->id_numero_ambiente; ?></span>
                                         <?php if ($amb->disponibilidad == 0): ?>
                                             <span class="badge-amb-top-right bg-danger"><i class="fa-solid fa-lock me-1"></i> INACTIVO</span>
@@ -2118,66 +2125,72 @@
 <div class="modal fade" id="modalCrearAmbiente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light px-4 py-4">
-                <h5 class="modal-title fw-bold text-dark">Crear Nuevo Ambiente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-dark text-white px-4 py-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalCrearAmbienteLabel"><i class="fa-solid fa-building me-2 text-success"></i>Registrar Nuevo Ambiente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form action="<?= URLROOT; ?>/index.php?route=ambientes/create" method="POST">
+            <form action="<?= URLROOT; ?>/index.php?route=ambientes/create" method="POST" enctype="multipart/form-data">
                 <div class="modal-body px-4 py-4">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Nombre Ambiente</label>
-                            <input type="text" name="nombre" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Tipo (Ej. Laboratorio)</label>
-                            <input type="text" name="tipo" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Capacidad</label>
-                            <input type="number" name="capacidad" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Computadores</label>
-                            <input type="number" name="computadores" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Especialidad</label>
-                            <input type="text" name="especialidad_ambiente" class="form-control">
-                        </div>
-                    </div>
                     <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label fw-medium text-secondary">Nombre del Ambiente</label>
+                            <input type="text" class="form-control form-control-lg" id="nombre" name="nombre" placeholder="Ej. Laboratorio de Software 2" maxlength="15" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tipo" class="form-label fw-medium text-secondary">Tipo (Ej. Laboratorio)</label>
+                            <select class="form-select form-select-lg" id="tipo" name="tipo" onchange="toggleEspecialidad(this, 'especialidad_ambiente')" required>
+                                <option value="" disabled selected>Seleccione un tipo</option>
+                                <option value="Convencional">Convencional</option>
+                                <option value="Especializado">Especializado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="capacidad" class="form-label fw-medium text-secondary">Capacidad (Max 2 dígitos)</label>
+                            <input type="text" class="form-control form-control-lg" id="capacidad" name="capacidad" placeholder="Ej. 35" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="computadores" class="form-label fw-medium text-secondary">Cantidad de Computadores</label>
+                            <input type="text" class="form-control form-control-lg" id="computadores" name="computadores" placeholder="Ej. 35" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,3)" required>
+                        </div>
+                        <div class="col-md-4" id="div_especialidad_ambiente" style="display:none;">
+                            <label for="especialidad_ambiente" class="form-label fw-medium text-secondary">Especialidad del Ambiente</label>
+                            <input type="text" class="form-control form-control-lg" id="especialidad_ambiente" name="especialidad_ambiente" placeholder="Ej. Desarrollo de Software, Redes, SST">
+                        </div>
                         <div class="col-12">
-                            <label class="text-muted small fw-bold mb-2">Equipamiento</label>
-                            <div class="d-flex gap-3 flex-wrap">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="aire" value="1" id="chk_aire">
-                                    <label class="form-check-label" for="chk_aire">Aire</label>
+                            <label class="form-label fw-medium text-secondary d-block mt-2 mb-2">Fotos del Ambiente (Opcional)</label>
+                            <input type="file" class="form-control form-control-lg" name="fotos[]" multiple accept="image/*">
+                            <small class="text-muted">Puedes seleccionar varias imágenes a la vez.</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium text-secondary d-block mb-3">Dotación e Instalaciones</label>
+                            <div class="d-flex flex-wrap gap-4 bg-light p-3 rounded-3 border border-secondary-subtle">
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="aire" name="aire" value="1" checked>
+                                    <label class="form-check-label fw-medium" for="aire">Aire Acondicionado</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="ventilador" value="1" id="chk_vent">
-                                    <label class="form-check-label" for="chk_vent">Ventilador</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="ventilador" name="ventilador" value="1">
+                                    <label class="form-check-label fw-medium" for="ventilador">Ventilador</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="tablero" value="1" id="chk_tablero">
-                                    <label class="form-check-label" for="chk_tablero">Tablero</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="tablero" name="tablero" value="1" checked>
+                                    <label class="form-check-label fw-medium" for="tablero">Tablero / Pizarra</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="tv" value="1" id="chk_tv">
-                                    <label class="form-check-label" for="chk_tv">TV</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="tv" name="tv" value="1" checked>
+                                    <label class="form-check-label fw-medium" for="tv">Televisor</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="disponibilidad" value="1" id="chk_disp" checked>
-                                    <label class="form-check-label" for="chk_disp">Disponible</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="disponibilidad" name="disponibilidad" value="1" checked>
+                                    <label class="form-check-label fw-medium text-success" for="disponibilidad">Disponible de Inmediato</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-primary rounded-pill">Crear</button>
+                <div class="modal-footer p-4 border-0 bg-light d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm ms-2" style="padding: 0.6rem 1.4rem; border-radius: 25px;"><i class="fa-solid fa-floppy-disk me-2"></i> Crear</button>
                 </div>
             </form>
         </div>
@@ -2188,67 +2201,72 @@
 <div class="modal fade" id="modalEditarAmbiente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light px-4 py-4">
-                <h5 class="modal-title fw-bold text-dark">Editar Ambiente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white px-4 py-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalEditarAmbienteLabel"><i class="fa-solid fa-pen me-2"></i>Editar Ambiente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form action="<?= URLROOT; ?>/index.php?route=ambientes/update" method="POST">
+            <form action="<?= URLROOT; ?>/index.php?route=ambientes/update" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id_numero_ambiente" id="edit_amb_id">
                 <div class="modal-body px-4 py-4">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Nombre Ambiente</label>
-                            <input type="text" name="nombre" id="edit_amb_nombre" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Tipo</label>
-                            <input type="text" name="tipo" id="edit_amb_tipo" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Capacidad</label>
-                            <input type="number" name="capacidad" id="edit_amb_capacidad" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Computadores</label>
-                            <input type="number" name="computadores" id="edit_amb_computadores" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Especialidad</label>
-                            <input type="text" name="especialidad_ambiente" id="edit_amb_especialidad" class="form-control">
-                        </div>
-                    </div>
                     <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium text-secondary">Nombre del Ambiente</label>
+                            <input type="text" class="form-control form-control-lg" id="edit_amb_nombre" name="nombre" maxlength="15" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium text-secondary">Tipo</label>
+                            <select class="form-select form-select-lg" id="edit_amb_tipo" name="tipo" onchange="toggleEspecialidad(this, 'edit_amb_especialidad')" required>
+                                <option value="Convencional">Convencional</option>
+                                <option value="Especializado">Especializado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium text-secondary">Capacidad (Max 2 dígitos)</label>
+                            <input type="text" class="form-control form-control-lg" id="edit_amb_capacidad" name="capacidad" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium text-secondary">Cantidad de Computadores</label>
+                            <input type="text" class="form-control form-control-lg" id="edit_amb_computadores" name="computadores" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,3)" required>
+                        </div>
+                        <div class="col-md-4" id="div_edit_amb_especialidad" style="display:none;">
+                            <label class="form-label fw-medium text-secondary">Especialidad del Ambiente</label>
+                            <input type="text" class="form-control form-control-lg" id="edit_amb_especialidad" name="especialidad_ambiente">
+                        </div>
                         <div class="col-12">
-                            <label class="text-muted small fw-bold mb-2">Equipamiento</label>
-                            <div class="d-flex gap-3 flex-wrap">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="aire" value="1" id="edit_amb_aire">
-                                    <label class="form-check-label">Aire</label>
+                            <label class="form-label fw-medium text-secondary d-block mt-2 mb-2">Agregar Nuevas Fotos (Opcional)</label>
+                            <input type="file" class="form-control form-control-lg" name="fotos[]" multiple accept="image/*">
+                            <small class="text-muted">Puedes seleccionar varias imágenes. Las existentes se mantendrán.</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium text-secondary d-block mb-3">Dotación e Instalaciones</label>
+                            <div class="d-flex flex-wrap gap-4 bg-light p-3 rounded-3 border border-secondary-subtle">
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="edit_amb_aire" name="aire" value="1">
+                                    <label class="form-check-label fw-medium" for="edit_amb_aire">Aire Acondicionado</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="ventilador" value="1" id="edit_amb_vent">
-                                    <label class="form-check-label">Ventilador</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="edit_amb_vent" name="ventilador" value="1">
+                                    <label class="form-check-label fw-medium" for="edit_amb_vent">Ventilador</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="tablero" value="1" id="edit_amb_tablero">
-                                    <label class="form-check-label">Tablero</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="edit_amb_tablero" name="tablero" value="1">
+                                    <label class="form-check-label fw-medium" for="edit_amb_tablero">Tablero / Pizarra</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="tv" value="1" id="edit_amb_tv">
-                                    <label class="form-check-label">TV</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="edit_amb_tv" name="tv" value="1">
+                                    <label class="form-check-label fw-medium" for="edit_amb_tv">Televisor</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="disponibilidad" value="1" id="edit_amb_disp">
-                                    <label class="form-check-label">Disponible</label>
+                                <div class="form-check form-switch form-check-lg">
+                                    <input class="form-check-input" type="checkbox" id="edit_amb_disp" name="disponibilidad" value="1">
+                                    <label class="form-check-label fw-medium text-success" for="edit_amb_disp">Disponible</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-primary rounded-pill">Guardar Cambios</button>
+                <div class="modal-footer p-4 border-0 bg-light d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm ms-2" style="padding: 0.6rem 1.4rem; border-radius: 25px;"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -2436,6 +2454,33 @@
 
 <?php endif; ?>
 
+<!-- MODAL GALERÍA AMBIENTE -->
+<div class="modal fade" id="modalGaleriaAmbiente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-dark">
+            <div class="modal-header border-0 bg-dark text-white p-3">
+                <h5 class="modal-title fw-bold" id="modalGaleriaAmbienteLabel">Galería de Fotos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="carouselGaleria" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner" id="galeriaCarouselInner">
+                        <!-- Las imágenes se insertan aquí vía JS -->
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselGaleria" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 20px;"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselGaleria" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 20px;"></span>
+                        <span class="visually-hidden">Siguiente</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Script de Automatización: Conmutación de Asistencia en vivo y Búsqueda -->
 <script>
 // Función automatizada para conmutar el estado de asistencia entre PRESENTE y FALLA
@@ -2557,6 +2602,31 @@ document.addEventListener("DOMContentLoaded", function() {
     if (buscadorUsr) buscadorUsr.addEventListener('input', filtrarTablaUsuarios);
     if (filtroRol) filtroRol.addEventListener('change', filtrarTablaUsuarios);
 });
+
+function verGaleria(nombre, fotosJson) {
+    try {
+        var fotos = JSON.parse(fotosJson);
+        var modal = new bootstrap.Modal(document.getElementById('modalGaleriaAmbiente'));
+        document.getElementById('modalGaleriaAmbienteLabel').innerText = 'Ambiente: ' + nombre;
+        
+        var carouselInner = document.getElementById('galeriaCarouselInner');
+        carouselInner.innerHTML = '';
+        
+        if (fotos.length === 0) {
+            carouselInner.innerHTML = '<div class="carousel-item active"><div class="d-flex align-items-center justify-content-center flex-column text-white" style="height: 400px; background: #222;"><i class="fa-solid fa-camera-retro fa-3x mb-3 text-secondary"></i><h5>Sin fotos</h5></div></div>';
+        } else {
+            fotos.forEach(function(foto, index) {
+                var activeClass = index === 0 ? 'active' : '';
+                carouselInner.innerHTML += '<div class="carousel-item ' + activeClass + '"><img src="' + foto.url + '" class="d-block w-100" style="max-height: 70vh; object-fit: contain; background: #000;"></div>';
+            });
+        }
+        
+        modal.show();
+    } catch(e) {
+        console.error("Error al abrir galería: ", e);
+    }
+}
+
 function editarFicha(ficha, cant, inicio, practicas, fin, id_lider, id_prog, id_jor) {
     document.getElementById('edit_numero_ficha_original').value = ficha;
     document.getElementById('edit_numero_ficha').value = ficha;
@@ -2571,10 +2641,27 @@ function editarFicha(ficha, cant, inicio, practicas, fin, id_lider, id_prog, id_
     modal.show();
 }
 
+function toggleEspecialidad(selectElement, targetId) {
+    var target = document.getElementById(targetId);
+    var divTarget = document.getElementById('div_' + targetId);
+    if (!target || !divTarget) return;
+    if (selectElement.value === 'Especializado') {
+        divTarget.style.display = 'block';
+        target.setAttribute('required', 'required');
+    } else {
+        divTarget.style.display = 'none';
+        target.removeAttribute('required');
+        target.value = '';
+    }
+}
+
 function editarAmbiente(id, nombre, tipo, cap, comp, esp, aire, vent, tab, tv, disp) {
     document.getElementById('edit_amb_id').value = id;
     document.getElementById('edit_amb_nombre').value = nombre;
     document.getElementById('edit_amb_tipo').value = tipo;
+    
+    toggleEspecialidad(document.getElementById('edit_amb_tipo'), 'edit_amb_especialidad');
+    
     document.getElementById('edit_amb_capacidad').value = cap;
     document.getElementById('edit_amb_computadores').value = comp;
     document.getElementById('edit_amb_especialidad').value = esp;

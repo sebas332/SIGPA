@@ -67,6 +67,12 @@ class DashboardController extends BaseController {
             $data['fichas'] = $todasFichas;
             $data['ambientes'] = $this->ambienteModel->all();
             $data['ambientes_count'] = count($data['ambientes']);
+            
+            $data['fotos_ambientes'] = [];
+            $fotoModel = $this->model('FotoAmbiente');
+            foreach ($data['ambientes'] as $a) {
+                $data['fotos_ambientes'][$a->id_numero_ambiente] = $fotoModel->getByAmbiente($a->id_numero_ambiente);
+            }
             $data['usuarios_count'] = count($this->usuarioModel->all());
             $data['programas_count'] = count($this->programaModel->all());
             $data['novedades'] = $this->novedadModel->all();
