@@ -56,7 +56,7 @@ footer {
         <div class="login-overlay d-flex flex-column justify-content-between p-5 text-white">
             <div>
                 <div class="d-flex align-items-center mb-4">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/120px-Sena_Colombia_logo.svg.png" alt="Logo SENA" style="width: 55px; height: auto;" class="me-3 bg-white p-2 rounded-3 shadow">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA" style="width: 55px; height: auto;" class="me-3 bg-white p-2 rounded-3 shadow">
                     <h3 class="fw-bold mb-0 tracking-tight">Servicio Nacional de Aprendizaje</h3>
                 </div>
                 <span class="badge bg-white text-dark fw-bold px-3 py-2 text-uppercase tracking-wider shadow-sm mb-3">SGA - Gestión Académica Integral</span>
@@ -87,7 +87,7 @@ footer {
             
             <!-- Cabecera Móvil y Logo -->
             <div class="text-center mb-5">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/2048px-Sena_Colombia_logo.svg.png" alt="Logo SENA Oficial" class="mb-4" style="width: 90px; height: auto;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" alt="Logo SENA Oficial" class="mb-4" style="width: 90px; height: auto;">
                 <h3 class="fw-bold text-dark mb-1">Bienvenido al SGA</h3>
                 <p class="text-muted small mb-0">Ingresa tus credenciales institucionales para continuar</p>
             </div>
@@ -104,18 +104,16 @@ footer {
             <!-- Formulario de Login -->
             <form action="<?= URLROOT; ?>/index.php?route=auth/login" method="POST" class="needs-validation" novalidate>
                 <div class="form-floating mb-4 shadow-sm">
-                    <input type="text" inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="form-control form-control-lg rounded-3" id="username" name="username" value="<?= htmlspecialchars($username ?? ''); ?>" placeholder="Ej: 1020304050" required title="Debe ser un número de documento válido, máximo 10 dígitos." autofocus>
+                    <input type="text" inputmode="numeric" maxlength="10" pattern="[0-9]{6,10}" class="form-control form-control-lg rounded-3" id="username" name="username" value="<?= htmlspecialchars($username ?? ''); ?>" placeholder="Ej: 1020304050" required autofocus>
                     <label for="username" class="text-secondary"><i class="fa-solid fa-id-card me-2 text-muted"></i>Documento de Identidad</label>
-                    <div class="invalid-feedback px-2 small">
-                        Ingresa un número de documento válido (solo números, máximo 10 dígitos).
-                    </div>
+                    <div id="username-feedback" class="small text-muted mt-1 px-2">Ingresa tu documento (6-10 dígitos).</div>
                 </div>
 
                 <div class="form-floating mb-4 shadow-sm">
-                    <input type="password" class="form-control form-control-lg rounded-3" id="password" name="password" placeholder="Contraseña" required minlength="8" title="La contraseña debe tener al menos 8 caracteres.">
+                    <input type="password" class="form-control form-control-lg rounded-3" id="password" name="password" placeholder="Contraseña" required minlength="8" maxlength="30">
                     <label for="password" class="text-secondary"><i class="fa-solid fa-lock me-2 text-muted"></i>Contraseña</label>
-                    <div class="invalid-feedback px-2 small">
-                        La contraseña debe tener al menos 8 caracteres.
+                    <div id="password-feedback" class="small text-muted mt-1 px-2" style="line-height: 1.4; display: none;">
+                        La contraseña debe tener 8 a 30 caracteres, iniciar con mayúscula, y tener al menos un número y un carácter especial.
                     </div>
                 </div>
 
@@ -158,4 +156,65 @@ footer {
     }, false)
   })
 })()
+
+// Validación en tiempo real para el documento
+const usernameInput = document.getElementById('username');
+const usernameFeedback = document.getElementById('username-feedback');
+
+usernameInput.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    const val = this.value;
+    const minLength = 6;
+    
+    if (val.length === 0) {
+        usernameFeedback.textContent = 'Ingresa tu documento (6-10 dígitos).';
+        usernameFeedback.className = 'small text-muted mt-1 px-2';
+        this.setCustomValidity("Campo requerido");
+    } else if (val.length < minLength) {
+        usernameFeedback.textContent = `Faltan ${minLength - val.length} dígitos como mínimo.`;
+        usernameFeedback.className = 'small text-danger mt-1 px-2';
+        this.setCustomValidity("Faltan dígitos");
+    } else {
+        usernameFeedback.textContent = `${val.length}/10 dígitos ingresados.`;
+        usernameFeedback.className = 'small text-success mt-1 px-2';
+        this.setCustomValidity("");
+    }
+});
+
+// Validación en tiempo real para la contraseña
+const passwordInput = document.getElementById('password');
+const passwordFeedback = document.getElementById('password-feedback');
+
+function validatePassword() {
+    const val = passwordInput.value;
+    let rulesFailed = [];
+    
+    if (val.length < 8 || val.length > 30) rulesFailed.push("Tener entre 8 y 30 caracteres.");
+    if (!/^[A-Z]/.test(val)) rulesFailed.push("Iniciar con mayúscula.");
+    if (!/[0-9]/.test(val)) rulesFailed.push("Contener al menos un número.");
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) rulesFailed.push("Contener un carácter especial.");
+    
+    if (val.length === 0) {
+        passwordFeedback.innerHTML = "La contraseña debe tener 8 a 30 caracteres, iniciar con mayúscula, y tener al menos un número y un carácter especial.";
+        passwordFeedback.className = 'small text-muted mt-1 px-2';
+        passwordInput.setCustomValidity("Campo requerido");
+    } else if (rulesFailed.length > 0) {
+        passwordFeedback.innerHTML = "<span class='text-danger d-block mb-1'><i class='fa-solid fa-circle-xmark'></i> " + rulesFailed.join("</span><span class='text-danger d-block mb-1'><i class='fa-solid fa-circle-xmark'></i> ") + "</span>";
+        passwordInput.setCustomValidity("Faltan requisitos en la contraseña");
+    } else {
+        passwordFeedback.innerHTML = "<span class='text-success'><i class='fa-solid fa-circle-check'></i> Contraseña válida y segura.</span>";
+        passwordInput.setCustomValidity("");
+    }
+}
+
+passwordInput.addEventListener('focus', function() {
+    passwordFeedback.style.display = 'block';
+    validatePassword();
+});
+
+passwordInput.addEventListener('blur', function() {
+    passwordFeedback.style.display = 'none';
+});
+
+passwordInput.addEventListener('input', validatePassword);
 </script>
