@@ -374,6 +374,17 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 }
             });
         });
+
+        // Cerrar automáticamente las alertas flash después de 5 segundos
+        var alerts = document.querySelectorAll('.alert-dismissible');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
     });
 </script>
 </body>
