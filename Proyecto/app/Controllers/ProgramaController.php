@@ -53,7 +53,32 @@ class ProgramaController extends BaseController {
             ];
 
             if ($this->programaModel->create($data)) {
+                $new_id_programa = $this->programaModel->getLastInsertId();
                 $_SESSION['flash_success'] = 'Programa de formación creado exitosamente.';
+
+                // Registrar competencia inicial si se rellenaron los campos
+                $comp_nombre = $_POST['comp_nombre'] ?? '';
+                $comp_codigo = $_POST['comp_codigo'] ?? '';
+                if (!empty($comp_nombre) && !empty($comp_codigo)) {
+                    $compData = [
+                        'id_programa' => $new_id_programa,
+                        'nombre' => $comp_nombre,
+                        'codigo' => $comp_codigo,
+                        'horas_totales' => $_POST['comp_horas_totales'] ?? 0,
+                        'resultados_totales' => $_POST['comp_resultados_totales'] ?? 0,
+                        'porcentaje' => $_POST['comp_porcentaje'] ?? 100
+                    ];
+
+                    try {
+                        if ($this->competenciaModel->create($compData)) {
+                            $_SESSION['flash_success'] = 'Programa de formación y su competencia inicial creados exitosamente.';
+                        } else {
+                            $_SESSION['flash_error'] = 'Programa de formación creado, pero no se pudo registrar la competencia inicial.';
+                        }
+                    } catch (Exception $e) {
+                        $_SESSION['flash_error'] = 'Programa de formación creado, pero la competencia inicial no superó las validaciones del Trigger: ' . $e->getMessage();
+                    }
+                }
             } else {
                 $_SESSION['flash_error'] = 'Error al crear el programa.';
             }
@@ -128,7 +153,8 @@ class ProgramaController extends BaseController {
                 $_SESSION['flash_error'] = 'Error en validación por Triggers: ' . $e->getMessage();
             }
         }
-        $this->redirect('programas/index');
+        $redirect = $_POST['redirect'] ?? 'programas/index';
+        $this->redirect($redirect);
     }
 
     /**
@@ -154,7 +180,8 @@ class ProgramaController extends BaseController {
                 $_SESSION['flash_error'] = 'Error en validación por Triggers: ' . $e->getMessage();
             }
         }
-        $this->redirect('programas/index');
+        $redirect = $_POST['redirect'] ?? 'programas/index';
+        $this->redirect($redirect);
     }
 
     /**
@@ -171,5 +198,105 @@ class ProgramaController extends BaseController {
             $_SESSION['flash_error'] = 'Error en validación (SP): ' . $resultado['message'];
         }
         $this->redirect('programas/index');
+    }
+
+    /**
+     * Formulario completo multinivel para registrar programa, competencias y resultados de aprendizaje (Coordinador)
+     */
+    public function crearCompleto() {
+        $this->requireRol('Coordinador');
+        $tipos = $this->tipoProgramaModel->all();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $db = Database::getInstance();
+
+            // Datos del programa
+            $progData = [
+                'nombre' => $_POST['nombre'] ?? '',
+                'codigo' => $_POST['codigo'] ?? '',
+                'version' => $_POST['version'] ?? '',
+                'vigencia' => $_POST['vigencia'] ?? '',
+                'duracion_lectiva' => $_POST['duracion_lectiva'] ?? 0,
+                'duracion_practica' => $_POST['duracion_practica'] ?? 0,
+                'id_tipo_programa' => $_POST['id_tipo_programa'] ?? 0
+            ];
+
+            $competencias = $_POST['competencias'] ?? [];
+
+            try {
+                // Iniciar Transacción
+                $db->beginTransaction();
+
+                // 1. Insertar el Programa
+                if (!$this->programaModel->create($progData)) {
+                    throw new Exception("Error al guardar los datos básicos del programa.");
+                }
+                
+                $id_programa = $this->programaModel->getLastInsertId();
+                if (!$id_programa) {
+                    throw new Exception("No se pudo obtener el ID del programa creado.");
+                }
+
+                // 2. Insertar cada Competencia
+                foreach ($competencias as $comp) {
+                    $compData = [
+                        'id_programa' => $id_programa,
+                        'nombre' => $comp['nombre'] ?? '',
+                        'codigo' => $comp['codigo'] ?? '',
+                        'horas_totales' => $comp['horas_totales'] ?? 0,
+                        'resultados_totales' => $comp['resultados_totales'] ?? 0,
+                        'porcentaje' => $comp['porcentaje'] ?? 100
+                    ];
+
+                    if (!$this->competenciaModel->create($compData)) {
+                        throw new Exception("Error al guardar la competencia: " . ($comp['nombre'] ?? ''));
+                    }
+
+                    $id_competencia = $this->competenciaModel->getLastInsertId();
+                    if (!$id_competencia) {
+                        throw new Exception("No se pudo obtener el ID de la competencia creada.");
+                    }
+
+                    // 3. Insertar los Resultados de Aprendizaje de esta Competencia
+                    $resultados = $comp['resultados'] ?? [];
+                    foreach ($resultados as $ra) {
+                        $raData = [
+                            'id_competencia' => $id_competencia,
+                            'codigo' => $ra['codigo'] ?? '',
+                            'descripcion' => $ra['descripcion'] ?? '',
+                            'sesiones_asignadas' => ($ra['sesiones_asignadas'] !== '') ? $ra['sesiones_asignadas'] : null
+                        ];
+
+                        if (!$this->resultadoModel->create($raData)) {
+                            throw new Exception("Error al guardar el resultado de aprendizaje: " . ($ra['codigo'] ?? ''));
+                        }
+                    }
+                }
+
+                // Confirmar transacción
+                $db->commit();
+
+                $_SESSION['flash_success'] = 'Programa de Formación, Competencias y Resultados registrados exitosamente en una sola transacción.';
+                $this->redirect('dashboard/index#pills-programas');
+
+            } catch (Exception $e) {
+                // Revertir todo en caso de error
+                $db->rollBack();
+                $_SESSION['flash_error'] = 'Error al registrar el currículo: ' . $e->getMessage();
+                
+                // Volver a mostrar la vista manteniendo los datos ingresados
+                $this->render('programas/crear_completo', [
+                    'titulo' => 'Registrar Programa Completo',
+                    'tipos' => $tipos,
+                    'oldData' => $_POST
+                ]);
+            }
+        } else {
+            $this->render('programas/crear_completo', [
+                'titulo' => 'Registrar Programa Completo',
+                'tipos' => $tipos,
+                'oldData' => []
+            ]);
+        }
     }
 }

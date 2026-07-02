@@ -841,9 +841,11 @@
                             <h5 class="fw-bold text-dark mb-1">Catálogo de Programas de Formación</h5>
                             <p class="text-muted small mb-0">Gestión de la oferta educativa, competencias y resultados.</p>
                         </div>
-                        <button type="button" class="btn-new-ficha" data-bs-toggle="modal" data-bs-target="#modalCrearPrograma">
-                            <i class="fa-solid fa-circle-plus"></i> Crear Programa
-                        </button>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn btn-outline-primary rounded-pill px-4 fw-medium shadow-sm d-inline-flex align-items-center gap-2" style="font-size: 0.88rem;">
+                                <i class="fa-solid fa-cubes"></i> Constructor Completo
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -873,6 +875,9 @@
                                                 <td>
                                                     <div class="fw-bold text-dark small"><?= $p->nombre; ?></div>
                                                     <div class="text-muted small">Duración total: <?= $p->duracion_lectiva + $p->duracion_practica; ?> horas</div>
+                                                    <a href="#competencias-prog-<?= $p->id_programa; ?>" data-bs-toggle="collapse" class="text-success text-decoration-none small fw-bold d-inline-block mt-1" style="font-size: 0.78rem;">
+                                                        <i class="fa-solid fa-book-bookmark me-1"></i> Ver Competencias y Resultados
+                                                    </a>
                                                 </td>
                                                 <td class="text-dark small fw-medium">v<?= $p->version; ?></td>
                                                 <td class="text-dark small fw-medium"><?= $p->vigencia; ?></td>
@@ -883,6 +888,73 @@
                                                     <a href="<?= URLROOT; ?>/index.php?route=programas/delete&id=<?= $p->id_programa; ?>" class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="return confirm('¿Estás seguro de que deseas eliminar este programa? Esta acción no se puede deshacer.');" title="Eliminar">
                                                         <i class="fa-solid fa-trash"></i>
                                                     </a>
+                                                </td>
+                                            </tr>
+                                            <tr class="collapse" id="competencias-prog-<?= $p->id_programa; ?>">
+                                                <td colspan="5" class="bg-light p-3">
+                                                    <div class="card border-0 shadow-none bg-transparent">
+                                                        <div class="card-body p-0">
+                                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                                <h6 class="fw-bold text-success m-0" style="font-size: 0.85rem;"><i class="fa-solid fa-book-bookmark me-1"></i> Competencias de <?= htmlspecialchars($p->nombre); ?></h6>
+                                                                <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 text-white shadow-sm border-0" style="font-size: 0.75rem; background-color: #39A900;" onclick="abrirModalCompetencia(<?= $p->id_programa; ?>)">
+                                                                    <i class="fa-solid fa-plus me-1"></i> Agregar Competencia
+                                                                </button>
+                                                            </div>
+                                                            
+                                                            <?php 
+                                                            $compProg = array_filter($competencias ?? [], function($c) use ($p) {
+                                                                return $c->id_programa == $p->id_programa;
+                                                            });
+                                                            if (empty($compProg)):
+                                                            ?>
+                                                                <div class="text-muted small py-2 bg-white rounded-3 px-3 border">No hay competencias registradas para este programa.</div>
+                                                            <?php else: ?>
+                                                                <div class="accordion" id="accordionComp-<?= $p->id_programa; ?>">
+                                                                    <?php foreach ($compProg as $c): ?>
+                                                                        <div class="accordion-item border mb-2 shadow-sm rounded-3 overflow-hidden bg-white">
+                                                                            <h2 class="accordion-header">
+                                                                                <button class="accordion-button collapsed bg-white fw-bold text-dark py-2 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp-<?= $c->id_competencia; ?>" aria-expanded="false" style="font-size: 0.8rem; box-shadow: none;">
+                                                                                    <span class="text-success me-2">[<?= $c->codigo; ?>]</span> <?= htmlspecialchars($c->nombre); ?>
+                                                                                    <span class="badge bg-light text-secondary border ms-auto me-3"><?= $c->horas_totales; ?> hrs totales</span>
+                                                                                    <span class="badge bg-success-subtle text-success me-3"><?= $c->total_sesiones; ?> sesiones (<?= $c->horas_a_ejecutar; ?> hrs a ejecutar al <?= $c->porcentaje; ?>%)</span>
+                                                                                </button>
+                                                                            </h2>
+                                                                            <div id="collapseComp-<?= $c->id_competencia; ?>" class="accordion-collapse collapse" data-bs-parent="#accordionComp-<?= $p->id_programa; ?>">
+                                                                                <div class="accordion-body bg-white p-3 border-top">
+                                                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                                                                        <span class="fw-bold small text-muted">Resultados de Aprendizaje (RAP)</span>
+                                                                                        <button type="button" class="btn btn-outline-warning text-dark fw-bold rounded-pill px-2 py-1 border-1" style="font-size: 0.72rem;" onclick="abrirModalResultado(<?= $c->id_competencia; ?>)">
+                                                                                            <i class="fa-solid fa-plus me-1"></i> Agregar RAP
+                                                                                        </button>
+                                                                                    </div>
+                                                                                    <?php 
+                                                                                    $raComp = array_filter($resultados ?? [], function($r) use ($c) {
+                                                                                        return $r->id_competencia == $c->id_competencia;
+                                                                                    });
+                                                                                    if (empty($raComp)):
+                                                                                    ?>
+                                                                                        <div class="text-muted small">No hay resultados de aprendizaje registrados para esta competencia.</div>
+                                                                                    <?php else: ?>
+                                                                                        <ul class="list-group list-group-flush">
+                                                                                            <?php foreach ($raComp as $r): ?>
+                                                                                                <li class="list-group-item d-flex justify-content-between align-items-start px-0 py-2 border-0">
+                                                                                                    <div class="ms-2 me-auto">
+                                                                                                        <div class="fw-bold text-warning-emphasis small" style="font-size: 0.75rem;">[<?= $r->codigo; ?>]</div>
+                                                                                                        <span class="text-secondary small" style="font-size: 0.75rem;"><?= htmlspecialchars($r->descripcion); ?></span>
+                                                                                                    </div>
+                                                                                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><?= $r->sesiones_asignadas; ?> sesiones</span>
+                                                                                                </li>
+                                                                                            <?php endforeach; ?>
+                                                                                        </ul>
+                                                                                    <?php endif; ?>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    <?php endforeach; ?>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -2321,6 +2393,55 @@
                             <input type="number" name="duracion_practica" class="form-control" required>
                         </div>
                     </div>
+                    
+                    <!-- Competencia Inicial (Opcional) -->
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-success m-0"><i class="fa-solid fa-book-medical me-1"></i> Competencia Inicial (Opcional)</h6>
+                        <span class="badge bg-light text-secondary border">Crear junto al programa</span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="text-muted small fw-bold mb-1">Nombre de la Competencia</label>
+                            <input type="text" name="comp_nombre" id="prog_comp_nombre" class="form-control" placeholder="Ej. Programar aplicaciones web">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small fw-bold mb-1">Código Competencia</label>
+                            <input type="text" name="comp_codigo" id="prog_comp_codigo" class="form-control" placeholder="Ej. 220501099">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="text-muted small fw-bold mb-1">Horas Totales</label>
+                            <input type="number" name="comp_horas_totales" id="prog_comp_horas_totales" class="form-control" placeholder="Ej. 180">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small fw-bold mb-1">Resultados Totales (RA)</label>
+                            <input type="number" name="comp_resultados_totales" id="prog_comp_resultados_totales" class="form-control" placeholder="Ej. 3">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small fw-bold mb-1">Porcentaje (%)</label>
+                            <input type="number" name="comp_porcentaje" id="prog_comp_porcentaje" class="form-control" placeholder="Ej. 100" value="100">
+                        </div>
+                    </div>
+
+                    <!-- Campos Calculados Dinámicamente para la Competencia del Programa -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Horas a Ejecutar</span>
+                                <h5 class="m-0 fw-bold text-success" id="prog_comp_calc_horas_ejecutar">0 hrs</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Total Sesiones (de 6 horas)</span>
+                                <h5 class="m-0 fw-bold text-primary" id="prog_comp_calc_total_sesiones">0 sesiones</h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="submit" class="btn btn-primary rounded-pill">Crear</button>
@@ -2446,6 +2567,157 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="submit" class="btn btn-primary rounded-pill">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Competencia -->
+<div class="modal fade" id="modalCrearCompetencia" tabindex="-1" aria-labelledby="modalCrearCompetenciaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalCrearCompetenciaLabel"><i class="fa-solid fa-book-medical me-2 text-success"></i>Registrar Competencia</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="<?= URLROOT; ?>/index.php?route=programas/createCompetencia" method="POST">
+                <input type="hidden" name="redirect" value="dashboard/index#pills-programas">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="id_programa_comp" class="form-label fw-medium text-secondary">Programa de Formación</label>
+                            <select class="form-select form-select-lg" id="id_programa_comp" name="id_programa" required>
+                                <option value="">Selecciona un programa...</option>
+                                <?php foreach ($programas as $prog): ?>
+                                    <option value="<?= $prog->id_programa; ?>"><?= htmlspecialchars($prog->nombre) . ' (' . htmlspecialchars($prog->codigo) . ')'; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="nombre_comp" class="form-label fw-medium text-secondary">Nombre de la Competencia</label>
+                            <input type="text" class="form-control form-control-lg" id="nombre_comp" name="nombre" placeholder="Ej. Programar aplicaciones web" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="codigo_comp" class="form-label fw-medium text-secondary">Código Competencia</label>
+                            <input type="text" class="form-control form-control-lg" id="codigo_comp" name="codigo" placeholder="Ej. 220501099" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="horas_totales" class="form-label fw-medium text-secondary">Horas Totales</label>
+                            <input type="number" class="form-control form-control-lg" id="horas_totales" name="horas_totales" placeholder="Ej. 180" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="resultados_totales" class="form-label fw-medium text-secondary">Resultados Totales (RA)</label>
+                            <input type="number" class="form-control form-control-lg" id="resultados_totales" name="resultados_totales" placeholder="Ej. 3" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="porcentaje" class="form-label fw-medium text-secondary">Porcentaje (%)</label>
+                            <input type="number" class="form-control form-control-lg" id="porcentaje" name="porcentaje" placeholder="Ej. 100" value="100" required>
+                        </div>
+                        
+                        <!-- Campos Calculados Dinámicamente en el cliente -->
+                        <div class="col-md-6 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Horas a Ejecutar</span>
+                                <h4 class="m-0 fw-bold text-success" id="calc_horas_ejecutar">0 hrs</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Total Sesiones (de 6 horas)</span>
+                                <h4 class="m-0 fw-bold text-primary" id="calc_total_sesiones">0 sesiones</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-4 border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold shadow-sm"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Competencia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Resultado -->
+<div class="modal fade" id="modalCrearResultado" tabindex="-1" aria-labelledby="modalCrearResultadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalCrearResultadoLabel"><i class="fa-solid fa-file-pen me-2 text-warning"></i>Registrar Resultado de Aprendizaje</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="<?= URLROOT; ?>/index.php?route=programas/createResultado" method="POST">
+                <input type="hidden" name="redirect" value="dashboard/index#pills-programas">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="id_competencia_ra" class="form-label fw-medium text-secondary">Competencia Asociada</label>
+                            <select class="form-select form-select-lg" id="id_competencia_ra" name="id_competencia" onchange="calcularSesionesResultado('ra')" required>
+                                <option value="" data-total-sesiones="0" data-resultados-totales="0" data-resultados-actuales="0" data-sesiones-usadas="0">Selecciona una competencia...</option>
+                                <?php foreach ($competencias as $comp): 
+                                    $raComp = array_filter($resultados ?? [], function($r) use ($comp) {
+                                        return $r->id_competencia == $comp->id_competencia;
+                                    });
+                                    $resultados_actuales = count($raComp);
+                                    $sesiones_usadas = 0;
+                                    foreach ($raComp as $r) {
+                                        $sesiones_usadas += ($r->sesiones_asignadas ?? 0);
+                                    }
+                                ?>
+                                    <option value="<?= $comp->id_competencia; ?>" 
+                                            data-total-sesiones="<?= $comp->total_sesiones; ?>"
+                                            data-resultados-totales="<?= $comp->resultados_totales; ?>"
+                                            data-resultados-actuales="<?= $resultados_actuales; ?>"
+                                            data-sesiones-usadas="<?= $sesiones_usadas; ?>">
+                                        <?= htmlspecialchars($comp->codigo) . ' - ' . htmlspecialchars($comp->nombre); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Campos Calculados Dinámicamente para el Resultado -->
+                        <div class="col-md-4 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Sesiones de la Competencia</span>
+                                <h5 class="m-0 fw-bold text-success" id="ra_total_sesiones">0 sesiones</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Resultados (Actuales / Límite)</span>
+                                <h5 class="m-0 fw-bold text-primary" id="ra_resultados_status">0 / 0</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mt-3">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <span class="d-block text-muted small fw-bold">Sesiones (Usadas / Disponibles)</span>
+                                <h5 class="m-0 fw-bold text-warning-emphasis" id="ra_sesiones_status">0 / 0</h5>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="alert alert-info py-2 px-3 mb-0 small border-0 shadow-sm" id="ra_info_calculo" style="display:none; background-color: #e0f2f1; color: #00796b;">
+                                <i class="fa-solid fa-calculator me-1"></i> El Trigger de la base de datos asignará automáticamente <strong><span id="ra_sugerido">0</span> sesiones</strong> por resultado de aprendizaje si dejas el campo vacío.
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="codigo_ra" class="form-label fw-medium text-secondary">Código RA</label>
+                            <input type="text" class="form-control form-control-lg" id="codigo_ra" name="codigo" placeholder="Ej. RA-05" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="sesiones_asignadas" class="form-label fw-medium text-secondary">Sesiones Asignadas (Opcional - Calcula Trigger)</label>
+                            <input type="number" class="form-control form-control-lg" id="sesiones_asignadas" name="sesiones_asignadas" placeholder="Deja vacío para cálculo automático">
+                        </div>
+                        <div class="col-md-12">
+                            <label for="descripcion_ra" class="form-label fw-medium text-secondary">Descripción del Resultado</label>
+                            <textarea class="form-control form-control-lg" id="descripcion_ra" name="descripcion" rows="4" placeholder="Ej. Implementar interfaces seguras y responsivas..." required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-4 border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold shadow-sm text-dark"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Resultado</button>
                 </div>
             </form>
         </div>
@@ -2904,5 +3176,119 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+});
+
+// Funciones para competencias y resultados en el Dashboard
+function abrirModalCompetencia(idPrograma) {
+    const selectProg = document.getElementById('id_programa_comp');
+    if (selectProg) {
+        selectProg.value = idPrograma;
+    }
+    var modal = new bootstrap.Modal(document.getElementById('modalCrearCompetencia'));
+    modal.show();
+}
+
+function abrirModalResultado(idCompetencia) {
+    const selectComp = document.getElementById('id_competencia_ra');
+    if (selectComp) {
+        selectComp.value = idCompetencia;
+        calcularSesionesResultado('ra');
+    }
+    var modal = new bootstrap.Modal(document.getElementById('modalCrearResultado'));
+    modal.show();
+}
+
+function calcularCompetencia() {
+    const horasTotalesInput = document.getElementById('horas_totales');
+    const porcentajeInput = document.getElementById('porcentaje');
+    const calcHorasEjecutar = document.getElementById('calc_horas_ejecutar');
+    const calcTotalSesiones = document.getElementById('calc_total_sesiones');
+
+    if (!horasTotalesInput || !porcentajeInput) return;
+
+    const horasTotales = parseFloat(horasTotalesInput.value) || 0;
+    const porcentaje = parseFloat(porcentajeInput.value) || 0;
+
+    const horasAEjecutar = Math.ceil((horasTotales * porcentaje) / 100);
+    const totalSesiones = Math.ceil(horasAEjecutar / 6);
+
+    if (calcHorasEjecutar) calcHorasEjecutar.innerText = horasAEjecutar + ' hrs';
+    if (calcTotalSesiones) calcTotalSesiones.innerText = totalSesiones + ' sesiones';
+}
+
+function calcularSesionesResultado(prefix) {
+    const selectComp = document.getElementById(prefix === 'ra' ? 'id_competencia_ra' : 'id_competencia');
+    const raTotalSesiones = document.getElementById(prefix === 'ra' ? 'ra_total_sesiones' : 'prog_ra_total_sesiones');
+    const raResultadosStatus = document.getElementById(prefix === 'ra' ? 'ra_resultados_status' : 'prog_ra_resultados_status');
+    const raSesionesStatus = document.getElementById(prefix === 'ra' ? 'ra_sesiones_status' : 'prog_ra_sesiones_status');
+    const raInfoCalculo = document.getElementById(prefix === 'ra' ? 'ra_info_calculo' : 'prog_ra_info_calculo');
+    const raSugerido = document.getElementById(prefix === 'ra' ? 'ra_sugerido' : 'prog_ra_sugerido');
+
+    if (!selectComp) return;
+
+    const selectedOption = selectComp.options[selectComp.selectedIndex];
+    if (!selectedOption || selectComp.value === "") {
+        if (raTotalSesiones) raTotalSesiones.innerText = '0 sesiones';
+        if (raResultadosStatus) raResultadosStatus.innerText = '0 / 0';
+        if (raSesionesStatus) raSesionesStatus.innerText = '0 / 0';
+        if (raInfoCalculo) raInfoCalculo.style.display = 'none';
+        return;
+    }
+
+    const totalSesiones = parseInt(selectedOption.getAttribute('data-total-sesiones')) || 0;
+    const resultadosTotales = parseInt(selectedOption.getAttribute('data-resultados-totales')) || 0;
+    const resultadosActuales = parseInt(selectedOption.getAttribute('data-resultados-actuales')) || 0;
+    const sesionesUsadas = parseInt(selectedOption.getAttribute('data-sesiones-usadas')) || 0;
+
+    const sugerido = resultadosTotales > 0 ? Math.floor(totalSesiones / resultadosTotales) : 0;
+    const disponibles = totalSesiones - sesionesUsadas;
+
+    if (raTotalSesiones) raTotalSesiones.innerText = totalSesiones + ' sesiones';
+    if (raResultadosStatus) raResultadosStatus.innerText = resultadosActuales + ' / ' + resultadosTotales;
+    if (raSesionesStatus) raSesionesStatus.innerText = sesionesUsadas + ' / ' + totalSesiones + ' (' + disponibles + ' disp.)';
+    
+    if (raInfoCalculo) {
+        raInfoCalculo.style.display = 'block';
+        if (raSugerido) raSugerido.innerText = sugerido;
+    }
+}
+
+function calcularCompetenciaPrograma() {
+    const horasTotalesInput = document.getElementById('prog_comp_horas_totales');
+    const porcentajeInput = document.getElementById('prog_comp_porcentaje');
+    const calcHorasEjecutar = document.getElementById('prog_comp_calc_horas_ejecutar');
+    const calcTotalSesiones = document.getElementById('prog_comp_calc_total_sesiones');
+
+    if (!horasTotalesInput || !porcentajeInput) return;
+
+    const horasTotales = parseFloat(horasTotalesInput.value) || 0;
+    const porcentaje = parseFloat(porcentajeInput.value) || 0;
+
+    const horasAEjecutar = Math.ceil((horasTotales * porcentaje) / 100);
+    const totalSesiones = Math.ceil(horasAEjecutar / 6);
+
+    if (calcHorasEjecutar) calcHorasEjecutar.innerText = horasAEjecutar + ' hrs';
+    if (calcTotalSesiones) calcTotalSesiones.innerText = totalSesiones + ' sesiones';
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const horasTotalesInput = document.getElementById('horas_totales');
+    const porcentajeInput = document.getElementById('porcentaje');
+
+    if (horasTotalesInput) {
+        horasTotalesInput.addEventListener('input', calcularCompetencia);
+    }
+    if (porcentajeInput) {
+        porcentajeInput.addEventListener('input', calcularCompetencia);
+    }
+
+    const progCompHoras = document.getElementById('prog_comp_horas_totales');
+    const progCompPorcentaje = document.getElementById('prog_comp_porcentaje');
+    if (progCompHoras) {
+        progCompHoras.addEventListener('input', calcularCompetenciaPrograma);
+    }
+    if (progCompPorcentaje) {
+        progCompPorcentaje.addEventListener('input', calcularCompetenciaPrograma);
+    }
 });
 </script>

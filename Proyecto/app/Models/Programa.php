@@ -84,4 +84,12 @@ class Programa {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Obtener el último ID de programa insertado
+     * @return int
+     */
+    public function getLastInsertId() {
+        return $this->db->lastInsertId();
+    }
 }

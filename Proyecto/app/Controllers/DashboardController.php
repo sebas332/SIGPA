@@ -12,6 +12,7 @@ class DashboardController extends BaseController {
     private $asistenciaModel;
     private $novedadModel;
     private $competenciaModel;
+    private $resultadoModel;
     private $jornadaModel;
     private $rolModel;
 
@@ -24,6 +25,7 @@ class DashboardController extends BaseController {
         $this->asistenciaModel = $this->model('Asistencia');
         $this->novedadModel = $this->model('NovedadAmbiente');
         $this->competenciaModel = $this->model('Competencia');
+        $this->resultadoModel = $this->model('ResultadoAprendizaje');
         $this->jornadaModel = $this->model('Jornada');
         $this->rolModel = $this->model('Rol');
     }
@@ -53,6 +55,7 @@ class DashboardController extends BaseController {
             'asistencias' => [],
             'novedades' => [],
             'competencias' => [],
+            'resultados' => [],
             'aprendices' => [],
             'programas_fichas' => []
         ];
@@ -77,6 +80,8 @@ class DashboardController extends BaseController {
             $data['programas_count'] = count($this->programaModel->all());
             $data['novedades'] = $this->novedadModel->all();
             $data['programacion'] = $this->programacionModel->all();
+            $data['competencias'] = $this->competenciaModel->all();
+            $data['resultados'] = $this->resultadoModel->all();
 
             // Cargar listas para el Modal de Crear Ficha y Programas
             $data['programas'] = $this->programaModel->all();

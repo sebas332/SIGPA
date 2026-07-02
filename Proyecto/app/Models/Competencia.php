@@ -101,12 +101,32 @@ class Competencia {
      */
     public function validarSesiones($id_competencia) {
         try {
-            $this->db->query("CALL sp_validar_sesiones_competencia(:id_competencia)");
-            $this->db->bind(':id_competencia', $id_competencia);
-            $this->db->execute();
+            // Obtener total_sesiones de la competencia
+            $this->db->query("SELECT total_sesiones FROM competencias WHERE id_competencia = :id");
+            $this->db->bind(':id', $id_competencia);
+            $comp = $this->db->single();
+            $total_sesiones = $comp ? $comp->total_sesiones : 0;
+
+            // Obtener suma de sesiones asignadas de los resultados
+            $this->db->query("SELECT SUM(sesiones_asignadas) as suma FROM resultado_aprendizaje WHERE id_competencia = :id");
+            $this->db->bind(':id', $id_competencia);
+            $res = $this->db->single();
+            $suma_sesiones = $res ? ($res->suma ?? 0) : 0;
+
+            if ($suma_sesiones != $total_sesiones) {
+                return ['success' => false, 'message' => 'La suma final de sesiones asignadas (' . $suma_sesiones . ') debe ser igual al total de sesiones de la competencia (' . $total_sesiones . ').'];
+            }
             return ['success' => true, 'message' => 'Las sesiones asignadas coinciden correctamente con el total de la competencia.'];
         } catch (PDOException $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Obtener el último ID de competencia insertado
+     * @return int
+     */
+    public function getLastInsertId() {
+        return $this->db->lastInsertId();
     }
 }
