@@ -229,7 +229,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                     </a>
                 <?php endforeach; ?>
             <?php endforeach; ?>
-            <a class="sga-menu-link logout mt-auto" href="<?= URLROOT; ?>/index.php?route=auth/logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Cerrar sesión</span></a>
+            <a class="sga-menu-link logout mt-auto" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Cerrar sesión</span></a>
         </nav>
         <a class="sga-sidebar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index">
             <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
@@ -311,6 +311,27 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     </section>
 </div>
 <?php endif; ?>
+
+<!-- Modal Confirmación de Cierre de Sesión -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg text-center p-4">
+            <div class="modal-body">
+                <div class="mb-4 text-danger">
+                    <div style="width: 80px; height: 80px; background-color: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">¿Estás seguro de salir?</h4>
+                <p class="text-muted mb-4" style="font-size: 0.95rem;">Se cerrará tu sesión actual en el Sistema de Gestión Académica y regresarás a la pantalla de inicio.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light border px-4 py-2 fw-medium shadow-sm text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="<?= URLROOT; ?>/index.php?route=auth/logout" class="btn btn-danger px-4 py-2 fw-bold shadow-sm" style="background-color: #dc2626; border-color: #dc2626;">Salir del Sistema</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Bootstrap 5 JS Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
