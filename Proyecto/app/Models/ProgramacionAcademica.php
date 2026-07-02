@@ -1,0 +1,172 @@
+<?php
+/**
+ * Modelo ProgramacionAcademica
+ * Gestiona las operaciones CRUD y joins complejos de la tabla `programacion_academica`.
+ */
+class ProgramacionAcademica {
+    private $db;
+
+    public function __construct() {
+        $this->db = Database::getInstance();
+    }
+
+    /**
+     * Obtener toda la programación académica con joins completos
+     * @return array
+     */
+    public function all() {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Obtener programación asignada a un instructor
+     * @param int $id_instructor
+     * @return array
+     */
+    public function getByInstructor($id_instructor) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE pa.id_usuario = :id_instructor 
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':id_instructor', $id_instructor);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Obtener programación de una ficha (útil para aprendices)
+     * @param int $numero_ficha
+     * @return array
+     */
+    public function getByFicha($numero_ficha) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE pa.numero_ficha = :numero_ficha 
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':numero_ficha', $numero_ficha);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Obtener programación de un aprendiz (mediante las fichas en las que está inscrito)
+     * @param int $id_aprendiz
+     * @return array
+     */
+    public function getByAprendiz($id_aprendiz) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN ficha_aprendiz fa ON f.numero_ficha = fa.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE fa.id_usuario_aprendiz = :id_aprendiz 
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':id_aprendiz', $id_aprendiz);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Obtener el detalle de una programación por su ID
+     * @param int $id
+     * @return object|false
+     */
+    public function find($id) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE pa.id_programacion = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->single();
+    }
+
+    /**
+     * Crear una nueva programación académica
+     * @param array $data
+     * @return bool
+     */
+    public function create($data) {
+        $this->db->query("INSERT INTO programacion_academica (numero_ficha, id_usuario, id_numero_ambiente, id_dias, hora_inicio, hora_fin, id_resultado_aprendizaje, fecha_inicio) 
+                          VALUES (:numero_ficha, :id_usuario, :id_numero_ambiente, :id_dias, :hora_inicio, :hora_fin, :id_resultado_aprendizaje, :fecha_inicio)");
+        $this->db->bind(':numero_ficha', $data['numero_ficha']);
+        $this->db->bind(':id_usuario', $data['id_usuario']);
+        $this->db->bind(':id_numero_ambiente', $data['id_numero_ambiente']);
+        $this->db->bind(':id_dias', $data['id_dias']);
+        $this->db->bind(':hora_inicio', $data['hora_inicio']);
+        $this->db->bind(':hora_fin', $data['hora_fin']);
+        $this->db->bind(':id_resultado_aprendizaje', $data['id_resultado_aprendizaje']);
+        $this->db->bind(':fecha_inicio', $data['fecha_inicio']);
+        return $this->db->execute();
+    }
+
+    /**
+     * Actualizar una programación académica
+     * @param int $id
+     * @param array $data
+     * @return bool
+     */
+    public function update($id, $data) {
+        $this->db->query("UPDATE programacion_academica SET numero_ficha = :numero_ficha, id_usuario = :id_usuario, 
+                          id_numero_ambiente = :id_numero_ambiente, id_dias = :id_dias, hora_inicio = :hora_inicio, 
+                          hora_fin = :hora_fin, id_resultado_aprendizaje = :id_resultado_aprendizaje, fecha_inicio = :fecha_inicio 
+                          WHERE id_programacion = :id");
+        $this->db->bind(':numero_ficha', $data['numero_ficha']);
+        $this->db->bind(':id_usuario', $data['id_usuario']);
+        $this->db->bind(':id_numero_ambiente', $data['id_numero_ambiente']);
+        $this->db->bind(':id_dias', $data['id_dias']);
+        $this->db->bind(':hora_inicio', $data['hora_inicio']);
+        $this->db->bind(':hora_fin', $data['hora_fin']);
+        $this->db->bind(':id_resultado_aprendizaje', $data['id_resultado_aprendizaje']);
+        $this->db->bind(':fecha_inicio', $data['fecha_inicio']);
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Eliminar una programación académica
+     * @param int $id
+     * @return bool
+     */
+    public function delete($id) {
+        $this->db->query("DELETE FROM programacion_academica WHERE id_programacion = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+}
