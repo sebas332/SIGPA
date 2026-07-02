@@ -104,10 +104,10 @@ footer {
             <!-- Formulario de Login -->
             <form action="<?= URLROOT; ?>/index.php?route=auth/login" method="POST" class="needs-validation" novalidate>
                 <div class="form-floating mb-4 shadow-sm">
-                    <input type="number" class="form-control form-control-lg rounded-3" id="username" name="username" value="<?= htmlspecialchars($username ?? ''); ?>" placeholder="Ej: 1020304050" required min="10000" title="Debe ser un número de documento válido." autofocus>
+                    <input type="text" inputmode="numeric" maxlength="10" pattern="[0-9]{1,10}" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="form-control form-control-lg rounded-3" id="username" name="username" value="<?= htmlspecialchars($username ?? ''); ?>" placeholder="Ej: 1020304050" required title="Debe ser un número de documento válido, máximo 10 dígitos." autofocus>
                     <label for="username" class="text-secondary"><i class="fa-solid fa-id-card me-2 text-muted"></i>Documento de Identidad</label>
                     <div class="invalid-feedback px-2 small">
-                        Ingresa un número de documento válido.
+                        Ingresa un número de documento válido (solo números, máximo 10 dígitos).
                     </div>
                 </div>
 

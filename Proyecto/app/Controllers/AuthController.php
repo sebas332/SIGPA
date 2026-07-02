@@ -35,8 +35,8 @@ class AuthController extends BaseController {
 
             if (empty($data['username']) || empty($data['password'])) {
                 $data['error'] = 'Por favor ingresa tu documento y contraseña.';
-            } elseif (!preg_match('/^[0-9]{4,20}$/', $data['username'])) {
-                $data['error'] = 'El documento de identidad debe contener solo números.';
+            } elseif (!preg_match('/^[0-9]{1,10}$/', $data['username'])) {
+                $data['error'] = 'El documento de identidad debe contener solo números y máximo 10 dígitos.';
             } elseif (strlen($data['password']) < 8) {
                 $data['error'] = 'La contraseña debe tener al menos 8 caracteres.';
             } else {
