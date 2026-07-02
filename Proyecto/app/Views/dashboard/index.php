@@ -1986,43 +1986,43 @@
                     <div class="row g-4 mb-4">
                         <div class="col-12 col-md-6">
                             <label class="text-muted small fw-bold mb-2">Nombres</label>
-                            <input type="text" name="nombre" class="form-control select-sena shadow-sm" required placeholder="Ej. Carlos Arturo">
+                            <input type="text" name="nombre" class="form-control select-sena shadow-sm" required placeholder="Ej. Carlos Arturo" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="El nombre solo debe contener letras.">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="text-muted small fw-bold mb-2">Apellidos</label>
-                            <input type="text" name="apellido" class="form-control select-sena shadow-sm" required placeholder="Ej. Gómez">
+                            <input type="text" name="apellido" class="form-control select-sena shadow-sm" required placeholder="Ej. Gómez" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="El apellido solo debe contener letras.">
                         </div>
                     </div>
 
                     <div class="row g-4 mb-4">
                         <div class="col-12 col-md-6">
                             <label class="text-muted small fw-bold mb-2">Teléfono de Contacto</label>
-                            <input type="text" name="telefono" class="form-control select-sena shadow-sm" required placeholder="Ej. 3019876543">
+                            <input type="text" name="telefono" class="form-control select-sena shadow-sm" required placeholder="Ej. 3019876543" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="El teléfono debe tener exactamente 10 números.">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="text-muted small fw-bold mb-2">Correo Electrónico</label>
-                            <input type="email" name="correo" class="form-control select-sena shadow-sm" required placeholder="Ej. correo@soy.sena.edu.co">
+                            <input type="email" name="correo" class="form-control select-sena shadow-sm" required placeholder="Ej. correo@soy.sena.edu.co" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="El correo debe tener un formato válido (ejemplo@dominio.com).">
                         </div>
                     </div>
 
                     <div class="row g-4 mb-4">
                         <div class="col-12">
                             <label class="text-muted small fw-bold mb-2">Titulación o Nivel Académico</label>
-                            <input type="text" name="titulacion" class="form-control select-sena shadow-sm" required placeholder="Ej. Ingeniero de Sistemas / Bachiller">
+                            <input type="text" name="titulacion" class="form-control select-sena shadow-sm" required placeholder="Ej. Ingeniero de Sistemas o Bachiller" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="La titulación solo debe contener letras.">
                         </div>
                     </div>
 
                     <div class="row g-4">
                         <div class="col-12 col-md-4">
                             <label class="text-muted small fw-bold mb-2">Documento de Identidad (Login)</label>
-                            <input type="number" name="documento" class="form-control select-sena shadow-sm" required placeholder="Ej. 1020304050">
+                            <input type="text" inputmode="numeric" name="documento" class="form-control select-sena shadow-sm" required placeholder="Ej. 1020304050" pattern="[0-9]{6,10}" maxlength="10" title="El documento debe contener solo números, entre 6 y 10 dígitos.">
                         </div>
                         <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Contraseña Inicial</label>
-                            <input type="text" name="contrasena" class="form-control select-sena shadow-sm" required placeholder="Ej. pass123">
+                            <label class="text-muted small fw-bold mb-2">Contraseña Inicial<span class="d-none d-md-inline"><br>&nbsp;</span></label>
+                            <input type="text" name="contrasena" class="form-control select-sena shadow-sm" required placeholder="Ej. Pass123*" pattern="(?=[A-ZÑÁÉÍÓÚ])(?=.*\d)(?=.*[!@#$%^&amp;*(),.?&quot;:{}|&lt;&gt;[\]\\/_\-+=~'`;]).{8,30}" title="La contraseña debe iniciar con mayúscula, tener de 8 a 30 caracteres, e incluir un número y un carácter especial.">
                         </div>
                         <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Rol Principal</label>
+                            <label class="text-muted small fw-bold mb-2">Rol Principal<span class="d-none d-md-inline"><br>&nbsp;</span></label>
                             <select name="id_rol" class="form-select select-sena shadow-sm" required>
                                 <?php if(isset($roles)): foreach ($roles as $r): ?>
                                     <option value="<?= $r->id_rol; ?>"><?= $r->nombre_rol; ?></option>
@@ -2033,7 +2033,7 @@
                 </div>
                 <div class="modal-footer border-top-0 bg-light px-4 py-3 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn shadow-sm border-0" style="background-color: #0d6efd; color: white; padding: 0.6rem 1.4rem; border-radius: 25px; font-weight: 600;"><i class="fa-solid fa-floppy-disk"></i> Guardar Usuario</button>
+                    <button type="submit" class="btn shadow-sm border-0" style="background-color: #39A900; color: white; padding: 0.6rem 1.4rem; border-radius: 25px; font-weight: 600;" onmouseover="this.style.backgroundColor='#007832'" onmouseout="this.style.backgroundColor='#39A900'"><i class="fa-solid fa-floppy-disk"></i> Guardar Usuario</button>
                 </div>
             </form>
         </div>
@@ -2565,4 +2565,208 @@ function editarUsuario(id, nom, ape, doc, tel, cor, tit) {
     var modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
     modal.show();
 }
+
+// Validaciones para formularios de usuarios (Crear y Editar)
+document.addEventListener("DOMContentLoaded", function () {
+    const forms = document.querySelectorAll("form[action*='usuarios/create'], form[action*='usuarios/update']");
+    forms.forEach(function (form) {
+        // Restringir entrada a letras y espacios en tiempo real
+        const textFields = form.querySelectorAll("input[name='nombre'], input[name='apellido'], input[name='titulacion']");
+        textFields.forEach(input => {
+            input.addEventListener("input", function() {
+                this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+            });
+        });
+
+        // Restringir entrada a números en tiempo real
+        const numericFields = form.querySelectorAll("input[name='telefono'], input[name='documento']");
+        numericFields.forEach(input => {
+            input.addEventListener("input", function() {
+                this.value = this.value.replace(/\D/g, '');
+            });
+        });
+
+        // Restringir y truncar el campo de correo en tiempo real
+        const emailFields = form.querySelectorAll("input[type='email']");
+        emailFields.forEach(input => {
+            input.addEventListener("input", function() {
+                const val = this.value;
+                const atIndex = val.indexOf('@');
+                if (atIndex !== -1) {
+                    const afterAt = val.substring(atIndex + 1);
+                    const comMatch = afterAt.match(/\.(com|co)/i);
+                    if (comMatch) {
+                        const suffixIndex = atIndex + 1 + comMatch.index + comMatch[0].length;
+                        if (val.length > suffixIndex) {
+                            this.value = val.substring(0, suffixIndex);
+                        }
+                    }
+                }
+            });
+        });
+
+        // Obtener campos relevantes
+        const inputs = form.querySelectorAll("input[name='nombre'], input[name='apellido'], input[name='telefono'], input[type='email'], input[name='titulacion'], input[name='documento'], input[name='contrasena']");
+        
+        inputs.forEach(input => {
+            // Contenedor para mensajes de validación personalizados
+            const container = document.createElement("div");
+            container.className = "validation-feedback-container mt-1";
+            
+            const errorMsg = document.createElement("div");
+            errorMsg.className = "validation-feedback text-danger small fw-semibold";
+            errorMsg.style.cssText = "display: none; font-size: 0.78rem; margin-top: 3px;";
+            
+            const successMsg = document.createElement("div");
+            successMsg.className = "validation-feedback text-success small fw-semibold";
+            successMsg.style.cssText = "display: none; font-size: 0.78rem; margin-top: 3px;";
+            
+            container.appendChild(errorMsg);
+            container.appendChild(successMsg);
+            input.parentNode.appendChild(container);
+
+            function updateFeedback(isValid, text) {
+                if (isValid) {
+                    errorMsg.style.display = "none";
+                    successMsg.style.display = "none";
+                    input.classList.remove("is-invalid");
+                    input.classList.add("is-valid");
+                    input.setCustomValidity("");
+                } else {
+                    successMsg.style.display = "none";
+                    errorMsg.textContent = "❌ " + text;
+                    errorMsg.style.display = "block";
+                    input.classList.remove("is-valid");
+                    input.classList.add("is-invalid");
+                    input.setCustomValidity(text);
+                }
+            }
+
+            function clearFeedback() {
+                errorMsg.style.display = "none";
+                successMsg.style.display = "none";
+                input.classList.remove("is-valid", "is-invalid");
+                input.setCustomValidity("");
+            }
+
+            function validate() {
+                const val = input.value;
+                const name = input.name;
+                const type = input.type;
+
+                if (val === "") {
+                    const isOptionalEmpty = form.action.includes('update') && name === 'contrasena';
+                    if (isOptionalEmpty) {
+                        clearFeedback();
+                    } else {
+                        updateFeedback(false, "Este campo es requerido.");
+                    }
+                    return;
+                }
+
+                if (name === "nombre" || name === "apellido") {
+                    if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
+                        updateFeedback(true, "Formato de " + (name === "nombre" ? "nombre" : "apellido") + " válido.");
+                    } else {
+                        updateFeedback(false, "Solo debe contener letras.");
+                    }
+                }
+                else if (name === "telefono") {
+                    if (/^\d{10}$/.test(val)) {
+                        updateFeedback(true, "Número de teléfono válido.");
+                    } else {
+                        updateFeedback(false, "Debe contener exactamente 10 números (actual: " + val.length + ").");
+                    }
+                }
+                else if (type === "email") {
+                    // Validaciones específicas para el correo
+                    if (!val.includes('@')) {
+                        updateFeedback(false, "Debe incluir el carácter '@'.");
+                        return;
+                    }
+                    
+                    const atIndex = val.indexOf('@');
+                    const afterAt = val.substring(atIndex + 1);
+                    
+                    if (afterAt === "" || !/^[a-zA-Z]/.test(afterAt)) {
+                        updateFeedback(false, "Debe haber letras después de el '@'.");
+                        return;
+                    }
+                    
+                    const dotIndex = afterAt.indexOf('.');
+                    if (dotIndex === -1) {
+                        updateFeedback(false, "Debe incluir un punto '.' después del dominio.");
+                        return;
+                    }
+                    
+                    const afterDot = afterAt.substring(dotIndex + 1);
+                    if (afterDot.toLowerCase() !== "com" && afterDot.toLowerCase() !== "co") {
+                        updateFeedback(false, "Solo se permite '.com' o '.co' al final.");
+                        return;
+                    }
+                    
+                    updateFeedback(true, "Correo electrónico válido.");
+                }
+                else if (name === "titulacion") {
+                    if (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) {
+                        updateFeedback(true, "Formato de titulación válido.");
+                    } else {
+                        updateFeedback(false, "Solo debe contener letras.");
+                    }
+                }
+                else if (name === "documento") {
+                    if (/^\d{6,10}$/.test(val)) {
+                        updateFeedback(true, "Número de documento válido.");
+                    } else {
+                        if (val.length < 6) {
+                            updateFeedback(false, "Debe contener mínimo 6 dígitos (actual: " + val.length + ").");
+                        } else if (val.length > 10) {
+                            updateFeedback(false, "Debe contener máximo 10 dígitos (actual: " + val.length + ").");
+                        } else {
+                            updateFeedback(false, "Solo debe contener números.");
+                        }
+                    }
+                }
+                else if (name === "contrasena") {
+                    if (val.length < 8 || val.length > 30) {
+                        updateFeedback(false, "La contraseña debe tener entre 8 y 30 caracteres (actual: " + val.length + ").");
+                        return;
+                    }
+                    if (!/^[A-ZÑÁÉÍÓÚ]/.test(val)) {
+                        updateFeedback(false, "La primera letra debe ser mayúscula.");
+                        return;
+                    }
+                    if (!/\d/.test(val)) {
+                        updateFeedback(false, "Debe contener al menos un número.");
+                        return;
+                    }
+                    if (!/[!@#$%^&*(),.?":{}|<>[\]\\/_\-+=~`';]/.test(val)) {
+                        updateFeedback(false, "Debe contener al menos un carácter especial.");
+                        return;
+                    }
+                    updateFeedback(true, "Contraseña segura y válida.");
+                }
+            }
+
+            input.addEventListener("input", validate);
+            input.addEventListener("focus", validate);
+            input.addEventListener("blur", validate);
+        });
+
+        form.addEventListener("submit", function (e) {
+            let formValid = true;
+            inputs.forEach(input => {
+                // Forzar validación al enviar
+                input.focus();
+                input.blur();
+                if (!input.checkValidity()) {
+                    formValid = false;
+                }
+            });
+            if (!formValid) {
+                e.preventDefault();
+            }
+        });
+    });
+});
 </script>
