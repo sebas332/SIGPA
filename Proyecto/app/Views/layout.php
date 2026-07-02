@@ -234,7 +234,6 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
         <a class="sga-sidebar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index">
             <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
             <span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span>
-            <i class="fa-solid fa-chevron-up"></i>
         </a>
     </aside>
     <button id="sidebarBackdrop" class="sga-sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>
@@ -253,7 +252,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 <button class="sga-topbar-button" type="button" title="Ayuda">
                     <i class="fa-regular fa-circle-question"></i>
                 </button>
-                <a class="sga-topbar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index"><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Perfil"><span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span><i class="fa-solid fa-chevron-down"></i></a>
+                <a class="sga-topbar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index"><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Perfil"><span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span></a>
             </div>
         </header>
         <main class="sga-content">
