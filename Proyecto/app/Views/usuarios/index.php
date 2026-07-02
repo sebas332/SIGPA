@@ -11,6 +11,23 @@
         <?php endif; ?>
     </div>
 
+    <div class="row mb-4 g-3 align-items-center">
+        <div class="col-md-7 col-lg-8">
+            <div class="input-group shadow-sm border-0 rounded-3 overflow-hidden">
+                <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="buscadorUsuarios" class="form-control border-0 bg-white shadow-none py-2" placeholder="Buscar por nombre, correo, login, teléfono o titulación...">
+            </div>
+        </div>
+        <div class="col-md-5 col-lg-4">
+            <select id="filtroRol" class="form-select shadow-sm border-0 rounded-3 py-2 text-secondary fw-medium">
+                <option value="">Todos los roles</option>
+                <?php foreach ($roles as $r): ?>
+                    <option value="<?= $r->nombre_rol; ?>"><?= $r->nombre_rol; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0 rounded-4 bg-white">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -345,5 +362,38 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // Buscador y filtro en tiempo real
+    const buscador = document.getElementById('buscadorUsuarios');
+    const filtroRol = document.getElementById('filtroRol');
+    const tbody = document.querySelector('table tbody');
+    const rows = tbody ? tbody.querySelectorAll('tr') : [];
+
+    function filtrarTabla() {
+        if (!buscador || !filtroRol) return;
+        
+        const term = buscador.value.toLowerCase().trim();
+        const roleFilter = filtroRol.value.toLowerCase();
+
+        rows.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            // Buscar los roles en la columna específica (para evitar falsos positivos si el nombre coincide con un rol)
+            // La columna de roles es la 5ta (índice 5 con nth-child)
+            const rolesColumn = row.querySelector('td:nth-child(5)'); 
+            const rolesText = rolesColumn ? rolesColumn.textContent.toLowerCase() : '';
+
+            const matchTerm = textContent.includes(term);
+            const matchRole = roleFilter === '' || rolesText.includes(roleFilter);
+
+            if (matchTerm && matchRole) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (buscador) buscador.addEventListener('input', filtrarTabla);
+    if (filtroRol) filtroRol.addEventListener('change', filtrarTabla);
 });
 </script>

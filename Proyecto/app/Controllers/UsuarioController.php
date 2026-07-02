@@ -43,29 +43,50 @@ class UsuarioController extends BaseController {
     public function create() {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'nombre' => $_POST['nombre'] ?? '',
-                'apellido' => $_POST['apellido'] ?? '',
-                'documento' => trim($_POST['documento'] ?? ''),
-                'telefono' => $_POST['telefono'] ?? '',
-                'correo' => $_POST['correo'] ?? '',
-                'titulacion' => $_POST['titulacion'] ?? '',
-                'usuario' => trim($_POST['documento'] ?? ''), // El login es el documento
-                'contrasena' => !empty($_POST['contrasena']) ? password_hash(trim($_POST['contrasena']), PASSWORD_BCRYPT) : ''
-            ];
-
+            $nombre = $_POST['nombre'] ?? '';
+            $apellido = $_POST['apellido'] ?? '';
+            $documento = trim($_POST['documento'] ?? '');
+            $telefono = $_POST['telefono'] ?? '';
+            $correo = $_POST['correo'] ?? '';
+            $titulacion = $_POST['titulacion'] ?? '';
+            $contrasena = trim($_POST['contrasena'] ?? '');
             $id_rol = $_POST['id_rol'] ?? 0;
 
+            $errores = [];
+
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $nombre)) $errores[] = "El nombre solo debe contener letras.";
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $apellido)) $errores[] = "El apellido solo debe contener letras.";
+            if (!preg_match('/^[0-9]{6,10}$/', $documento)) $errores[] = "El documento debe contener entre 6 y 10 dígitos numéricos.";
+            if (!preg_match('/^[0-9]{10}$/', $telefono)) $errores[] = "El teléfono debe contener exactamente 10 números.";
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL) || strpos($correo, '@') === false) $errores[] = "El correo electrónico no es válido.";
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $titulacion)) $errores[] = "La titulación solo debe contener letras.";
+            if (!empty($contrasena) && !preg_match('/^[A-Z](?=.*\d)(?=.*[\W_]).{7,29}$/', $contrasena)) {
+                $errores[] = "La contraseña debe tener de 8 a 30 caracteres, iniciar con mayúscula, tener un número y un carácter especial.";
+            }
+
+            if (!empty($errores)) {
+                $_SESSION['flash_error'] = implode("<br>", $errores);
+                $this->redirect('usuarios/index');
+                return;
+            }
+
+            $data = [
+                'nombre' => $nombre,
+                'apellido' => $apellido,
+                'documento' => $documento,
+                'telefono' => $telefono,
+                'correo' => $correo,
+                'titulacion' => $titulacion,
+                'usuario' => $documento, // El login es el documento
+                'contrasena' => !empty($contrasena) ? password_hash($contrasena, PASSWORD_BCRYPT) : ''
+            ];
+
             if ($this->usuarioModel->create($data)) {
-                // Obtener el ID insertado
                 $db = Database::getInstance();
                 $lastId = $db->lastInsertId();
-
-                // Asignar el rol
                 if ($id_rol > 0 && $lastId > 0) {
                     $this->usuarioRolModel->create($lastId, $id_rol);
                 }
-
                 $_SESSION['flash_success'] = 'Usuario registrado y rol asignado correctamente.';
             } else {
                 $_SESSION['flash_error'] = 'Error al registrar el usuario.';
@@ -74,19 +95,34 @@ class UsuarioController extends BaseController {
         $this->redirect('usuarios/index');
     }
 
-    /**
-     * Asignar un rol adicional a un usuario existente
-     */
     public function asignarRol() {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_usuario = $_POST['id_usuario'] ?? 0;
             $id_rol = $_POST['id_rol'] ?? 0;
 
-            if ($this->usuarioRolModel->create($id_usuario, $id_rol)) {
-                $_SESSION['flash_success'] = 'Rol asignado correctamente al usuario.';
-            } else {
+            // Obtener roles actuales
+            $roles_actuales = $this->usuarioModel->getRoles($id_usuario);
+            
+            // Verificar si ya tiene el rol
+            $ya_tiene_rol = false;
+            foreach ($roles_actuales as $rol) {
+                if ($rol->id_rol == $id_rol) {
+                    $ya_tiene_rol = true;
+                    break;
+                }
+            }
+
+            if ($ya_tiene_rol) {
                 $_SESSION['flash_error'] = 'El usuario ya posee este rol.';
+            } else if (count($roles_actuales) >= 2) {
+                $_SESSION['flash_error'] = 'Un usuario no puede tener más de dos roles al mismo tiempo.';
+            } else {
+                if ($this->usuarioRolModel->create($id_usuario, $id_rol)) {
+                    $_SESSION['flash_success'] = 'Rol asignado correctamente al usuario.';
+                } else {
+                    $_SESSION['flash_error'] = 'Error al asignar el rol.';
+                }
             }
         }
         $this->redirect('usuarios/index');
@@ -99,20 +135,45 @@ class UsuarioController extends BaseController {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id_usuario'] ?? 0;
+            $nombre = $_POST['nombre'] ?? '';
+            $apellido = $_POST['apellido'] ?? '';
+            $documento = trim($_POST['documento'] ?? '');
+            $telefono = $_POST['telefono'] ?? '';
+            $correo = $_POST['correo'] ?? '';
+            $titulacion = $_POST['titulacion'] ?? '';
+            $contrasena = trim($_POST['contrasena'] ?? '');
+            $id_rol = $_POST['id_rol'] ?? 0;
+
+            $errores = [];
+
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $nombre)) $errores[] = "El nombre solo debe contener letras.";
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $apellido)) $errores[] = "El apellido solo debe contener letras.";
+            if (!preg_match('/^[0-9]{6,10}$/', $documento)) $errores[] = "El documento debe contener entre 6 y 10 dígitos numéricos.";
+            if (!preg_match('/^[0-9]{10}$/', $telefono)) $errores[] = "El teléfono debe contener exactamente 10 números.";
+            if (!filter_var($correo, FILTER_VALIDATE_EMAIL) || strpos($correo, '@') === false) $errores[] = "El correo electrónico no es válido.";
+            if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/', $titulacion)) $errores[] = "La titulación solo debe contener letras.";
+            if (!empty($contrasena) && !preg_match('/^[A-Z](?=.*\d)(?=.*[\W_]).{7,29}$/', $contrasena)) {
+                $errores[] = "La contraseña debe tener de 8 a 30 caracteres, iniciar con mayúscula, tener un número y un carácter especial.";
+            }
+
+            if (!empty($errores)) {
+                $_SESSION['flash_error'] = implode("<br>", $errores);
+                $this->redirect('dashboard/index#pills-usuarios');
+                return;
+            }
+
             $data = [
-                'nombre' => $_POST['nombre'] ?? '',
-                'apellido' => $_POST['apellido'] ?? '',
-                'documento' => trim($_POST['documento'] ?? ''),
-                'telefono' => $_POST['telefono'] ?? '',
-                'correo' => $_POST['correo'] ?? '',
-                'titulacion' => $_POST['titulacion'] ?? '',
-                'usuario' => trim($_POST['documento'] ?? ''),
-                'contrasena' => !empty($_POST['contrasena']) ? password_hash(trim($_POST['contrasena']), PASSWORD_BCRYPT) : ''
+                'nombre' => $nombre,
+                'apellido' => $apellido,
+                'documento' => $documento,
+                'telefono' => $telefono,
+                'correo' => $correo,
+                'titulacion' => $titulacion,
+                'usuario' => $documento,
+                'contrasena' => !empty($contrasena) ? password_hash($contrasena, PASSWORD_BCRYPT) : ''
             ];
 
             if ($this->usuarioModel->update($id, $data)) {
-                // Actualizar rol principal si se envía
-                $id_rol = $_POST['id_rol'] ?? 0;
                 if ($id_rol > 0) {
                     $this->usuarioRolModel->deleteByUsuario($id);
                     $this->usuarioRolModel->create($id, $id_rol);

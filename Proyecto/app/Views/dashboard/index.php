@@ -1190,6 +1190,23 @@
                     </div>
                 </div>
 
+                <div class="row mb-4 g-3 align-items-center">
+                    <div class="col-md-7 col-lg-8">
+                        <div class="input-group shadow-sm border-0 rounded-3 overflow-hidden">
+                            <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="buscadorUsuarios" class="form-control border-0 bg-white shadow-none py-2" placeholder="Buscar por nombre, correo, login, teléfono o titulación...">
+                        </div>
+                    </div>
+                    <div class="col-md-5 col-lg-4">
+                        <select id="filtroRol" class="form-select shadow-sm border-0 rounded-3 py-2 text-secondary fw-medium">
+                            <option value="">Todos los roles</option>
+                            <?php if(isset($roles)): foreach ($roles as $r): ?>
+                                <option value="<?= $r->nombre_rol; ?>"><?= $r->nombre_rol; ?></option>
+                            <?php endforeach; endif; ?>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -1237,25 +1254,12 @@
                                             </td>
                                             <td class="text-end pe-4">
                                                 <div class="d-flex flex-column align-items-end gap-2">
-                                                    <!-- Asignar Rol -->
-                                                    <form action="<?= URLROOT; ?>/index.php?route=usuarios/asignarRol" method="POST" class="d-flex align-items-center gap-1">
-                                                        <input type="hidden" name="id_usuario" value="<?= $u->id_usuario; ?>">
-                                                        <select class="form-select form-select-sm shadow-sm select-sena" name="id_rol" style="width: 130px; font-size: 0.75rem;" required>
-                                                            <option value="">Añadir rol...</option>
-                                                            <?php if(isset($roles)): foreach ($roles as $r): ?>
-                                                                <option value="<?= $r->id_rol; ?>"><?= $r->nombre_rol; ?></option>
-                                                            <?php endforeach; endif; ?>
-                                                        </select>
-                                                        <button type="submit" class="btn btn-outline-success btn-sm shadow-sm" style="padding: 0.2rem 0.5rem;" title="Asignar Rol">
-                                                            <i class="fa-solid fa-plus"></i>
-                                                        </button>
-                                                    </form>
                                                     <!-- Botones CRUD -->
-                                                    <div class="d-flex gap-1 mt-1">
-                                                        <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario(<?= $u->id_usuario; ?>, '<?= htmlspecialchars(addslashes($u->nombre)); ?>', '<?= htmlspecialchars(addslashes($u->apellido)); ?>', '<?= htmlspecialchars(addslashes($u->documento)); ?>', '<?= htmlspecialchars(addslashes($u->telefono)); ?>', '<?= htmlspecialchars(addslashes($u->correo)); ?>', '<?= htmlspecialchars(addslashes($u->titulacion)); ?>')" title="Editar">
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary shadow-sm" onclick="editarUsuario(<?= $u->id_usuario; ?>, '<?= htmlspecialchars(addslashes($u->nombre)); ?>', '<?= htmlspecialchars(addslashes($u->apellido)); ?>', '<?= htmlspecialchars(addslashes($u->documento)); ?>', '<?= htmlspecialchars(addslashes($u->telefono)); ?>', '<?= htmlspecialchars(addslashes($u->correo)); ?>', '<?= htmlspecialchars(addslashes($u->titulacion)); ?>', '<?= !empty($rolesUsuario[$u->id_usuario]) ? $rolesUsuario[$u->id_usuario][0]->id_rol : ''; ?>')" title="Editar">
                                                             <i class="fa-solid fa-pen"></i> Editar
                                                         </button>
-                                                        <a href="<?= URLROOT; ?>/index.php?route=usuarios/delete&id=<?= $u->id_usuario; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas borrar a este usuario?');" title="Eliminar">
+                                                        <a href="<?= URLROOT; ?>/index.php?route=usuarios/delete&id=<?= $u->id_usuario; ?>" class="btn btn-sm btn-outline-danger shadow-sm" onclick="return confirm('¿Seguro que deseas borrar a este usuario?');" title="Eliminar">
                                                             <i class="fa-solid fa-trash"></i>
                                                         </a>
                                                     </div>
@@ -2408,9 +2412,17 @@
                         </div>
                     </div>
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <label class="text-muted small fw-bold mb-1">Titulación</label>
                             <input type="text" name="titulacion" id="edit_usr_titulacion" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small fw-bold mb-1">Rol Principal</label>
+                            <select name="id_rol" id="edit_usr_rol" class="form-select" required>
+                                <?php if(isset($roles)): foreach ($roles as $r): ?>
+                                    <option value="<?= $r->id_rol; ?>"><?= $r->nombre_rol; ?></option>
+                                <?php endforeach; endif; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -2511,6 +2523,40 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
+// Buscador y filtro en tiempo real para Usuarios en el Dashboard
+document.addEventListener("DOMContentLoaded", function() {
+    const buscadorUsr = document.getElementById('buscadorUsuarios');
+    const filtroRol = document.getElementById('filtroRol');
+    
+    const tablaUsuarios = document.querySelector('#pills-usuarios table tbody');
+    const rowsUsr = tablaUsuarios ? tablaUsuarios.querySelectorAll('tr') : [];
+
+    function filtrarTablaUsuarios() {
+        if (!buscadorUsr || !filtroRol) return;
+        
+        const term = buscadorUsr.value.toLowerCase().trim();
+        const roleFilter = filtroRol.value.toLowerCase();
+
+        rowsUsr.forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            const rolesColumn = row.querySelector('td:nth-child(4)'); // Columna 4 = Roles
+            const rolesText = rolesColumn ? rolesColumn.textContent.toLowerCase() : '';
+
+            const matchTerm = textContent.includes(term);
+            const matchRole = roleFilter === '' || rolesText.includes(roleFilter);
+
+            if (matchTerm && matchRole) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (buscadorUsr) buscadorUsr.addEventListener('input', filtrarTablaUsuarios);
+    if (filtroRol) filtroRol.addEventListener('change', filtrarTablaUsuarios);
+});
 function editarFicha(ficha, cant, inicio, practicas, fin, id_lider, id_prog, id_jor) {
     document.getElementById('edit_numero_ficha_original').value = ficha;
     document.getElementById('edit_numero_ficha').value = ficha;
@@ -2554,7 +2600,7 @@ function editarPrograma(id, nombre, codigo, ver, vig, lec, prac, tipo) {
     modal.show();
 }
 
-function editarUsuario(id, nom, ape, doc, tel, cor, tit) {
+function editarUsuario(id, nom, ape, doc, tel, cor, tit, rolId) {
     document.getElementById('edit_usr_id').value = id;
     document.getElementById('edit_usr_nombre').value = nom;
     document.getElementById('edit_usr_apellido').value = ape;
@@ -2562,6 +2608,9 @@ function editarUsuario(id, nom, ape, doc, tel, cor, tit) {
     document.getElementById('edit_usr_telefono').value = tel;
     document.getElementById('edit_usr_correo').value = cor;
     document.getElementById('edit_usr_titulacion').value = tit;
+    if (rolId && document.getElementById('edit_usr_rol')) {
+        document.getElementById('edit_usr_rol').value = rolId;
+    }
     var modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
     modal.show();
 }

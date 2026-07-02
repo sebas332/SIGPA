@@ -43,6 +43,9 @@ class AuthController extends BaseController {
                 $user = $this->usuarioModel->authenticate($data['username'], $data['password']);
 
                 if ($user) {
+                    // Prevenir ataques de fijación de sesión (Session Fixation)
+                    session_regenerate_id(true);
+
                     // Obtener los roles del usuario
                     $rolesObj = $this->usuarioModel->getRoles($user->id_usuario);
                     $roles = [];
