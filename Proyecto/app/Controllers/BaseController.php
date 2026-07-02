@@ -19,13 +19,17 @@ class BaseController {
      * @param string $view Ruta relativa de la vista (ej. 'dashboard/index')
      * @param array $data Datos pasados a la vista
      */
-    protected function render($view, $data = []) {
+    protected function render($view, $data = [], $layout = 'layout') {
         // Desempaquetar el array en variables individuales para usar en las vistas
         extract($data);
         
         $contentView = APPROOT . '/Views/' . $view . '.php';
         if (file_exists($contentView)) {
-            require_once APPROOT . '/Views/layout.php';
+            if ($layout === false) {
+                require_once $contentView;
+            } else {
+                require_once APPROOT . '/Views/' . $layout . '.php';
+            }
         } else {
             die('La vista ' . $view . ' no existe.');
         }

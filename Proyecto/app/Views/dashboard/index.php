@@ -849,6 +849,41 @@
                     </div>
                 </div>
 
+                <!-- Buscador de Programas -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="card-body p-3">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-6">
+                                    <div class="position-relative">
+                                        <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                                        <input type="text" id="buscarPrograma" class="form-control form-control-lg bg-light border-0 ps-5 rounded-pill shadow-none" placeholder="Buscar por código o nombre del programa..." style="font-size: 0.95rem;">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="position-relative">
+                                        <i class="fa-regular fa-calendar position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                                        <select id="filtroVigenciaPrograma" class="form-select form-select-lg bg-light border-0 ps-5 rounded-pill shadow-none" style="font-size: 0.95rem;">
+                                            <option value="">Todas las vigencias</option>
+                                            <?php 
+                                            $vigencias = array_unique(array_column($programas ?? [], 'vigencia'));
+                                            rsort($vigencias);
+                                            foreach ($vigencias as $v): ?>
+                                                <option value="<?= htmlspecialchars($v); ?>"><?= htmlspecialchars($v); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-md-end text-center mt-3 mt-md-0">
+                                    <div class="d-inline-flex align-items-center bg-primary-subtle text-primary rounded-pill px-4 py-2 fw-bold" style="font-size: 0.95rem;">
+                                        <i class="fa-solid fa-layer-group me-2"></i>
+                                        <span id="contadorProgramas"><?= count($programas); ?> programas</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-0">
                         <?php if (empty($programas)): ?>
@@ -868,10 +903,10 @@
                                             <th class="text-end pe-4 py-3">ACCIONES</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <?php foreach ($programas as $p): ?>
-                                            <tr>
-                                                <td class="ps-4"><span class="badge-ficha-table fw-bold">#<?= $p->codigo; ?></span></td>
+                                    <?php foreach ($programas as $p): ?>
+                                    <tbody class="programa-item" data-search="<?= htmlspecialchars(strtolower($p->codigo . ' ' . $p->nombre)); ?>" data-vigencia="<?= htmlspecialchars($p->vigencia); ?>">
+                                        <tr>
+                                            <td class="ps-4"><span class="badge-ficha-table fw-bold">#<?= $p->codigo; ?></span></td>
                                                 <td>
                                                     <div class="fw-bold text-dark small"><?= $p->nombre; ?></div>
                                                     <div class="text-muted small">Duración total: <?= $p->duracion_lectiva + $p->duracion_practica; ?> horas</div>
@@ -882,12 +917,12 @@
                                                 <td class="text-dark small fw-medium">v<?= $p->version; ?></td>
                                                 <td class="text-dark small fw-medium"><?= $p->vigencia; ?></td>
                                                 <td class="text-end pe-4">
-                                                    <button class="btn btn-sm btn-outline-primary rounded-circle shadow-sm me-1" onclick="editarPrograma(<?= $p->id_programa; ?>, '<?= htmlspecialchars(addslashes($p->nombre)); ?>', '<?= htmlspecialchars(addslashes($p->codigo)); ?>', '<?= htmlspecialchars(addslashes($p->version)); ?>', '<?= htmlspecialchars(addslashes($p->vigencia)); ?>', <?= $p->duracion_lectiva; ?>, <?= $p->duracion_practica; ?>, <?= $p->id_tipo_programa; ?>)" title="Editar">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-circle shadow-sm me-1" onclick="abrirModalEditarPrograma(<?= $p->id_programa; ?>)" title="Editar">
                                                         <i class="fa-solid fa-pen"></i>
                                                     </button>
-                                                    <a href="<?= URLROOT; ?>/index.php?route=programas/delete&id=<?= $p->id_programa; ?>" class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="return confirm('¿Estás seguro de que deseas eliminar este programa? Esta acción no se puede deshacer.');" title="Eliminar">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="confirmarEliminacionPrograma(<?= $p->id_programa; ?>)" title="Eliminar">
                                                         <i class="fa-solid fa-trash"></i>
-                                                    </a>
+                                                    </button>
                                                 </td>
                                             </tr>
                                             <tr class="collapse" id="competencias-prog-<?= $p->id_programa; ?>">
@@ -957,8 +992,8 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
+                                        </tbody>
+                                    <?php endforeach; ?>
                                 </table>
                             </div>
                         <?php endif; ?>
@@ -2345,29 +2380,71 @@
     </div>
 </div>
 
+<!-- MODAL EDITAR PROGRAMA COMPLETO (AJAX) -->
+<div class="modal fade" id="modalEditarPrograma" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+            <div class="modal-header bg-dark text-white p-3 border-0">
+                <h5 class="modal-title fw-bold m-0"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar Programa Formativo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0 position-relative" style="height: 80vh; background: #fafbfc; min-height: 400px;">
+                <div class="d-flex justify-content-center align-items-center position-absolute top-0 start-0 w-100 h-100 bg-white" id="loaderEditarPrograma" style="z-index:10;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-2" role="status" style="width: 3rem; height: 3rem;"></div>
+                        <div class="text-muted fw-bold">Cargando información...</div>
+                    </div>
+                </div>
+                <div id="contenedorEditarPrograma" class="w-100 h-100 overflow-auto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmación de Eliminación de Programa -->
+<div class="modal fade" id="modalEliminarPrograma" tabindex="-1" aria-labelledby="modalEliminarProgramaLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg text-center p-4">
+            <div class="modal-body">
+                <div class="mb-4 text-danger">
+                    <div style="width: 80px; height: 80px; background-color: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="fa-solid fa-trash-can" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">¿Eliminar Programa?</h4>
+                <p class="text-muted mb-4" style="font-size: 0.95rem;">Se eliminará este programa junto con todas sus competencias y resultados. Esta acción no se puede deshacer.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light border px-4 py-2 fw-medium shadow-sm text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a href="#" id="btnConfirmarEliminarPrograma" class="btn btn-danger px-4 py-2 fw-bold shadow-sm" style="background-color: #dc2626; border-color: #dc2626;">Sí, eliminar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL CREAR PROGRAMA -->
 <div class="modal fade" id="modalCrearPrograma" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light px-4 py-4">
-                <h5 class="modal-title fw-bold text-dark">Crear Programa</h5>
+            <div class="modal-header bg-light p-4 border-0">
+                <h5 class="modal-title fw-bold text-dark m-0"><i class="fa-solid fa-graduation-cap me-2 text-primary"></i>Crear Programa</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="<?= URLROOT; ?>/index.php?route=programas/create" method="POST">
-                <div class="modal-body px-4 py-4">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-8">
-                            <label class="text-muted small fw-bold mb-1">Nombre Programa</label>
-                            <input type="text" name="nombre" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Código</label>
-                            <input type="text" name="codigo" class="form-control" required>
-                        </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="text-muted small fw-bold mb-1">Nombre Programa</label>
+                        <input type="text" name="nombre" class="form-control" required>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Versión</label>
+                    <div class="col-md-4">
+                        <label class="text-muted small fw-bold mb-1">Código</label>
+                        <input type="text" name="codigo" class="form-control" required>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="text-muted small fw-bold mb-1">Versión</label>
                             <input type="text" name="version" class="form-control" required>
                         </div>
                         <div class="col-md-4">
@@ -2897,6 +2974,80 @@ function verGaleria(nombre, fotosJson) {
     } catch(e) {
         console.error("Error al abrir galería: ", e);
     }
+}
+
+function confirmarEliminacionPrograma(idPrograma) {
+    const btn = document.getElementById('btnConfirmarEliminarPrograma');
+    btn.href = '<?= URLROOT; ?>/index.php?route=programas/delete&id=' + idPrograma;
+    const modal = new bootstrap.Modal(document.getElementById('modalEliminarPrograma'));
+    modal.show();
+}
+
+// Filtros de Programas
+document.addEventListener("DOMContentLoaded", function() {
+    const buscarPrograma = document.getElementById('buscarPrograma');
+    const filtroVigencia = document.getElementById('filtroVigenciaPrograma');
+    const programaItems = document.querySelectorAll('.programa-item');
+    const contadorProgramas = document.getElementById('contadorProgramas');
+
+    function filtrarProgramas() {
+        if (!buscarPrograma || !filtroVigencia) return;
+        
+        const searchVal = buscarPrograma.value.toLowerCase().trim();
+        const vigenciaVal = filtroVigencia.value;
+        let count = 0;
+
+        programaItems.forEach(item => {
+            const dataSearch = item.getAttribute('data-search') || '';
+            const dataVigencia = item.getAttribute('data-vigencia') || '';
+            
+            const matchSearch = dataSearch.includes(searchVal);
+            const matchVigencia = vigenciaVal === '' || dataVigencia === vigenciaVal;
+
+            if (matchSearch && matchVigencia) {
+                item.style.display = '';
+                count++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        if (contadorProgramas) {
+            contadorProgramas.innerText = count + (count === 1 ? ' programa' : ' programas');
+        }
+    }
+
+    if (buscarPrograma) buscarPrograma.addEventListener('input', filtrarProgramas);
+    if (filtroVigencia) filtroVigencia.addEventListener('change', filtrarProgramas);
+});
+
+function abrirModalEditarPrograma(idPrograma) {
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarPrograma'));
+    modal.show();
+
+    document.getElementById('loaderEditarPrograma').style.display = 'flex';
+    document.getElementById('contenedorEditarPrograma').innerHTML = '';
+
+    fetch('<?= URLROOT; ?>/index.php?route=programas/editarCompleto&id=' + idPrograma + '&ajax=1')
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('contenedorEditarPrograma').innerHTML = html;
+            document.getElementById('loaderEditarPrograma').style.display = 'none';
+            
+            // Re-ejecutar scripts dentro del HTML inyectado
+            const scripts = document.getElementById('contenedorEditarPrograma').querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        })
+        .catch(error => {
+            console.error('Error cargando el formulario:', error);
+            document.getElementById('contenedorEditarPrograma').innerHTML = '<div class="alert alert-danger m-4">Error al cargar la información. Intenta nuevamente.</div>';
+            document.getElementById('loaderEditarPrograma').style.display = 'none';
+        });
 }
 
 function editarFicha(ficha, cant, inicio, practicas, fin, id_lider, id_prog, id_jor) {
