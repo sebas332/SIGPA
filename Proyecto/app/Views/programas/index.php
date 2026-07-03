@@ -6,12 +6,9 @@
         </div>
         <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
             <?php if ($current_role === 'Coordinador'): ?>
-                <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn btn-outline-primary shadow-sm fw-medium d-inline-flex align-items-center gap-2">
-                    <i class="fa-solid fa-cubes"></i> Constructor Completo
+                <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn btn-primary shadow-sm fw-medium d-inline-flex align-items-center gap-2">
+                    <i class="fa-solid fa-plus me-1"></i> Crear Programa
                 </a>
-                <button type="button" class="btn btn-primary shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCrearPrograma">
-                    <i class="fa-solid fa-plus me-1"></i> Programa
-                </button>
                 <button type="button" class="btn btn-success shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCrearCompetencia">
                     <i class="fa-solid fa-book-medical me-1"></i> Competencia
                 </button>

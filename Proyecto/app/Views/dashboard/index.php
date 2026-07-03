@@ -841,11 +841,9 @@
                             <h5 class="fw-bold text-dark mb-1">Catálogo de Programas de Formación</h5>
                             <p class="text-muted small mb-0">Gestión de la oferta educativa, competencias y resultados.</p>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn btn-outline-primary rounded-pill px-4 fw-medium shadow-sm d-inline-flex align-items-center gap-2" style="font-size: 0.88rem;">
-                                <i class="fa-solid fa-cubes"></i> Constructor Completo
-                            </a>
-                        </div>
+                        <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn-new-ficha text-decoration-none">
+                            <i class="fa-solid fa-circle-plus"></i> Crear Programa
+                        </a>
                     </div>
                 </div>
 
@@ -882,7 +880,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-0">
