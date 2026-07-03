@@ -1439,7 +1439,7 @@
                                 <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarPDF" class="btn btn-danger btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
                                     <i class="fa-solid fa-file-pdf me-2"></i> Exportar PDF
                                 </a>
-                                <a href="<?= URLROOT; ?>/index.php?route=usuarios/descargarPlantilla" class="btn btn-success btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
+                                <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarExcel" class="btn btn-secondary btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
                                     <i class="fa-solid fa-file-excel me-2"></i> Descargar Plantilla
                                 </a>
                                 <button type="button" class="btn btn-dark btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaUsuarios">

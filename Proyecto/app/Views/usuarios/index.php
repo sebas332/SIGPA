@@ -9,7 +9,7 @@
                 <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarPDF" class="btn btn-outline-danger shadow-sm fw-medium">
                     <i class="fa-solid fa-file-pdf me-2"></i> Exportar PDF
                 </a>
-                <a href="<?= URLROOT; ?>/index.php?route=usuarios/descargarPlantilla" class="btn btn-outline-success shadow-sm fw-medium">
+                <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarExcel" class="btn btn-outline-secondary shadow-sm fw-medium">
                     <i class="fa-solid fa-file-excel me-2"></i> Descargar Plantilla
                 </a>
                 <button type="button" class="btn btn-outline-dark shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaUsuarios">

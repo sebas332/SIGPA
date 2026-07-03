@@ -213,54 +213,246 @@ class UsuarioController extends BaseController {
         // Importación de la librería FPDF (se verificó que fpdf.php está directamente en Libraries)
         require_once dirname(__DIR__) . '/Libraries/fpdf.php';
 
+        // Intentar descargar el logo del SENA si no existe localmente
+        $logoPath = dirname(__DIR__, 2) . '/public/logo-sena.png';
+        if (!file_exists($logoPath)) {
+            $logoUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Sena_Colombia_logo.svg/500px-Sena_Colombia_logo.svg.png';
+            $context = stream_context_create([
+                'http' => [
+                    'header' => "User-Agent: SIGPA-App/1.0 (https://github.com/sebas332/SIGPA)\r\n",
+                    'timeout' => 5
+                ]
+            ]);
+            $logoData = @file_get_contents($logoUrl, false, $context);
+            if ($logoData) {
+                @file_put_contents($logoPath, $logoData);
+            }
+        }
+
         $db = Database::getInstance();
         $db->query("SELECT u.documento, 
                            CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo, 
                            u.correo, 
+                           u.telefono,
                            u.titulacion, 
                            COALESCE(GROUP_CONCAT(r.nombre_rol SEPARATOR ', '), 'Sin Rol') AS roles
                     FROM usuarios u
                     LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
                     LEFT JOIN rol r ON ur.id_rol = r.id_rol
                     GROUP BY u.id_usuario
-                    ORDER BY u.nombre ASC");
+                    ORDER BY u.nombre, u.apellido");
         $usuarios = $db->resultSet();
 
-        $pdf = new FPDF('L', 'mm', 'A4');
-        $pdf->AddPage();
-        
-        $pdf->SetFont('Arial', 'B', 16);
-        $pdf->Cell(0, 15, utf8_decode('Reporte de Usuarios Registrados'), 0, 1, 'C');
-        $pdf->Ln(2);
+        // Instanciar FPDF usando una clase anónima para evitar problemas de anidamiento de clases
+        $pdf = new class('L', 'mm', 'A4') extends FPDF {
+            public $logoFile;
 
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->SetFillColor(220, 220, 220); 
-        $pdf->SetTextColor(0, 0, 0); 
-        
-        $w_doc = 35;
-        $w_nom = 65;
-        $w_cor = 75;
-        $w_tit = 55;
-        $w_rol = 47;
+            function Header() {
+                // Logo del SENA
+                $logoDrawn = false;
+                if (!empty($this->logoFile) && file_exists($this->logoFile)) {
+                    try {
+                        $this->Image($this->logoFile, 15, 10, 18);
+                        $logoDrawn = true;
+                    } catch (Exception $e) {
+                        // Fallback si la imagen está corrupta o falla el cargado
+                    }
+                }
+
+                if (!$logoDrawn) {
+                    // Rectángulo verde alternativo
+                    $this->SetFillColor(57, 169, 0);
+                    $this->Rect(15, 10, 18, 18, 'F');
+                    $this->SetTextColor(255, 255, 255);
+                    $this->SetFont('Arial', 'B', 8);
+                    $this->SetXY(15, 17);
+                    $this->Cell(18, 4, 'SENA', 0, 0, 'C');
+                }
+
+                // Títulos del encabezado
+                $this->SetTextColor(80, 80, 80);
+                $this->SetFont('Arial', 'B', 10);
+                $this->SetXY(38, 10);
+                $this->Cell(0, 5, utf8_decode('SISTEMA DE GESTIÓN ACADÉMICA (SIGPA)'), 0, 1, 'L');
+
+                $this->SetTextColor(57, 169, 0); // Verde SENA
+                $this->SetFont('Arial', 'B', 16);
+                $this->SetX(38);
+                $this->Cell(0, 8, utf8_decode('Reporte General de Usuarios Registrados'), 0, 1, 'L');
+
+                $this->SetTextColor(120, 120, 120);
+                $this->SetFont('Arial', 'I', 9);
+                $this->SetX(38);
+                $fecha = date('d/m/Y h:i A');
+                $this->Cell(0, 5, utf8_decode('Fecha de generación: ' . $fecha), 0, 1, 'L');
+
+                // Línea decorativa verde
+                $this->SetDrawColor(57, 169, 0);
+                $this->SetLineWidth(0.8);
+                $this->Line(15, 32, 282, 32);
+
+                // Espacio después del encabezado
+                $this->Ln(10);
+            }
+
+            function Footer() {
+                $this->SetY(-15);
+                $this->SetFont('Arial', 'I', 8);
+                $this->SetTextColor(128, 128, 128);
+
+                // Línea de separación gris
+                $this->SetDrawColor(220, 220, 220);
+                $this->SetLineWidth(0.3);
+                $this->Line(15, $this->GetY(), 282, $this->GetY());
+
+                // Número de página y texto legal
+                $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo() . ' de {nb}', 0, 0, 'R');
+                $this->SetX(15);
+                $this->Cell(0, 10, utf8_decode('SIGPA - Reporte de Usuarios Institucional'), 0, 0, 'L');
+            }
+        };
+
+        $pdf->logoFile = $logoPath;
+        $pdf->AliasNbPages();
+        $pdf->SetMargins(15, 35, 15);
+        $pdf->AddPage();
+
+        // Estilos de la cabecera de la tabla
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetFillColor(57, 169, 0); // Verde SENA
+        $pdf->SetTextColor(255, 255, 255); // Blanco
+        $pdf->SetDrawColor(40, 120, 0); // Borde verde oscuro
+        $pdf->SetLineWidth(0.3);
+
+        $w_doc = 30;
+        $w_nom = 60;
+        $w_cor = 65;
+        $w_tel = 30;
+        $w_tit = 50;
+        $w_rol = 32;
 
         $pdf->Cell($w_doc, 10, 'Documento', 1, 0, 'C', true);
-        $pdf->Cell($w_nom, 10, 'Nombre', 1, 0, 'C', true);
+        $pdf->Cell($w_nom, 10, 'Nombre Completo', 1, 0, 'C', true);
         $pdf->Cell($w_cor, 10, 'Correo', 1, 0, 'C', true);
+        $pdf->Cell($w_tel, 10, utf8_decode('Contacto'), 1, 0, 'C', true);
         $pdf->Cell($w_tit, 10, utf8_decode('Titulación'), 1, 0, 'C', true);
-        $pdf->Cell($w_rol, 10, 'Rol', 1, 1, 'C', true); 
+        $pdf->Cell($w_rol, 10, 'Rol', 1, 1, 'C', true);
 
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->SetFillColor(255, 255, 255);
+        // Estilos del cuerpo de la tabla
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetTextColor(50, 50, 50); // Gris oscuro para mejor lectura
+        $pdf->SetDrawColor(220, 220, 220); // Gris claro para bordes
 
+        $fill = false;
         foreach ($usuarios as $u) {
-            $pdf->Cell($w_doc, 8, utf8_decode($u->documento), 1, 0, 'C');
-            $pdf->Cell($w_nom, 8, utf8_decode($u->nombre_completo), 1, 0, 'L');
-            $pdf->Cell($w_cor, 8, utf8_decode($u->correo), 1, 0, 'L');
-            $pdf->Cell($w_tit, 8, utf8_decode($u->titulacion), 1, 0, 'C');
-            $pdf->Cell($w_rol, 8, utf8_decode($u->roles), 1, 1, 'C');
+            if ($fill) {
+                $pdf->SetFillColor(245, 250, 245); // Fila alternada verde muy suave
+            } else {
+                $pdf->SetFillColor(255, 255, 255); // Fila blanca
+            }
+
+            $pdf->Cell($w_doc, 8, utf8_decode($u->documento), 1, 0, 'C', true);
+            $pdf->Cell($w_nom, 8, utf8_decode($u->nombre_completo), 1, 0, 'L', true);
+            $pdf->Cell($w_cor, 8, utf8_decode($u->correo), 1, 0, 'L', true);
+            $pdf->Cell($w_tel, 8, utf8_decode($u->telefono), 1, 0, 'C', true);
+            $pdf->Cell($w_tit, 8, utf8_decode($u->titulacion), 1, 0, 'L', true);
+            $pdf->Cell($w_rol, 8, utf8_decode($u->roles), 1, 1, 'C', true);
+
+            $fill = !$fill;
         }
 
         $pdf->Output('D', 'Reporte_Usuarios_SIGPA.pdf');
+        exit;
+    }
+
+    /**
+     * Generar y descargar reporte de usuarios en Excel (CSV)
+     */
+    public function exportarExcel() {
+        $this->requireRol('Coordinador');
+
+        $db = Database::getInstance();
+        $db->query("SELECT u.documento, 
+                           CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo, 
+                           u.correo, 
+                           u.telefono, 
+                           u.titulacion, 
+                           COALESCE(GROUP_CONCAT(r.nombre_rol SEPARATOR ', '), 'Sin Rol') AS roles
+                    FROM usuarios u
+                    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+                    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+                    GROUP BY u.id_usuario
+                    ORDER BY u.nombre, u.apellido");
+        $usuarios = $db->resultSet();
+
+        $filename = "plantilla_usuarios.xls";
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        // Escribir el documento HTML que Excel interpretará con estilos
+        echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        echo '<head>';
+        echo '<meta http-equiv="Content-type" content="text/html;charset=utf-8" />';
+        echo '<style>';
+        echo '  .title { font-family: Arial, sans-serif; font-size: 14pt; font-weight: bold; color: #39A900; }';
+        echo '  .subtitle { font-family: Arial, sans-serif; font-size: 10pt; color: #555555; }';
+        echo '  .table-data { font-family: Arial, sans-serif; border-collapse: collapse; margin-top: 15px; }';
+        echo '  .table-data th { background-color: #39A900; color: #FFFFFF; font-weight: bold; border: 1px solid #287800; text-align: center; font-size: 11pt; padding: 6px; }';
+        echo '  .table-data td { border: 1px solid #DDDDDD; font-size: 10pt; padding: 5px; }';
+        echo '  .zebra { background-color: #F5FAF5; }';
+        echo '  .logo-box { background-color: #39A900; color: #FFFFFF; font-family: Arial, sans-serif; font-weight: bold; font-size: 12pt; text-align: center; vertical-align: middle; }';
+        echo '</style>';
+        echo '</head>';
+        echo '<body>';
+        
+        // Tabla de Encabezado/Logo
+        echo '<table border="0" style="border-collapse: collapse;">';
+        echo '  <tr>';
+        echo '    <td class="logo-box" rowspan="3" colspan="2" style="width: 120px; border: 1px solid #287800;">SENA</td>';
+        echo '    <td colspan="4" class="title" style="padding-left: 10px;">SISTEMA DE GESTIÓN ACADÉMICA (SIGPA)</td>';
+        echo '  </tr>';
+        echo '  <tr>';
+        echo '    <td colspan="4" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 11pt; padding-left: 10px; color: #333333;">Reporte General de Usuarios Registrados</td>';
+        echo '  </tr>';
+        echo '  <tr>';
+        echo '    <td colspan="4" class="subtitle" style="padding-left: 10px; font-style: italic;">Generado el: ' . date('d/m/Y h:i A') . '</td>';
+        echo '  </tr>';
+        echo '</table>';
+        echo '<br />';
+        
+        // Tabla de Datos
+        echo '<table class="table-data" border="1">';
+        echo '  <thead>';
+        echo '    <tr>';
+        echo '      <th style="width: 100px;">Documento</th>';
+        echo '      <th style="width: 180px;">Nombre Completo</th>';
+        echo '      <th style="width: 220px;">Correo</th>';
+        echo '      <th style="width: 110px;">Contacto</th>';
+        echo '      <th style="width: 200px;">Titulación</th>';
+        echo '      <th style="width: 120px;">Rol</th>';
+        echo '    </tr>';
+        echo '  </thead>';
+        echo '  <tbody>';
+        
+        $fill = false;
+        foreach ($usuarios as $u) {
+            $class = $fill ? ' class="zebra"' : '';
+            echo '    <tr' . $class . '>';
+            // Forzar formato de texto para documento y teléfono para que Excel no trunque los ceros iniciales
+            echo '      <td style="text-align: center; mso-number-format:\'\@\';">' . htmlspecialchars($u->documento, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: left;">' . htmlspecialchars($u->nombre_completo, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: left;">' . htmlspecialchars($u->correo, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: center; mso-number-format:\'\@\';">' . htmlspecialchars($u->telefono, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: left;">' . htmlspecialchars($u->titulacion, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: center;">' . htmlspecialchars($u->roles, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '    </tr>';
+            $fill = !$fill;
+        }
+        
+        echo '  </tbody>';
+        echo '</table>';
+        echo '</body>';
+        echo '</html>';
         exit;
     }
 
