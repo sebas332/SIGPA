@@ -371,20 +371,6 @@ class UsuarioController extends BaseController {
     public function exportarExcel() {
         $this->requireRol('Coordinador');
 
-        $db = Database::getInstance();
-        $db->query("SELECT u.documento, 
-                           CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo, 
-                           u.correo, 
-                           u.telefono, 
-                           u.titulacion, 
-                           COALESCE(GROUP_CONCAT(r.nombre_rol SEPARATOR ', '), 'Sin Rol') AS roles
-                    FROM usuarios u
-                    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
-                    LEFT JOIN rol r ON ur.id_rol = r.id_rol
-                    GROUP BY u.id_usuario
-                    ORDER BY u.nombre, u.apellido");
-        $usuarios = $db->resultSet();
-
         $filename = "plantilla_usuarios.xls";
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -409,18 +395,18 @@ class UsuarioController extends BaseController {
         echo '<table border="0" style="border-collapse: collapse;">';
         echo '  <tr>';
         echo '    <td class="logo-box" rowspan="3" colspan="2" style="width: 120px; border: 1px solid #287800;">SENA</td>';
-        echo '    <td colspan="4" class="title" style="padding-left: 10px;">SISTEMA DE GESTIÓN ACADÉMICA (SIGPA)</td>';
+        echo '    <td colspan="6" class="title" style="padding-left: 10px;">SISTEMA DE GESTIÓN ACADÉMICA (SIGPA)</td>';
         echo '  </tr>';
         echo '  <tr>';
-        echo '    <td colspan="4" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 11pt; padding-left: 10px; color: #333333;">Reporte General de Usuarios Registrados</td>';
+        echo '    <td colspan="6" style="font-family: Arial, sans-serif; font-weight: bold; font-size: 11pt; padding-left: 10px; color: #333333;">Reporte General de Usuarios Registrados</td>';
         echo '  </tr>';
         echo '  <tr>';
-        echo '    <td colspan="4" class="subtitle" style="padding-left: 10px; font-style: italic;">Generado el: ' . date('d/m/Y h:i A') . '</td>';
+        echo '    <td colspan="6" class="subtitle" style="padding-left: 10px; font-style: italic;">Generado el: ' . date('d/m/Y h:i A') . '</td>';
         echo '  </tr>';
         echo '</table>';
         echo '<br />';
         
-        // Tabla de Datos
+        // Tabla de Datos vacía
         echo '<table class="table-data" border="1">';
         echo '  <thead>';
         echo '    <tr>';
@@ -429,22 +415,26 @@ class UsuarioController extends BaseController {
         echo '      <th style="width: 220px;">Correo</th>';
         echo '      <th style="width: 110px;">Contacto</th>';
         echo '      <th style="width: 200px;">Titulación</th>';
+        echo '      <th style="width: 130px;">Usuario</th>';
+        echo '      <th style="width: 130px;">Contraseña</th>';
         echo '      <th style="width: 120px;">Rol</th>';
         echo '    </tr>';
         echo '  </thead>';
         echo '  <tbody>';
         
         $fill = false;
-        foreach ($usuarios as $u) {
+        // Generar 10 filas vacías con estilo zebra
+        for ($i = 0; $i < 10; $i++) {
             $class = $fill ? ' class="zebra"' : '';
             echo '    <tr' . $class . '>';
-            // Forzar formato de texto para documento y teléfono para que Excel no trunque los ceros iniciales
-            echo '      <td style="text-align: center; mso-number-format:\'\@\';">' . htmlspecialchars($u->documento, ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '      <td style="text-align: left;">' . htmlspecialchars($u->nombre_completo, ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '      <td style="text-align: left;">' . htmlspecialchars($u->correo, ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '      <td style="text-align: center; mso-number-format:\'\@\';">' . htmlspecialchars($u->telefono, ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '      <td style="text-align: left;">' . htmlspecialchars($u->titulacion, ENT_QUOTES, 'UTF-8') . '</td>';
-            echo '      <td style="text-align: center;">' . htmlspecialchars($u->roles, ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '      <td style="text-align: center; mso-number-format:\'\@\';"></td>';
+            echo '      <td style="text-align: left;"></td>';
+            echo '      <td style="text-align: left;"></td>';
+            echo '      <td style="text-align: center; mso-number-format:\'\@\';"></td>';
+            echo '      <td style="text-align: left;"></td>';
+            echo '      <td style="text-align: left;"></td>';
+            echo '      <td style="text-align: left;"></td>';
+            echo '      <td style="text-align: center;"></td>';
             echo '    </tr>';
             $fill = !$fill;
         }
@@ -492,15 +482,162 @@ class UsuarioController extends BaseController {
 
         $file = $_FILES['archivo_csv']['tmp_name'];
         if (!$file) {
-            echo json_encode(['status' => 'error', 'message' => 'Error al subir el archivo CSV al servidor.']);
+            echo json_encode(['status' => 'error', 'message' => 'Error al subir el archivo al servidor.']);
             exit;
         }
 
-        $handle = fopen($file, 'r');
-        if ($handle === false) {
-            echo json_encode(['status' => 'error', 'message' => 'No se pudo leer el archivo CSV.']);
+        $content = file_get_contents($file);
+        if ($content === false) {
+            echo json_encode(['status' => 'error', 'message' => 'No se pudo leer el archivo cargado.']);
             exit;
         }
+
+        $rows_data = [];
+        $handle = null;
+
+        // 1. Detectar si es XLSX (Zip conteniendo xl/worksheets/sheet1.xml)
+        $is_xlsx = false;
+        $zip = new ZipArchive;
+        if ($zip->open($file) === TRUE) {
+            $is_xlsx = true;
+            $zip->close();
+        }
+
+        // 2. Detectar si es el formato XML/HTML XLS que exportamos
+        $is_html = (stripos($content, '<html') !== false || stripos($content, '<table') !== false);
+
+        if ($is_xlsx) {
+            // Leer XLSX de manera nativa sin dependencias externas
+            $zip = new ZipArchive;
+            if ($zip->open($file) === TRUE) {
+                $sharedStrings = [];
+                $sharedStringsXml = $zip->getFromName('xl/sharedStrings.xml');
+                if ($sharedStringsXml !== FALSE) {
+                    $domStrings = new DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $domStrings->loadXML($sharedStringsXml);
+                    libxml_clear_errors();
+                    foreach ($domStrings->getElementsByTagName('t') as $t) {
+                        $sharedStrings[] = $t->nodeValue;
+                    }
+                }
+                
+                $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+                if ($sheetXml !== FALSE) {
+                    $domSheet = new DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $domSheet->loadXML($sheetXml);
+                    libxml_clear_errors();
+                    
+                    foreach ($domSheet->getElementsByTagName('row') as $row) {
+                        $rowData = array_fill(0, 9, '');
+                        $cells = $row->getElementsByTagName('c');
+                        foreach ($cells as $c) {
+                            $ref = $c->getAttribute('r');
+                            $colLetter = preg_replace('/[0-9]/', '', $ref);
+                            $colIndex = 0;
+                            // Convertir letra(s) de columna a índice (ej: A=0, B=1, AA=26, etc.)
+                            $len = strlen($colLetter);
+                            for ($idx = 0; $idx < $len; $idx++) {
+                                $colIndex = $colIndex * 26 + (ord($colLetter[$idx]) - 64);
+                            }
+                            $colIndex -= 1; // Index 0
+                            
+                            if ($colIndex >= 0 && $colIndex < 9) {
+                                $type = $c->getAttribute('t');
+                                $val = '';
+                                $v = $c->getElementsByTagName('v')->item(0);
+                                if ($v) {
+                                    $val = $v->nodeValue;
+                                    if ($type === 's') {
+                                        $val = $sharedStrings[(int)$val] ?? '';
+                                    }
+                                }
+                                $rowData[$colIndex] = trim($val);
+                            }
+                        }
+                        
+                        $real_count = 0;
+                        for ($k = 8; $k >= 0; $k--) {
+                            if ($rowData[$k] !== '') {
+                                $real_count = $k + 1;
+                                break;
+                            }
+                        }
+                        if ($real_count > 0) {
+                            $rowData = array_slice($rowData, 0, max(6, $real_count));
+                            $rows_data[] = $rowData;
+                        }
+                    }
+                }
+                $zip->close();
+            }
+        } elseif ($is_html) {
+            // Leer XLS basado en HTML
+            $dom = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+            libxml_clear_errors();
+            
+            $tables = $dom->getElementsByTagName('table');
+            if ($tables->length > 0) {
+                $dataTable = null;
+                foreach ($tables as $t) {
+                    if ($t->getAttribute('class') === 'table-data') {
+                        $dataTable = $t;
+                        break;
+                    }
+                }
+                if (!$dataTable) {
+                    $dataTable = $tables->item($tables->length - 1);
+                }
+                
+                $trs = $dataTable->getElementsByTagName('tr');
+                for ($i = 0; $i < $trs->length; $i++) {
+                    $tr = $trs->item($i);
+                    $tds = $tr->getElementsByTagName('td');
+                    if ($tds->length === 0) {
+                        $tds = $tr->getElementsByTagName('th');
+                    }
+                    if ($tds->length >= 6) {
+                        $rowData = [];
+                        for ($j = 0; $j < $tds->length; $j++) {
+                            $rowData[] = trim($tds->item($j)->nodeValue);
+                        }
+                        $rows_data[] = $rowData;
+                    }
+                }
+            }
+        } else {
+            // Leer CSV estándar
+            $lines = explode("\n", $content);
+            $first_line = $lines[0] ?? '';
+            $delimiter = ",";
+            if (strpos($first_line, ";") !== false && strpos($first_line, ",") === false) {
+                $delimiter = ";";
+            }
+            
+            $handle = fopen($file, 'r');
+            while (($data = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
+                $rows_data[] = array_map('trim', $data);
+            }
+            fclose($handle);
+            $handle = null;
+        }
+
+        // Filtrar y omitir decoraciones de SENA/títulos iniciales hasta encontrar la cabecera "Documento"
+        $header_found = false;
+        $filtered_rows = [];
+        foreach ($rows_data as $row) {
+            if (!$header_found) {
+                if (isset($row[0]) && stripos(trim($row[0]), 'documento') !== false) {
+                    $header_found = true;
+                }
+                continue; // Saltar cabeceras decorativas o el mismo título "Documento"
+            }
+            $filtered_rows[] = $row;
+        }
+        $rows_data = $filtered_rows;
 
         $db = Database::getInstance();
         $db->beginTransaction();
@@ -509,37 +646,112 @@ class UsuarioController extends BaseController {
         $fila = 1;
         
         try {
-            // Leer y descartar la primera fila (cabeceras)
-            fgetcsv($handle, 1000, ",");
-
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            foreach ($rows_data as $data) {
                 $fila++;
                 
                 // Ignorar filas totalmente vacías
                 if (empty(array_filter($data))) continue;
 
-                if (count($data) < 9) {
+                // Si no tiene documento ni nombre, asumimos que es una fila vacía de la plantilla y la saltamos
+                $doc = isset($data[0]) ? trim($data[0]) : '';
+                $nom = isset($data[1]) ? trim($data[1]) : '';
+                if (empty($doc) && empty($nom)) {
+                    continue;
+                }
+
+                if (count($data) < 6) {
                     throw new Exception("Faltan columnas en la fila $fila. Asegúrese de usar la plantilla descargada.");
                 }
 
-                $documento  = trim($data[0]);
-                $nombre     = trim($data[1]);
-                $apellido   = trim($data[2]);
-                $telefono   = trim($data[3]);
-                $correo     = trim($data[4]);
-                $titulacion = trim($data[5]);
-                $usuario    = trim($data[6]);
-                $contrasena = trim($data[7]);
-                $id_rol     = (int) trim($data[8]);
+                if (count($data) === 6) {
+                    // Formato antiguo de plantilla de 6 columnas (Excel/XLS/XLSX)
+                    $documento       = $data[0];
+                    $nombre_completo = $data[1];
+                    $correo          = $data[2];
+                    $telefono        = $data[3];
+                    $titulacion      = $data[4];
+                    $rol_val         = $data[5];
+
+                    // Separar nombre y apellido
+                    $nombre_partes = explode(' ', $nombre_completo, 2);
+                    $nombre = $nombre_partes[0] ?? '';
+                    $apellido = $nombre_partes[1] ?? '';
+
+                    // Generar nombre de usuario único basado en el correo
+                    if (!empty($correo)) {
+                        $usuario = explode('@', $correo)[0];
+                    } else {
+                        $usuario = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $nombre . $apellido));
+                    }
+
+                    // Por defecto la contraseña es el documento
+                    $contrasena = $documento;
+
+                    // Traducir nombre de rol a id_rol
+                    $rol_str = strtolower($rol_val);
+                    $id_rol = 3; // Aprendiz por defecto
+                    if (strpos($rol_str, 'coord') !== false || $rol_str === '1') $id_rol = 1;
+                    elseif (strpos($rol_str, 'inst') !== false || $rol_str === '2') $id_rol = 2;
+                } elseif (count($data) === 8) {
+                    // Formato nuevo de plantilla de 8 columnas (con Usuario y Contraseña)
+                    $documento       = $data[0];
+                    $nombre_completo = $data[1];
+                    $correo          = $data[2];
+                    $telefono        = $data[3];
+                    $titulacion      = $data[4];
+                    $usuario_val     = $data[5];
+                    $contrasena_val  = $data[6];
+                    $rol_val         = $data[7];
+
+                    // Separar nombre y apellido
+                    $nombre_partes = explode(' ', $nombre_completo, 2);
+                    $nombre = $nombre_partes[0] ?? '';
+                    $apellido = $nombre_partes[1] ?? '';
+
+                    // Si el usuario viene vacío, lo autogeneramos
+                    if (!empty($usuario_val)) {
+                        $usuario = $usuario_val;
+                    } else {
+                        if (!empty($correo)) {
+                            $usuario = explode('@', $correo)[0];
+                        } else {
+                            $usuario = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $nombre . $apellido));
+                        }
+                    }
+
+                    // Si la contraseña viene vacía, por defecto es el documento
+                    $contrasena = !empty($contrasena_val) ? $contrasena_val : $documento;
+
+                    // Traducir nombre de rol a id_rol
+                    $rol_str = strtolower($rol_val);
+                    $id_rol = 3; // Aprendiz por defecto
+                    if (strpos($rol_str, 'coord') !== false || $rol_str === '1') $id_rol = 1;
+                    elseif (strpos($rol_str, 'inst') !== false || $rol_str === '2') $id_rol = 2;
+                } else {
+                    // Formato antiguo de 9 columnas (CSV)
+                    $documento  = $data[0];
+                    $nombre     = $data[1];
+                    $apellido   = $data[2];
+                    $telefono   = $data[3];
+                    $correo     = $data[4];
+                    $titulacion = $data[5];
+                    $usuario    = $data[6];
+                    $contrasena = $data[7];
+                    $id_rol     = (int) $data[8];
+                }
 
                 if (empty($documento) || empty($nombre) || empty($usuario)) {
+                    // Si es una fila de plantilla totalmente vacía que no rellenaron, continuar silenciosamente
+                    if (empty($documento) && empty($nombre)) {
+                        continue;
+                    }
                     throw new Exception("El documento, nombre y usuario son obligatorios (Fila $fila).");
                 }
 
                 $hash = !empty($contrasena) ? password_hash($contrasena, PASSWORD_BCRYPT) : '';
 
-                // Inserción en tabla usuarios
-                $db->query("INSERT INTO usuarios (documento, nombre, apellido, telefono, correo, titulacion, usuario, contrasena) 
+                // Inserción en tabla usuarios usando la columna correcta `contraseña`
+                $db->query("INSERT INTO usuarios (documento, nombre, apellido, telefono, correo, titulacion, usuario, `contraseña`) 
                             VALUES (:documento, :nombre, :apellido, :telefono, :correo, :titulacion, :usuario, :contrasena)");
                 $db->bind(':documento', $documento);
                 $db->bind(':nombre', $nombre);
@@ -566,7 +778,7 @@ class UsuarioController extends BaseController {
                     }
                 }
                 
-                // Interpretar el nombre del rol para el JSON de respuesta
+                // Mapear nombre del rol para la respuesta
                 $nombre_rol = 'Sin Rol';
                 if ($id_rol === 1) $nombre_rol = 'Coordinador';
                 if ($id_rol === 2) $nombre_rol = 'Instructor';
@@ -585,7 +797,6 @@ class UsuarioController extends BaseController {
                 ];
             }
             
-            fclose($handle);
             $db->commit();
             
             echo json_encode([

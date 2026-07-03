@@ -2328,11 +2328,11 @@
             <form action="<?= URLROOT; ?>/index.php?route=usuarios/importarMasivoCSV" method="POST" enctype="multipart/form-data">
                 <div class="modal-body px-4 py-4 px-md-5">
                     <div class="alert alert-info small rounded-3 mb-4">
-                        <i class="fa-solid fa-circle-info me-2"></i> El archivo CSV debe contener exactamente las columnas de la plantilla descargada. Los registros duplicados serán ignorados o causarán que se revierta la carga completa.
+                        <i class="fa-solid fa-circle-info me-2"></i> El archivo cargado (Excel o CSV) debe contener exactamente las columnas de la plantilla descargada. Los registros duplicados serán ignorados o causarán que se revierta la carga completa.
                     </div>
                     <div class="mb-3">
-                        <label for="archivo_csv_usuarios" class="text-muted small fw-bold mb-2">Seleccione el Archivo CSV</label>
-                        <input class="form-control form-control-lg shadow-sm" type="file" id="archivo_csv_usuarios" name="archivo_csv" accept=".csv" required>
+                        <label for="archivo_csv_usuarios" class="text-muted small fw-bold mb-2">Seleccione el Archivo (Excel o CSV)</label>
+                        <input class="form-control form-control-lg shadow-sm" type="file" id="archivo_csv_usuarios" name="archivo_csv" accept=".csv, .xls, .xlsx, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 bg-light px-4 py-3 d-flex justify-content-end">
