@@ -1439,9 +1439,6 @@
                                 <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarPDF" class="btn btn-danger btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
                                     <i class="fa-solid fa-file-pdf me-2"></i> Exportar PDF
                                 </a>
-                                <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarExcel" class="btn btn-secondary btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
-                                    <i class="fa-solid fa-file-excel me-2"></i> Descargar Plantilla
-                                </a>
                                 <button type="button" class="btn btn-dark btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaUsuarios">
                                     <i class="fa-solid fa-upload me-2"></i> Carga Masiva
                                 </button>
@@ -2328,11 +2325,38 @@
             <form action="<?= URLROOT; ?>/index.php?route=usuarios/importarMasivoCSV" method="POST" enctype="multipart/form-data">
                 <div class="modal-body px-4 py-4 px-md-5">
                     <div class="alert alert-info small rounded-3 mb-4">
-                        <i class="fa-solid fa-circle-info me-2"></i> El archivo cargado (Excel o CSV) debe contener exactamente las columnas de la plantilla descargada. Los registros duplicados serán ignorados o causarán que se revierta la carga completa.
+                        <i class="fa-solid fa-circle-info me-2"></i> Descarga la plantilla oficial, llénala con los datos correspondientes y súbela aquí. Las contraseñas serán autogeneradas.
+                        <div class="mt-2 text-center">
+                            <a href="<?= URLROOT; ?>/index.php?route=usuarios/descargarPlantillaCSV" class="btn btn-sm btn-outline-info shadow-sm bg-white fw-bold"><i class="fa-solid fa-download me-2"></i>Descargar Plantilla CSV</a>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-muted small fw-bold mb-3 d-block">¿Qué tipo de usuarios vas a cargar?</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check border rounded-3 p-3 flex-fill text-center cursor-pointer shadow-sm" style="cursor: pointer;" onclick="document.getElementById('rolInstructorMasivo').click()">
+                                <input class="form-check-input float-none ms-0 mb-2" type="radio" name="rol_carga" id="rolInstructorMasivo" value="2" required onchange="toggleFichaMasiva(this.value)">
+                                <label class="form-check-label d-block fw-bold" for="rolInstructorMasivo">Instructores</label>
+                            </div>
+                            <div class="form-check border rounded-3 p-3 flex-fill text-center cursor-pointer shadow-sm" style="cursor: pointer;" onclick="document.getElementById('rolAprendizMasivo').click()">
+                                <input class="form-check-input float-none ms-0 mb-2" type="radio" name="rol_carga" id="rolAprendizMasivo" value="3" required onchange="toggleFichaMasiva(this.value)">
+                                <label class="form-check-label d-block fw-bold" for="rolAprendizMasivo">Aprendices</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" id="contenedorFichaMasiva" style="display: none;">
+                        <label for="ficha_carga" class="text-muted small fw-bold mb-2">Asignar a Ficha (Obligatorio)</label>
+                        <select name="numero_ficha" id="ficha_carga" class="form-select shadow-sm">
+                            <option value="">Seleccione la ficha destino...</option>
+                            <?php if (isset($fichas)): foreach ($fichas as $f): ?>
+                                <option value="<?= $f->numero_ficha; ?>"><?= $f->numero_ficha; ?> - <?= $f->nombre_programa ?? 'Programa No Asignado'; ?></option>
+                            <?php endforeach; endif; ?>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="archivo_csv_usuarios" class="text-muted small fw-bold mb-2">Seleccione el Archivo (Excel o CSV)</label>
-                        <input class="form-control form-control-lg shadow-sm" type="file" id="archivo_csv_usuarios" name="archivo_csv" accept=".csv, .xls, .xlsx, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <label for="archivo_csv_usuarios" class="text-muted small fw-bold mb-2">Seleccione el Archivo CSV Lleno</label>
+                        <input class="form-control form-control-lg shadow-sm" type="file" id="archivo_csv_usuarios" name="archivo_csv" accept=".csv" required>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 bg-light px-4 py-3 d-flex justify-content-end">
@@ -4517,65 +4541,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         text: result.message,
                         timer: 2000,
                         showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
                     });
-                    
-                    // Buscar la tabla de usuarios en la pestaña pills-usuarios
-                    const tbody = document.querySelector('#pills-usuarios table tbody');
-                    if (tbody) {
-                        result.data.forEach(u => {
-                            const inicial = u.nombre.charAt(0).toUpperCase();
-                            
-                            let badgeBg = 'bg-secondary';
-                            if (u.nombre_rol === 'Coordinador') badgeBg = 'bg-danger';
-                            if (u.nombre_rol === 'Instructor') badgeBg = 'bg-primary';
-                            if (u.nombre_rol === 'Aprendiz') badgeBg = 'bg-success';
-
-                            const tr = document.createElement('tr');
-                            tr.style.opacity = '0';
-                            tr.style.transition = 'opacity 0.6s ease-in-out';
-                            
-                            tr.innerHTML = `
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-circle bg-primary-subtle text-primary fw-bold me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%;">
-                                            ${inicial}
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">${u.nombre} ${u.apellido}</div>
-                                            <span class="text-muted small">${u.correo}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border px-3 py-1 fs-6">@${u.usuario}</span>
-                                </td>
-                                <td><div class="text-secondary small fw-medium">${u.titulacion}</div></td>
-                                <td><span class="text-muted small"><i class="fa-solid fa-phone me-1 text-secondary"></i> ${u.telefono}</span></td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <span class="badge ${badgeBg} px-3 py-1 shadow-sm">${u.nombre_rol}</span>
-                                    </div>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <form action="<?= URLROOT; ?>/index.php?route=usuarios/asignarRol" method="POST" class="d-flex align-items-center justify-content-end gap-2">
-                                        <input type="hidden" name="id_usuario" value="${u.id_usuario}">
-                                        <select class="form-select form-select-sm shadow-sm" name="id_rol" style="width: 130px;" required>
-                                            <option value="">Añadir rol...</option>
-                                            <?php if(isset($roles)): foreach ($roles as $r): ?>
-                                                <option value="<?= $r->id_rol; ?>"><?= $r->nombre_rol; ?></option>
-                                            <?php endforeach; endif; ?>
-                                        </select>
-                                        <button type="submit" class="btn btn-outline-success btn-sm shadow-sm" data-bs-toggle="tooltip" title="Asignar Rol">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            `;
-                            
-                            tbody.insertBefore(tr, tbody.firstChild);
-                            setTimeout(() => tr.style.opacity = '1', 50);
-                        });
-                    }
                     
                 } else {
                     Swal.fire('Atención', result.message, 'warning');
@@ -4591,4 +4559,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function toggleFichaMasiva(rolId) {
+    const contenedor = document.getElementById('contenedorFichaMasiva');
+    const select = document.getElementById('ficha_carga');
+    if (rolId == '3') {
+        contenedor.style.display = 'block';
+        select.setAttribute('required', 'required');
+    } else {
+        contenedor.style.display = 'none';
+        select.removeAttribute('required');
+    }
+}
 </script>

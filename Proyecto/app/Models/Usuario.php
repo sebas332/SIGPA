@@ -127,9 +127,29 @@ class Usuario {
      * @return bool
      */
     public function delete($id) {
-        $this->db->query("DELETE FROM usuarios WHERE id_usuario = :id");
-        $this->db->bind(':id', $id);
-        return $this->db->execute();
+        try {
+            $this->db->beginTransaction();
+
+            // Eliminar dependencias en ficha_aprendiz
+            $this->db->query("DELETE FROM ficha_aprendiz WHERE id_usuario_aprendiz = :id");
+            $this->db->bind(':id', $id);
+            $this->db->execute();
+
+            // Eliminar dependencias en usuario_rol
+            $this->db->query("DELETE FROM usuario_rol WHERE id_usuario = :id");
+            $this->db->bind(':id', $id);
+            $this->db->execute();
+
+            // Eliminar el usuario
+            $this->db->query("DELETE FROM usuarios WHERE id_usuario = :id");
+            $this->db->bind(':id', $id);
+            $this->db->execute();
+
+            return $this->db->commit();
+        } catch (\PDOException $e) {
+            $this->db->rollBack();
+            return false;
+        }
     }
 
     /**

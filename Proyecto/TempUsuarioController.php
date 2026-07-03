@@ -3,7 +3,7 @@
  * Controlador UsuarioController
  * Gestiona el listado de usuarios, registro y asignación de roles.
  */
-class UsuarioController extends BaseController {
+class UsuarioController extends TestUsuarioController {
     private $usuarioModel;
     private $rolModel;
     private $usuarioRolModel;
@@ -537,10 +537,6 @@ class UsuarioController extends BaseController {
                 $cabecera = fgetcsv($handle, 1000, $delimitador);
             }
             
-            $errores = [];
-            $documentos_vistos = [];
-            $correos_vistos = [];
-
             while (($data = fgetcsv($handle, 1000, $delimitador)) !== FALSE) {
                 $fila++;
                 if (empty(array_filter($data))) continue; // Ignorar filas vacías
@@ -553,43 +549,8 @@ class UsuarioController extends BaseController {
                 $titulacion = trim($data[5] ?? '');
 
                 if (empty($documento) || empty($nombres)) {
-                    $errores[] = "Fila $fila: Falta documento o nombres.";
                     $usuarios_ignorados++;
-                    continue; 
-                }
-
-                if (!preg_match('/^[0-9]{6,10}$/', $documento)) {
-                    $errores[] = "Fila $fila: El documento $documento es inválido (debe tener entre 6 y 10 dígitos numéricos).";
-                    $usuarios_ignorados++;
-                    continue;
-                }
-
-                if (!empty($telefono) && !preg_match('/^[0-9]{10}$/', $telefono)) {
-                    $errores[] = "Fila $fila: El teléfono $telefono es inválido (debe tener exactamente 10 dígitos numéricos).";
-                    $usuarios_ignorados++;
-                    continue;
-                }
-
-                if (!empty($correo) && !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-                    $errores[] = "Fila $fila: El correo $correo tiene un formato inválido.";
-                    $usuarios_ignorados++;
-                    continue;
-                }
-
-                if (in_array($documento, $documentos_vistos)) {
-                    $errores[] = "Fila $fila: El documento $documento está duplicado en este archivo.";
-                    $usuarios_ignorados++;
-                    continue;
-                }
-                $documentos_vistos[] = $documento;
-
-                if (!empty($correo)) {
-                    if (in_array($correo, $correos_vistos)) {
-                        $errores[] = "Fila $fila: El correo $correo está duplicado en este archivo.";
-                        $usuarios_ignorados++;
-                        continue;
-                    }
-                    $correos_vistos[] = $correo;
+                    continue; // Requisito mínimo
                 }
 
                 // Generar Usuario (Documento) y Contraseña por defecto
@@ -602,20 +563,8 @@ class UsuarioController extends BaseController {
                 $db->bind(':doc', $documento);
                 $db->bind(':usr', $usuario_login);
                 if ($db->single()) {
-                    $errores[] = "Fila $fila: El documento $documento ya se encuentra registrado en el sistema.";
                     $usuarios_ignorados++;
-                    continue; 
-                }
-
-                // Comprobar si el correo ya está en uso
-                if (!empty($correo)) {
-                    $db->query("SELECT id_usuario FROM usuarios WHERE correo = :correo LIMIT 1");
-                    $db->bind(':correo', $correo);
-                    if ($db->single()) {
-                        $errores[] = "Fila $fila: El correo $correo ya está registrado por otro usuario.";
-                        $usuarios_ignorados++;
-                        continue; 
-                    }
+                    continue; // Se salta si ya existe
                 }
 
                 // Inserción en tabla usuarios
@@ -660,21 +609,13 @@ class UsuarioController extends BaseController {
             fclose($handle);
             $db->commit();
             
-            $status = 'success';
             $msg = "Se subieron $usuarios_insertados usuarios exitosamente.";
-            
             if ($usuarios_ignorados > 0) {
-                if ($usuarios_insertados === 0) {
-                    $status = 'error'; // Ninguno se subió
-                    $msg = "No se subió ningún usuario. Revisa los errores:<br><br>" . implode("<br>", $errores);
-                } else {
-                    $status = 'warning'; // Algunos se subieron, otros fallaron
-                    $msg = "Se subieron $usuarios_insertados usuarios, pero hubo problemas:<br><br>" . implode("<br>", $errores);
-                }
+                $msg .= " Se ignoraron $usuarios_ignorados filas (datos inválidos o usuarios ya existentes).";
             }
 
             echo json_encode([
-                'status' => $status,
+                'status' => 'success',
                 'message' => $msg
             ]);
             
