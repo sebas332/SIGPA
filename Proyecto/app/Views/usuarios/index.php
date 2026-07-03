@@ -5,9 +5,20 @@
             <p class="text-muted small mb-0">Gestión de cuentas de acceso, perfiles académicos y niveles de privilegio</p>
         </div>
         <?php if ($current_role === 'Coordinador'): ?>
-            <button type="button" class="btn btn-primary shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
-                <i class="fa-solid fa-user-plus me-2"></i> Nuevo Usuario
-            </button>
+            <div class="d-flex gap-2">
+                <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarPDF" class="btn btn-outline-danger shadow-sm fw-medium">
+                    <i class="fa-solid fa-file-pdf me-2"></i> Exportar PDF
+                </a>
+                <a href="<?= URLROOT; ?>/index.php?route=usuarios/descargarPlantilla" class="btn btn-outline-success shadow-sm fw-medium">
+                    <i class="fa-solid fa-file-excel me-2"></i> Descargar Plantilla
+                </a>
+                <button type="button" class="btn btn-outline-dark shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaUsuarios">
+                    <i class="fa-solid fa-upload me-2"></i> Carga Masiva
+                </button>
+                <button type="button" class="btn btn-primary shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+                    <i class="fa-solid fa-user-plus me-2"></i> Nuevo Usuario
+                </button>
+            </div>
         <?php endif; ?>
     </div>
 

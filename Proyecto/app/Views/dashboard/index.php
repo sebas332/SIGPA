@@ -1434,9 +1434,22 @@
                             <h5 class="fw-bold text-dark mb-1">Administración de Usuarios y Roles</h5>
                             <p class="text-muted small mb-0">Gestión de cuentas de acceso, perfiles académicos y niveles de privilegio.</p>
                         </div>
-                        <button type="button" class="btn-new-ficha" style="background-color: #0d6efd;" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
-                            <i class="fa-solid fa-user-plus"></i> Registrar Nuevo Usuario
-                        </button>
+                        <?php if ($current_role === 'Coordinador'): ?>
+                            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                <a href="<?= URLROOT; ?>/index.php?route=usuarios/exportarPDF" class="btn btn-danger btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
+                                    <i class="fa-solid fa-file-pdf me-2"></i> Exportar PDF
+                                </a>
+                                <a href="<?= URLROOT; ?>/index.php?route=usuarios/descargarPlantilla" class="btn btn-success btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2">
+                                    <i class="fa-solid fa-file-excel me-2"></i> Descargar Plantilla
+                                </a>
+                                <button type="button" class="btn btn-dark btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaUsuarios">
+                                    <i class="fa-solid fa-upload me-2"></i> Carga Masiva
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm shadow-sm fw-medium d-flex align-items-center rounded-3 px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario" style="background-color: #0d6efd; border:none;">
+                                    <i class="fa-solid fa-user-plus me-2"></i> Nuevo Usuario
+                                </button>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -2295,6 +2308,36 @@
                 <div class="modal-footer border-top-0 bg-light px-4 py-3 d-flex justify-content-end">
                     <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-new-ficha ms-2 border-0" style="padding: 0.6rem 1.4rem;"><i class="fa-solid fa-save"></i> Guardar Ficha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CARGA MASIVA USUARIOS -->
+<div class="modal fade" id="modalCargaMasivaUsuarios" tabindex="-1" aria-labelledby="modalCargaMasivaUsuariosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-bottom-0 bg-light px-4 py-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="box-icon-sena" style="color: #212529; background-color: #e9ecef;"><i class="fa-solid fa-file-csv"></i></div>
+                    <h5 class="modal-title fw-bold text-dark" id="modalCargaMasivaUsuariosLabel">Carga Masiva de Usuarios</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?= URLROOT; ?>/index.php?route=usuarios/importarMasivoCSV" method="POST" enctype="multipart/form-data">
+                <div class="modal-body px-4 py-4 px-md-5">
+                    <div class="alert alert-info small rounded-3 mb-4">
+                        <i class="fa-solid fa-circle-info me-2"></i> El archivo CSV debe contener exactamente las columnas de la plantilla descargada. Los registros duplicados serán ignorados o causarán que se revierta la carga completa.
+                    </div>
+                    <div class="mb-3">
+                        <label for="archivo_csv_usuarios" class="text-muted small fw-bold mb-2">Seleccione el Archivo CSV</label>
+                        <input class="form-control form-control-lg shadow-sm" type="file" id="archivo_csv_usuarios" name="archivo_csv" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 bg-light px-4 py-3 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark ms-2 border-0 rounded-pill px-4" style="padding: 0.6rem 1.4rem;"><i class="fa-solid fa-upload"></i> Procesar Carga</button>
                 </div>
             </form>
         </div>
@@ -4438,5 +4481,114 @@ function setupAsignarHorarioModal() {
 
 document.addEventListener('DOMContentLoaded', function() {
     inicializarCalendario();
+    
+    // Lógica para Carga Masiva de Usuarios
+    const formMasivoUsuarios = document.querySelector("#modalCargaMasivaUsuarios form");
+    if (formMasivoUsuarios) {
+        formMasivoUsuarios.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            const originalBtnHtml = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Procesando...';
+            btnSubmit.disabled = true;
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    const modalEl = this.closest('.modal');
+                    if (modalEl) {
+                        const modalInst = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInst) modalInst.hide();
+                    }
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Carga Exitosa!',
+                        text: result.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Buscar la tabla de usuarios en la pestaña pills-usuarios
+                    const tbody = document.querySelector('#pills-usuarios table tbody');
+                    if (tbody) {
+                        result.data.forEach(u => {
+                            const inicial = u.nombre.charAt(0).toUpperCase();
+                            
+                            let badgeBg = 'bg-secondary';
+                            if (u.nombre_rol === 'Coordinador') badgeBg = 'bg-danger';
+                            if (u.nombre_rol === 'Instructor') badgeBg = 'bg-primary';
+                            if (u.nombre_rol === 'Aprendiz') badgeBg = 'bg-success';
+
+                            const tr = document.createElement('tr');
+                            tr.style.opacity = '0';
+                            tr.style.transition = 'opacity 0.6s ease-in-out';
+                            
+                            tr.innerHTML = `
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary-subtle text-primary fw-bold me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%;">
+                                            ${inicial}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">${u.nombre} ${u.apellido}</div>
+                                            <span class="text-muted small">${u.correo}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border px-3 py-1 fs-6">@${u.usuario}</span>
+                                </td>
+                                <td><div class="text-secondary small fw-medium">${u.titulacion}</div></td>
+                                <td><span class="text-muted small"><i class="fa-solid fa-phone me-1 text-secondary"></i> ${u.telefono}</span></td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="badge ${badgeBg} px-3 py-1 shadow-sm">${u.nombre_rol}</span>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="<?= URLROOT; ?>/index.php?route=usuarios/asignarRol" method="POST" class="d-flex align-items-center justify-content-end gap-2">
+                                        <input type="hidden" name="id_usuario" value="${u.id_usuario}">
+                                        <select class="form-select form-select-sm shadow-sm" name="id_rol" style="width: 130px;" required>
+                                            <option value="">Añadir rol...</option>
+                                            <?php if(isset($roles)): foreach ($roles as $r): ?>
+                                                <option value="<?= $r->id_rol; ?>"><?= $r->nombre_rol; ?></option>
+                                            <?php endforeach; endif; ?>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-success btn-sm shadow-sm" data-bs-toggle="tooltip" title="Asignar Rol">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            `;
+                            
+                            tbody.insertBefore(tr, tbody.firstChild);
+                            setTimeout(() => tr.style.opacity = '1', 50);
+                        });
+                    }
+                    
+                } else {
+                    Swal.fire('Atención', result.message, 'warning');
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                Swal.fire('Error Crítico', 'Hubo un error de conexión con el servidor.', 'error');
+            } finally {
+                btnSubmit.innerHTML = originalBtnHtml;
+                btnSubmit.disabled = false;
+                this.reset();
+            }
+        });
+    }
 });
 </script>

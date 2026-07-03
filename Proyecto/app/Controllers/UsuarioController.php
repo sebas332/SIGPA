@@ -203,4 +203,213 @@ class UsuarioController extends BaseController {
         }
         $this->redirect('dashboard/index#pills-usuarios');
     }
+
+    /**
+     * Generar y descargar reporte de usuarios en PDF
+     */
+    public function exportarPDF() {
+        $this->requireRol('Coordinador');
+        
+        // Importación de la librería FPDF (se verificó que fpdf.php está directamente en Libraries)
+        require_once dirname(__DIR__) . '/Libraries/fpdf.php';
+
+        $db = Database::getInstance();
+        $db->query("SELECT u.documento, 
+                           CONCAT(u.nombre, ' ', u.apellido) AS nombre_completo, 
+                           u.correo, 
+                           u.titulacion, 
+                           COALESCE(GROUP_CONCAT(r.nombre_rol SEPARATOR ', '), 'Sin Rol') AS roles
+                    FROM usuarios u
+                    LEFT JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+                    LEFT JOIN rol r ON ur.id_rol = r.id_rol
+                    GROUP BY u.id_usuario
+                    ORDER BY u.nombre ASC");
+        $usuarios = $db->resultSet();
+
+        $pdf = new FPDF('L', 'mm', 'A4');
+        $pdf->AddPage();
+        
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 15, utf8_decode('Reporte de Usuarios Registrados'), 0, 1, 'C');
+        $pdf->Ln(2);
+
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->SetFillColor(220, 220, 220); 
+        $pdf->SetTextColor(0, 0, 0); 
+        
+        $w_doc = 35;
+        $w_nom = 65;
+        $w_cor = 75;
+        $w_tit = 55;
+        $w_rol = 47;
+
+        $pdf->Cell($w_doc, 10, 'Documento', 1, 0, 'C', true);
+        $pdf->Cell($w_nom, 10, 'Nombre', 1, 0, 'C', true);
+        $pdf->Cell($w_cor, 10, 'Correo', 1, 0, 'C', true);
+        $pdf->Cell($w_tit, 10, utf8_decode('Titulación'), 1, 0, 'C', true);
+        $pdf->Cell($w_rol, 10, 'Rol', 1, 1, 'C', true); 
+
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->SetFillColor(255, 255, 255);
+
+        foreach ($usuarios as $u) {
+            $pdf->Cell($w_doc, 8, utf8_decode($u->documento), 1, 0, 'C');
+            $pdf->Cell($w_nom, 8, utf8_decode($u->nombre_completo), 1, 0, 'L');
+            $pdf->Cell($w_cor, 8, utf8_decode($u->correo), 1, 0, 'L');
+            $pdf->Cell($w_tit, 8, utf8_decode($u->titulacion), 1, 0, 'C');
+            $pdf->Cell($w_rol, 8, utf8_decode($u->roles), 1, 1, 'C');
+        }
+
+        $pdf->Output('D', 'Reporte_Usuarios_SIGPA.pdf');
+        exit;
+    }
+
+    /**
+     * Forzar descarga de la plantilla CSV para creación masiva de usuarios
+     */
+    public function descargarPlantilla() {
+        $this->requireRol('Coordinador');
+        
+        $filename = "plantilla_usuarios.csv";
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        
+        // Escribir BOM para correcta lectura de UTF-8 en Excel
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Fila de cabeceras requeridas
+        fputcsv($output, ['documento', 'nombre', 'apellido', 'telefono', 'correo', 'titulacion', 'usuario', 'contraseña', 'id_rol']);
+        
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Procesar la carga masiva de usuarios vía CSV (Estrictamente JSON y Transaccional)
+     */
+    public function importarMasivoCSV() {
+        $this->requireRol('Coordinador');
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['archivo_csv'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Petición inválida o no se adjuntó archivo.']);
+            exit;
+        }
+
+        $file = $_FILES['archivo_csv']['tmp_name'];
+        if (!$file) {
+            echo json_encode(['status' => 'error', 'message' => 'Error al subir el archivo CSV al servidor.']);
+            exit;
+        }
+
+        $handle = fopen($file, 'r');
+        if ($handle === false) {
+            echo json_encode(['status' => 'error', 'message' => 'No se pudo leer el archivo CSV.']);
+            exit;
+        }
+
+        $db = Database::getInstance();
+        $db->beginTransaction();
+
+        $usuarios_insertados = [];
+        $fila = 1;
+        
+        try {
+            // Leer y descartar la primera fila (cabeceras)
+            fgetcsv($handle, 1000, ",");
+
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                $fila++;
+                
+                // Ignorar filas totalmente vacías
+                if (empty(array_filter($data))) continue;
+
+                if (count($data) < 9) {
+                    throw new Exception("Faltan columnas en la fila $fila. Asegúrese de usar la plantilla descargada.");
+                }
+
+                $documento  = trim($data[0]);
+                $nombre     = trim($data[1]);
+                $apellido   = trim($data[2]);
+                $telefono   = trim($data[3]);
+                $correo     = trim($data[4]);
+                $titulacion = trim($data[5]);
+                $usuario    = trim($data[6]);
+                $contrasena = trim($data[7]);
+                $id_rol     = (int) trim($data[8]);
+
+                if (empty($documento) || empty($nombre) || empty($usuario)) {
+                    throw new Exception("El documento, nombre y usuario son obligatorios (Fila $fila).");
+                }
+
+                $hash = !empty($contrasena) ? password_hash($contrasena, PASSWORD_BCRYPT) : '';
+
+                // Inserción en tabla usuarios
+                $db->query("INSERT INTO usuarios (documento, nombre, apellido, telefono, correo, titulacion, usuario, contrasena) 
+                            VALUES (:documento, :nombre, :apellido, :telefono, :correo, :titulacion, :usuario, :contrasena)");
+                $db->bind(':documento', $documento);
+                $db->bind(':nombre', $nombre);
+                $db->bind(':apellido', $apellido);
+                $db->bind(':telefono', $telefono);
+                $db->bind(':correo', $correo);
+                $db->bind(':titulacion', $titulacion);
+                $db->bind(':usuario', $usuario);
+                $db->bind(':contrasena', $hash);
+                
+                if (!$db->execute()) {
+                    throw new Exception("Error insertando el documento $documento. ¿Es posible que ya exista?");
+                }
+
+                $id_usuario = $db->lastInsertId();
+
+                // Inserción en tabla usuario_rol
+                if ($id_rol > 0) {
+                    $db->query("INSERT INTO usuario_rol (id_usuario, id_rol) VALUES (:id_usuario, :id_rol)");
+                    $db->bind(':id_usuario', $id_usuario);
+                    $db->bind(':id_rol', $id_rol);
+                    if (!$db->execute()) {
+                        throw new Exception("No se pudo asignar el rol al usuario $documento.");
+                    }
+                }
+                
+                // Interpretar el nombre del rol para el JSON de respuesta
+                $nombre_rol = 'Sin Rol';
+                if ($id_rol === 1) $nombre_rol = 'Coordinador';
+                if ($id_rol === 2) $nombre_rol = 'Instructor';
+                if ($id_rol === 3) $nombre_rol = 'Aprendiz';
+
+                $usuarios_insertados[] = [
+                    'id_usuario' => $id_usuario,
+                    'documento'  => $documento,
+                    'nombre'     => $nombre,
+                    'apellido'   => $apellido,
+                    'correo'     => $correo,
+                    'telefono'   => $telefono,
+                    'titulacion' => $titulacion,
+                    'usuario'    => $usuario,
+                    'nombre_rol' => $nombre_rol
+                ];
+            }
+            
+            fclose($handle);
+            $db->commit();
+            
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Carga masiva completada exitosamente.',
+                'data' => $usuarios_insertados
+            ]);
+            
+        } catch (Exception $e) {
+            $db->rollBack();
+            if ($handle) fclose($handle);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Se canceló toda la carga. Razón: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
 }
