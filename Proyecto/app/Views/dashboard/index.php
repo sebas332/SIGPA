@@ -360,6 +360,130 @@
     color: #212529;
     background-color: #ffffff;
 }
+
+/* Estilos para el Calendario Mensual de Programación Académica */
+.calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+}
+.calendar-day-name {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 0.9rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #fafbfc;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.calendar-cell {
+    min-height: 110px;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+.calendar-cell:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    border-color: rgba(57, 169, 0, 0.25);
+    transform: translateY(-2px);
+}
+.calendar-cell.other-month {
+    background: #f8fafc;
+    opacity: 0.55;
+}
+.calendar-cell.today {
+    border: 2px solid #39A900;
+    background: rgba(57, 169, 0, 0.015);
+    box-shadow: 0 4px 15px rgba(57, 169, 0, 0.08);
+}
+.calendar-cell-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+    padding-bottom: 0.2rem;
+}
+.calendar-day-num {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+.calendar-cell.today .calendar-day-num {
+    color: #39A900;
+}
+.calendar-sessions-badge {
+    background-color: #d1fae5;
+    color: #065f46;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 20px;
+}
+.calendar-session-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    max-height: 140px;
+    padding-right: 2px;
+}
+.calendar-session-list::-webkit-scrollbar {
+    width: 3px;
+}
+.calendar-session-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+.calendar-session-card {
+    background: #f8fafc;
+    border-left: 3px solid #39A900;
+    padding: 0.4rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: 1px solid rgba(0,0,0,0.04);
+    border-left: 3px solid #39A900;
+    transition: all 0.2s ease;
+}
+.calendar-session-card:hover {
+    background: #f1f5f9;
+    border-color: rgba(0,0,0,0.08);
+}
+.calendar-session-time {
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.68rem;
+}
+.calendar-session-ficha {
+    font-weight: 700;
+    color: #e28743;
+    font-size: 0.68rem;
+}
+.calendar-session-instructor {
+    color: #2563eb;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.66rem;
+    margin-top: 1px;
+}
+.calendar-session-instructor:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+}
 </style>
 
 <div class="container-fluid px-0">
@@ -1003,96 +1127,99 @@
             <!-- PESTAÑA 2: PROGRAMACIÓN ACADÉMICA -->
             <div class="tab-pane fade" id="pills-programacion" role="tabpanel" aria-labelledby="pills-programacion-tab">
                 
+                <!-- Cabecera de Horarios y Programación -->
                 <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <div>
-                            <h5 class="fw-bold text-dark mb-1">Listado de Programación Académica</h5>
-                            <p class="text-muted small mb-0">Organiza las sesiones diarias, ambientes y resultados formativos.</p>
+                            <h5 class="fw-bold text-dark mb-1">Horarios y Programación</h5>
+                            <p class="text-muted small mb-0">Distribución del calendario lectivo y asignaciones de docentes.</p>
                         </div>
-                        <a href="<?= URLROOT; ?>/index.php?route=programacion/index" class="btn-new-ficha text-decoration-none">
-                            <i class="fa-solid fa-circle-plus"></i> Programar Nueva Sesión
-                        </a>
+                        <?php if ($current_role === 'Coordinador'): ?>
+                            <button type="button" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm d-inline-flex align-items-center gap-2" style="background-color: #00965e; border-color: #00965e; padding: 0.7rem 1.6rem;" data-bs-toggle="modal" data-bs-target="#modalAsignarHorario">
+                                <i class="fa-solid fa-plus"></i> Asignar Horario
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
+                <!-- Buscador y Selector de Vista -->
+                <div class="row mb-4 align-items-center g-3">
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <select id="filtroFicha" class="form-select form-select-lg border shadow-sm rounded-pill" style="font-size: 0.9rem;">
+                                    <option value="">Todas las Fichas</option>
+                                    <?php foreach ($fichas as $f): ?>
+                                        <option value="<?= $f->numero_ficha; ?>">Ficha <?= $f->numero_ficha; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select id="filtroAmbiente" class="form-select form-select-lg border shadow-sm rounded-pill" style="font-size: 0.9rem;">
+                                    <option value="">Todos los Ambientes</option>
+                                    <?php foreach ($ambientes as $a): ?>
+                                        <option value="<?= $a->nombre; ?>"><?= $a->nombre; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
+                            <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
+                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendario" style="background-color: #39A900;" onclick="cambiarVista('calendario')">
+                                <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaLista" onclick="cambiarVista('lista')">
+                                <i class="fa-solid fa-list me-1"></i> Lista Completa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Navegación del Mes -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" id="seccionNavegacionMes" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="navegarMes(-1)" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <span class="fs-5 fw-bold text-dark px-3 py-1 rounded bg-light text-uppercase d-flex align-items-center justify-content-center" id="nombreMesAnio" style="min-width: 180px; font-size: 1.1rem; letter-spacing: 0.5px;">Julio 2026</span>
+                            <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="navegarMes(1)" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-outline-success rounded-pill px-4 fw-bold" onclick="irMesActual()">
+                            Hoy (Mes Actual)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendario" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="calendar-days-grid mb-2">
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                    </div>
+                    <div class="calendar-days-grid" id="gridDiasCalendario">
+                        <!-- Generado dinámicamente con JS -->
+                    </div>
+                </div>
+
+                <!-- Contenedor de la Lista Completa -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden d-none" id="cardListaCompleta" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-0">
                         <?php if (empty($programacion)): ?>
-                            <!-- Tabla idéntica a la imagen 1 si la lista está vacía o como respaldo -->
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light text-secondary small text-uppercase py-3" style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;">
-                                        <tr>
-                                            <th class="ps-4 py-3">FICHA</th>
-                                            <th class="py-3">DÍA / HORAS</th>
-                                            <th class="py-3">INSTRUCTOR</th>
-                                            <th class="py-3">AMBIENTE</th>
-                                            <th class="py-3">RAP EVALUADO</th>
-                                            <th class="text-end pe-4 py-3">AVANCE SESIONES</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="ps-4"><span class="badge-ficha-table">#2721345</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> Lunes</div>
-                                                <div class="text-muted small">12:00 - 18:00</div>
-                                            </td>
-                                            <td class="text-dark small fw-medium">Darwin Cordero</td>
-                                            <td><span class="badge-ambiente-table">Ambiente 102</span></td>
-                                            <td class="text-muted small" style="max-width: 320px;">Elaborar la arquitectura del software aplicando patrones de diseño de acuerdo con el informe de requerimientos.</td>
-                                            <td class="text-end pe-4">
-                                                <div class="fw-bold text-dark small mb-1">11 / 15</div>
-                                                <div class="progress-sena"><div class="progress-sena-bar" style="width: 73%;"></div></div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4"><span class="badge-ficha-table">#2721345</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> Miércoles</div>
-                                                <div class="text-muted small">12:00 - 18:00</div>
-                                            </td>
-                                            <td class="text-dark small fw-medium">Darwin Cordero</td>
-                                            <td><span class="badge-ambiente-table">Ambiente 102</span></td>
-                                            <td class="text-muted small" style="max-width: 320px;">Validar el modelo de datos de la solución informática aplicando reglas de normalización y estándares técnicos.</td>
-                                            <td class="text-end pe-4">
-                                                <div class="fw-bold text-dark small mb-1">14 / 18</div>
-                                                <div class="progress-sena"><div class="progress-sena-bar" style="width: 77%;"></div></div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4"><span class="badge-ficha-table">#2721345</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> Viernes</div>
-                                                <div class="text-muted small">12:00 - 18:00</div>
-                                            </td>
-                                            <td class="text-dark small fw-medium">Darwin Cordero</td>
-                                            <td><span class="badge-ambiente-table">Ambiente 102</span></td>
-                                            <td class="text-muted small" style="max-width: 320px;">Codificar los módulos del sistema de información utilizando lenguajes de programación y metodologías ágiles.</td>
-                                            <td class="text-end pe-4">
-                                                <div class="fw-bold text-dark small mb-1">19 / 25</div>
-                                                <div class="progress-sena"><div class="progress-sena-bar" style="width: 76%;"></div></div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4"><span class="badge-ficha-table">#2839485</span></td>
-                                            <td>
-                                                <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> Martes</div>
-                                                <div class="text-muted small">06:00 - 12:00</div>
-                                            </td>
-                                            <td class="text-dark small fw-medium">Darwin Cordero</td>
-                                            <td><span class="badge-ambiente-table">Ambiente 204</span></td>
-                                            <td class="text-muted small" style="max-width: 320px;">Validar el modelo de datos de la solución informática aplicando reglas de normalización y estándares técnicos.</td>
-                                            <td class="text-end pe-4">
-                                                <div class="fw-bold text-dark small mb-1">15 / 20</div>
-                                                <div class="progress-sena"><div class="progress-sena-bar" style="width: 75%;"></div></div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
+                                <h5 class="fw-bold">No hay sesiones de formación programadas</h5>
                             </div>
                         <?php else: ?>
-                            <!-- Tabla dinámica real con base de datos manteniendo el diseño exacto de la imagen 1 -->
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light text-secondary small text-uppercase py-3" style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;">
@@ -1103,6 +1230,9 @@
                                             <th class="py-3">AMBIENTE</th>
                                             <th class="py-3">RAP EVALUADO</th>
                                             <th class="text-end pe-4 py-3">AVANCE SESIONES</th>
+                                            <?php if ($current_role === 'Coordinador'): ?>
+                                                <th class="text-end pe-4 py-3">ACCIÓN</th>
+                                            <?php endif; ?>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1123,6 +1253,13 @@
                                                     <div class="fw-bold text-dark small mb-1"><?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?></div>
                                                     <div class="progress-sena"><div class="progress-sena-bar" style="width: <?= $pct; ?>%;"></div></div>
                                                 </td>
+                                                <?php if ($current_role === 'Coordinador'): ?>
+                                                    <td class="text-end pe-4">
+                                                        <a href="<?= URLROOT; ?>/index.php?route=programacion/delete&id=<?= $prog->id_programacion; ?>" class="btn btn-outline-danger btn-sm shadow-sm" onclick="return confirm('¿Seguro que deseas eliminar esta programación?');" data-bs-toggle="tooltip" title="Eliminar Programación">
+                                                            <i class="fa-solid fa-trash-can"></i>
+                                                        </a>
+                                                    </td>
+                                                <?php endif; ?>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -2498,6 +2635,48 @@
     </div>
 </div>
 
+<!-- Modal Detalles de Programación del Instructor -->
+<div class="modal fade" id="modalDetalleInstructor" tabindex="-1" aria-labelledby="modalDetalleInstructorLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg bg-white">
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalDetalleInstructorLabel"><i class="fa-solid fa-chalkboard-user me-2 text-primary"></i>Programación del Instructor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded-3 border">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="fa-solid fa-user-tie fs-2"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1" id="instNombreDetalle">Nombre del Instructor</h4>
+                        <span class="badge bg-primary text-uppercase" style="font-size: 0.75rem;">Docente Formador</span>
+                    </div>
+                </div>
+                <h6 class="fw-bold text-secondary mb-3">Sesiones y Horarios Asignados</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border rounded overflow-hidden mb-0" id="tablaDetalleInstructor">
+                        <thead class="table-light text-secondary small text-uppercase" style="font-size: 0.75rem; font-weight: 700;">
+                            <tr>
+                                <th class="ps-3 py-3">FICHA</th>
+                                <th class="py-3">PROGRAMA</th>
+                                <th class="py-3">COMPETENCIA / RAP</th>
+                                <th class="text-end pe-3 py-3">SESIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoDetalleInstructor">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer p-3 border-0 bg-light d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL CREAR PROGRAMA -->
 <div class="modal fade" id="modalCrearPrograma" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -2901,6 +3080,115 @@
                         <span class="visually-hidden">Siguiente</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CREACIÓN ("+ Asignar Horario") -->
+<div class="modal fade" id="modalAsignarHorario" tabindex="-1" aria-labelledby="modalAsignarHorarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalAsignarHorarioLabel"><i class="fa-solid fa-calendar-plus me-2 text-success"></i>Programar Nueva Sesión Académica</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formCrearProgramacionAjax">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="modal_numero_ficha" class="form-label fw-medium text-secondary">Ficha de Formación</label>
+                            <select class="form-select form-select-lg" id="modal_numero_ficha" name="numero_ficha" required>
+                                <option value="">Selecciona la ficha...</option>
+                                <?php foreach ($fichas as $f): ?>
+                                    <option value="<?= $f->numero_ficha; ?>">Ficha <?= $f->numero_ficha; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_programa_nombre" class="form-label fw-medium text-secondary">Programa de Formación</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold text-dark" id="modal_programa_nombre" readonly placeholder="Se cargará automáticamente...">
+                        </div>
+                        <div class="col-md-12">
+                            <label for="modal_id_competencia" class="form-label fw-medium text-secondary">Competencia</label>
+                            <select class="form-select form-select-lg" id="modal_id_competencia" name="id_competencia" disabled required>
+                                <option value="">Selecciona primero una ficha...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="modal_id_resultado_aprendizaje" class="form-label fw-medium text-secondary">Resultado de Aprendizaje (RA)</label>
+                            <select class="form-select form-select-lg" id="modal_id_resultado_aprendizaje" name="id_resultado_aprendizaje" disabled required>
+                                <option value="">Selecciona primero una competencia...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_id_usuario" class="form-label fw-medium text-secondary">Instructor</label>
+                            <select class="form-select form-select-lg" id="modal_id_usuario" name="id_usuario" required>
+                                <option value="">Selecciona al instructor...</option>
+                                <?php foreach ($instructores as $inst): ?>
+                                    <option value="<?= $inst->id_usuario; ?>"><?= $inst->nombre . ' ' . $inst->apellido; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_id_numero_ambiente" class="form-label fw-medium text-secondary">Ambiente de Formación</label>
+                            <select class="form-select form-select-lg" id="modal_id_numero_ambiente" name="id_numero_ambiente" required>
+                                <option value="">Selecciona un ambiente...</option>
+                                <?php foreach ($ambientes as $amb): ?>
+                                    <option value="<?= $amb->id_numero_ambiente; ?>"><?= $amb->nombre; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_id_dias" class="form-label fw-medium text-secondary">Día de la Semana</label>
+                            <select class="form-select form-select-lg" id="modal_id_dias" name="id_dias" required>
+                                <option value="">Selecciona el día...</option>
+                                <?php foreach ($dias as $d): ?>
+                                    <option value="<?= $d->id_dias; ?>"><?= $d->nombre_dia; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_fecha_inicio" class="form-label fw-medium text-secondary">Fecha de Inicio Estimada</label>
+                            <input type="date" class="form-control form-control-lg" id="modal_fecha_inicio" name="fecha_inicio" value="<?= date('Y-m-d'); ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_hora_inicio" class="form-label fw-medium text-secondary">Hora de Inicio</label>
+                            <input type="time" class="form-control form-control-lg" id="modal_hora_inicio" name="hora_inicio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal_hora_fin" class="form-label fw-medium text-secondary">Hora de Fin</label>
+                            <input type="time" class="form-control form-control-lg" id="modal_hora_fin" name="hora_fin" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-4 border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Horario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VISTA DETALLE DIARIO -->
+<div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-dark text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalDetalleDiaLabel"><i class="fa-solid fa-calendar-day me-2 text-info"></i>Detalle de Sesiones Programadas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4 bg-light" id="contenidoDetalleDia">
+                <!-- Se cargará por AJAX vía Fetch -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3 bg-white justify-content-end rounded-bottom-4">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -3682,5 +3970,473 @@ document.addEventListener('DOMContentLoaded', function () {
         formEditarFicha.parentNode.replaceChild(oldFormEditarFicha, formEditarFicha);
         oldFormEditarFicha.addEventListener('submit', (e) => handleAjaxForm(e, oldFormEditarFicha, true));
     }
+});
+
+// Variable global para almacenar el mes y año actual de visualización del calendario
+var calendarDate = new Date(2026, 6, 1); // Inicializado en Julio 2026 como en la imagen
+
+// Almacenar localmente toda la programación académica
+window.programacionDataGlobal = <?= json_encode($programacion) ?>;
+
+function inicializarCalendario() {
+    const filtroFicha = document.getElementById('filtroFicha');
+    const filtroAmbiente = document.getElementById('filtroAmbiente');
+    if (filtroFicha) {
+        filtroFicha.addEventListener('change', renderizarCalendario);
+    }
+    if (filtroAmbiente) {
+        filtroAmbiente.addEventListener('change', renderizarCalendario);
+    }
+    
+    // Configurar selectores y envío del formulario modal de creación
+    setupAsignarHorarioModal();
+    
+    renderizarCalendario();
+}
+
+function navegarMes(offset) {
+    calendarDate.setMonth(calendarDate.getMonth() + offset);
+    renderizarCalendario();
+}
+
+function irMesActual() {
+    calendarDate = new Date();
+    renderizarCalendario();
+}
+
+function cambiarVista(vista) {
+    const btnCal = document.getElementById('btnVistaCalendario');
+    const btnList = document.getElementById('btnVistaLista');
+    const cardCal = document.getElementById('cardCalendario');
+    const navMes = document.getElementById('seccionNavegacionMes');
+    const cardList = document.getElementById('cardListaCompleta');
+    
+    if (vista === 'calendario') {
+        btnCal.classList.add('btn-success', 'active');
+        btnCal.classList.remove('btn-light', 'text-secondary');
+        btnCal.style.backgroundColor = '#39A900';
+        
+        btnList.classList.add('btn-light', 'text-secondary');
+        btnList.classList.remove('btn-success', 'active');
+        btnList.style.backgroundColor = '';
+        
+        cardCal.classList.remove('d-none');
+        navMes.classList.remove('d-none');
+        cardList.classList.add('d-none');
+    } else {
+        btnList.classList.add('btn-success', 'active');
+        btnList.classList.remove('btn-light', 'text-secondary');
+        btnList.style.backgroundColor = '#39A900';
+        
+        btnCal.classList.add('btn-light', 'text-secondary');
+        btnCal.classList.remove('btn-success', 'active');
+        btnCal.style.backgroundColor = '';
+        
+        cardCal.classList.add('d-none');
+        navMes.classList.add('d-none');
+        cardList.classList.remove('d-none');
+    }
+}
+
+// Calcular las sesiones activas por fecha
+function obtenerSesionesPorFecha(dateStr) {
+    const targetDate = new Date(dateStr + 'T00:00:00');
+    const dayOfWeek = targetDate.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+    const localDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    
+    const fichaFiltro = document.getElementById('filtroFicha') ? document.getElementById('filtroFicha').value : '';
+    const ambienteFiltro = document.getElementById('filtroAmbiente') ? document.getElementById('filtroAmbiente').value : '';
+    
+    return window.programacionDataGlobal.filter(prog => {
+        // Filtrar por Ficha
+        if (fichaFiltro && prog.numero_ficha.toString() !== fichaFiltro) {
+            return false;
+        }
+        
+        // Filtrar por Ambiente
+        if (ambienteFiltro && prog.ambiente_nombre.toLowerCase() !== ambienteFiltro.toLowerCase()) {
+            return false;
+        }
+        
+        // Coincidencia de día de la semana
+        if (parseInt(prog.id_dias) !== localDayOfWeek) return false;
+        
+        // Coincidencia de número de sesiones (semanas)
+        const start = new Date(prog.fecha_inicio + 'T00:00:00');
+        if (targetDate < start) return false;
+        
+        const diffTime = targetDate.getTime() - start.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const weeksElapsed = Math.floor(diffDays / 7);
+        
+        return weeksElapsed < parseInt(prog.total_sesiones);
+    });
+}
+
+function renderizarCalendario() {
+    const grid = document.getElementById('gridDiasCalendario');
+    const labelMesAnio = document.getElementById('nombreMesAnio');
+    
+    if (!grid || !labelMesAnio) return;
+    
+    grid.innerHTML = '';
+    
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    
+    // Nombres de meses en español
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    labelMesAnio.innerText = meses[month] + ' ' + year;
+    
+    // Primer día del mes
+    const primerDiaMes = new Date(year, month, 1);
+    const startDay = primerDiaMes.getDay();
+    const localStartDay = startDay === 0 ? 7 : startDay;
+    
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    const diasEnMesAnterior = new Date(year, month, 0).getDate();
+    
+    // Generar días del mes anterior para rellenar la primera semana
+    for (let i = localStartDay - 1; i > 0; i--) {
+        const diaNum = diasEnMesAnterior - i + 1;
+        const prevDate = new Date(year, month - 1, diaNum);
+        crearCeldaDia(prevDate, true, grid);
+    }
+    
+    // Generar días del mes actual
+    const hoy = new Date();
+    for (let i = 1; i <= diasEnMes; i++) {
+        const currentDate = new Date(year, month, i);
+        const esHoy = currentDate.getDate() === hoy.getDate() && currentDate.getMonth() === hoy.getMonth() && currentDate.getFullYear() === hoy.getFullYear();
+        crearCeldaDia(currentDate, false, grid, esHoy);
+    }
+    
+    // Rellenar la última semana con días del mes siguiente (para completar la cuadrícula de 7 columnas)
+    const celdasTotales = grid.children.length;
+    const celdasRestantes = celdasTotales % 7 === 0 ? 0 : 7 - (celdasTotales % 7);
+    for (let i = 1; i <= celdasRestantes; i++) {
+        const nextDate = new Date(year, month + 1, i);
+        crearCeldaDia(nextDate, true, grid);
+    }
+}
+
+function crearCeldaDia(date, esOtroMes, grid, esHoy = false) {
+    const diaNum = date.getDate();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(diaNum).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    
+    const sesiones = obtenerSesionesPorFecha(dateStr);
+    
+    const celda = document.createElement('div');
+    celda.className = 'calendar-cell';
+    celda.style.cursor = 'pointer';
+    celda.setAttribute('onclick', `abrirDetalleDia('${dateStr}', event)`);
+    
+    if (esOtroMes) celda.classList.add('other-month');
+    if (esHoy) celda.classList.add('today');
+    
+    let html = `
+        <div class="calendar-cell-header">
+            <span class="calendar-day-num">${diaNum}</span>
+            ${sesiones.length > 0 ? `<span class="calendar-sessions-badge">${sesiones.length} Sesiones</span>` : ''}
+        </div>
+        <div class="calendar-session-list">
+    `;
+    
+    sesiones.forEach(s => {
+        const instNombre = s.instructor_nombre + ' ' + s.instructor_apellido;
+        const instNombreCorto = s.instructor_nombre + ' ' + s.instructor_apellido.charAt(0) + '.';
+        const infoEscapada = encodeURIComponent(JSON.stringify(s));
+        
+        html += `
+            <div class="calendar-session-card">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="calendar-session-time">${s.hora_inicio.substring(0,5)} - ${s.hora_fin.substring(0,5)}</span>
+                    <span class="calendar-session-ficha">#${s.numero_ficha}</span>
+                </div>
+                <span class="calendar-session-instructor" onclick="mostrarDetalleInstructor('${instNombre}', '${infoEscapada}', event)">
+                    <i class="fa-solid fa-user-tie text-secondary small"></i> ${instNombreCorto}
+                </span>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    celda.innerHTML = html;
+    grid.appendChild(celda);
+}
+
+function mostrarDetalleInstructor(nombre, infoEscapada, event) {
+    if (event) event.stopPropagation();
+    
+    const data = JSON.parse(decodeURIComponent(infoEscapada));
+    document.getElementById('instNombreDetalle').innerText = nombre;
+    
+    const asignaciones = window.programacionDataGlobal.filter(p => p.id_usuario === data.id_usuario);
+    
+    const cuerpo = document.getElementById('cuerpoDetalleInstructor');
+    cuerpo.innerHTML = '';
+    
+    asignaciones.forEach(a => {
+        const pct = a.total_sesiones > 0 ? Math.round((a.sesiones_realizadas / a.total_sesiones) * 100) : 75;
+        cuerpo.innerHTML += `
+            <tr>
+                <td class="ps-3"><span class="badge bg-secondary text-white fw-bold">#${a.numero_ficha}</span></td>
+                <td>
+                    <div class="fw-bold text-dark text-wrap" style="max-width: 250px;">${a.competencia_nombre}</div>
+                    <div class="text-muted small mt-1"><i class="fa-regular fa-clock me-1"></i> ${a.nombre_dia} (${a.hora_inicio.substring(0,5)} - ${a.hora_fin.substring(0,5)})</div>
+                </td>
+                <td class="text-wrap small text-secondary" style="max-width: 300px;">
+                    <strong>[${a.ra_codigo}]</strong> ${a.ra_descripcion}
+                </td>
+                <td class="text-end pe-3">
+                    <div class="fw-bold text-dark small mb-1">${a.sesiones_realizadas} / ${a.total_sesiones}</div>
+                    <div class="progress" style="height: 6px; border-radius: 10px;">
+                        <div class="progress-bar bg-success" style="width: ${pct}%;"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetalleInstructor'));
+    modal.show();
+}
+
+function abrirDetalleDia(fecha, event) {
+    if (event.target.closest('.calendar-session-instructor') || event.target.closest('.calendar-session-card')) {
+        return;
+    }
+    
+    const modalEl = document.getElementById('modalDetalleDia');
+    const contenido = document.getElementById('contenidoDetalleDia');
+    if (!modalEl || !contenido) return;
+    
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    
+    contenido.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    `;
+    
+    fetch(`<?= URLROOT; ?>/index.php?route=programacion/detalle_dia&fecha=${fecha}`)
+        .then(res => res.json())
+        .then(res => {
+            if (!res.success) {
+                contenido.innerHTML = `<div class="alert alert-danger">${res.message}</div>`;
+                return;
+            }
+            
+            const partes = fecha.split('-');
+            const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            document.getElementById('modalDetalleDiaLabel').innerHTML = `<i class="fa-solid fa-calendar-day me-2 text-info"></i>Detalle de Sesiones: ${fechaFormateada}`;
+            
+            let html = '';
+            let tieneSesiones = false;
+            
+            for (const [jornada, sesiones] of Object.entries(res.jornadas)) {
+                if (sesiones.length > 0) {
+                    tieneSesiones = true;
+                    html += `
+                        <div class="card border-0 shadow-sm rounded-3 mb-3">
+                            <div class="card-header bg-secondary text-white fw-bold py-2">
+                                <i class="fa-solid fa-clock me-2"></i>Jornada ${jornada}
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush rounded-bottom-3">
+                    `;
+                    
+                    sesiones.forEach(s => {
+                        html += `
+                            <li class="list-group-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-success-subtle text-success-emphasis rounded-pill fw-bold">Ficha #${s.numero_ficha}</span>
+                                    <span class="small fw-semibold text-secondary"><i class="fa-regular fa-clock me-1"></i>${s.hora_inicio.substring(0,5)} - ${s.hora_fin.substring(0,5)}</span>
+                                </div>
+                                <div class="mb-1"><strong>Competencia:</strong> ${s.competencia_nombre}</div>
+                                <div class="mb-1 text-muted small"><strong>Resultado (RA):</strong> [${s.ra_codigo}] ${s.ra_descripcion}</div>
+                                <div class="row g-2 mt-2 pt-2 border-top">
+                                    <div class="col-sm-6 text-dark small"><i class="fa-solid fa-user-tie text-secondary me-2"></i><strong>Instructor:</strong> ${s.instructor_nombre} ${s.instructor_apellido}</div>
+                                    <div class="col-sm-6 text-dark small"><i class="fa-solid fa-building text-secondary me-2"></i><strong>Ambiente:</strong> ${s.ambiente_nombre}</div>
+                                </div>
+                            </li>
+                        `;
+                    });
+                    
+                    html += `
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (!tieneSesiones) {
+                html = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
+                        <h5>No hay sesiones programadas para este día</h5>
+                        <p class="small mb-0">Las celdas vacías no registran horarios vigentes.</p>
+                    </div>
+                `;
+            }
+            
+            contenido.innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            contenido.innerHTML = `<div class="alert alert-danger">Error al cargar los datos del servidor.</div>`;
+        });
+}
+
+function setupAsignarHorarioModal() {
+    const selectFicha = document.getElementById('modal_numero_ficha');
+    const inputPrograma = document.getElementById('modal_programa_nombre');
+    const selectCompetencia = document.getElementById('modal_id_competencia');
+    const selectResultado = document.getElementById('modal_id_resultado_aprendizaje');
+    const formCrear = document.getElementById('formCrearProgramacionAjax');
+
+    if (!selectFicha) return;
+
+    selectFicha.addEventListener('change', function() {
+        const val = this.value;
+        
+        inputPrograma.value = '';
+        selectCompetencia.innerHTML = '<option value="">Cargando...</option>';
+        selectCompetencia.disabled = true;
+        selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
+        selectResultado.disabled = true;
+
+        if (!val) {
+            selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
+            return;
+        }
+
+        fetch(`<?= URLROOT; ?>/index.php?route=programacion/get_competencias_por_ficha&ficha=${val}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    inputPrograma.value = res.programa.nombre;
+                    let html = '<option value="">Selecciona la competencia...</option>';
+                    res.competencias.forEach(c => {
+                        html += `<option value="${c.id_competencia}">${c.codigo} - ${c.nombre}</option>`;
+                    });
+                    selectCompetencia.innerHTML = html;
+                    selectCompetencia.disabled = false;
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'No se pudo cargar la información de la ficha.', 'error');
+            });
+    });
+
+    selectCompetencia.addEventListener('change', function() {
+        const val = this.value;
+        selectResultado.innerHTML = '<option value="">Cargando...</option>';
+        selectResultado.disabled = true;
+
+        if (!val) {
+            selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
+            return;
+        }
+
+        fetch(`<?= URLROOT; ?>/index.php?route=programacion/get_resultados_por_competencia&id_competencia=${val}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    let html = '<option value="">Selecciona el resultado...</option>';
+                    res.resultados.forEach(r => {
+                        html += `<option value="${r.id_resultado}">${r.codigo} - ${r.descripcion}</option>`;
+                    });
+                    selectResultado.innerHTML = html;
+                    selectResultado.disabled = false;
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'No se pudo cargar la información de la competencia.', 'error');
+            });
+    });
+
+    formCrear.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const data = {
+            numero_ficha: document.getElementById('modal_numero_ficha').value,
+            id_usuario: document.getElementById('modal_id_usuario').value,
+            id_numero_ambiente: document.getElementById('modal_id_numero_ambiente').value,
+            id_dias: document.getElementById('modal_id_dias').value,
+            fecha_inicio: document.getElementById('modal_fecha_inicio').value,
+            hora_inicio: document.getElementById('modal_hora_inicio').value,
+            hora_fin: document.getElementById('modal_hora_fin').value,
+            id_resultado_aprendizaje: document.getElementById('modal_id_resultado_aprendizaje').value
+        };
+
+        const btnSubmit = formCrear.querySelector('button[type="submit"]');
+        const btnHtml = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        btnSubmit.disabled = true;
+
+        fetch(`<?= URLROOT; ?>/index.php?route=programacion/create_ajax`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            btnSubmit.innerHTML = btnHtml;
+            btnSubmit.disabled = false;
+
+            if (res.success) {
+                window.programacionDataGlobal.push(res.data);
+                
+                const modalEl = document.getElementById('modalAsignarHorario');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                if (modal) modal.hide();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Programación Registrada',
+                    text: res.message,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+
+                renderizarCalendario();
+                formCrear.reset();
+                selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
+                selectCompetencia.disabled = true;
+                selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
+                selectResultado.disabled = true;
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btnSubmit.innerHTML = btnHtml;
+            btnSubmit.disabled = false;
+            Swal.fire('Error', 'No se pudo guardar el horario en el servidor.', 'error');
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarCalendario();
 });
 </script>

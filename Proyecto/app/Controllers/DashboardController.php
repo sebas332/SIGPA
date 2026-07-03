@@ -87,6 +87,7 @@ class DashboardController extends BaseController {
             $data['programas'] = $this->programaModel->all();
             $data['jornadas'] = $this->jornadaModel->all();
             $data['tipos'] = $this->model('TipoPrograma')->all();
+            $data['dias'] = $this->model('Dia')->all();
             
             $todosUsuarios = $this->usuarioModel->all();
             $instructores = [];

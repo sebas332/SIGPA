@@ -169,4 +169,50 @@ class ProgramacionAcademica {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Obtener programación para una fecha específica con JOINs completos para el detalle diario
+     * @param string $fecha YYYY-MM-DD
+     * @return array
+     */
+    public function getByFechaDetalle($fecha) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, j.nombre as jornada_nombre, j.id_jornada,
+                          u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN jornada j ON f.id_jornada = j.id_jornada
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          ORDER BY j.id_jornada, pa.hora_inicio");
+        $todas = $this->db->resultSet();
+        
+        $filtradas = [];
+        $timestampTarget = strtotime($fecha);
+        $dayOfWeekTarget = date('N', $timestampTarget); // 1 (Lunes) a 7 (Domingo)
+        
+        foreach ($todas as $p) {
+            if ((int)$p->id_dias !== (int)$dayOfWeekTarget) {
+                continue;
+            }
+            
+            $timestampInicio = strtotime($p->fecha_inicio);
+            if ($timestampTarget < $timestampInicio) {
+                continue;
+            }
+            
+            $diffDays = round(($timestampTarget - $timestampInicio) / (60 * 60 * 24));
+            $weeksElapsed = floor($diffDays / 7);
+            
+            if ($weeksElapsed < (int)$p->total_sesiones) {
+                $filtradas[] = $p;
+            }
+        }
+        
+        return $filtradas;
+    }
 }

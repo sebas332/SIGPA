@@ -161,7 +161,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 ['dashboard/index#pills-vision', 'fa-house', 'Visión General'],
                 ['dashboard/index#pills-fichas', 'fa-users', 'Fichas Académicas'],
                 ['dashboard/index#pills-programas', 'fa-graduation-cap', 'Programas Formativos'],
-                ['dashboard/index#pills-programacion', 'fa-clock', 'Horarios de Ficha'],
+                ['dashboard/index#pills-programacion', 'fa-clock', 'Programación Académica'],
                 ['dashboard/index#pills-ambientes', 'fa-building', 'Ambientes Físicos'],
                 ['dashboard/index#pills-novedades', 'fa-triangle-exclamation', 'Novedades de Sede']
             ],
