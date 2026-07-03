@@ -212,7 +212,7 @@
 </template>
 
 <script>
-let compCounter = 0;
+var compCounter = 0;
 
 function agregarCompetencia(data = null) {
     const container = document.getElementById('competencias-container');
@@ -314,7 +314,7 @@ function calcularCompetenciaFila(compIdx) {
     compBlock.querySelector('.comp-val-total-sesiones').innerText = totalSesiones + ' sesiones';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+function inicializarEditarCompleto() {
     // Inicializar con datos existentes
     const competenciasExistentes = <?= json_encode($competencias) ?>;
     const resultadosExistentes = <?= json_encode($resultados) ?>;
@@ -328,5 +328,11 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         agregarCompetencia();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarEditarCompleto);
+} else {
+    inicializarEditarCompleto();
+}
 </script>

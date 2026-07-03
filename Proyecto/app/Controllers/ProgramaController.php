@@ -119,10 +119,38 @@ class ProgramaController extends BaseController {
         $this->requireRol('Coordinador');
         $id = $_GET['id'] ?? 0;
         if ($id > 0) {
-            if ($this->programaModel->delete($id)) {
-                $_SESSION['flash_success'] = 'Programa eliminado correctamente.';
-            } else {
-                $_SESSION['flash_error'] = 'Error al eliminar el programa. Es posible que existan fichas asignadas a este programa.';
+            $db = Database::getInstance();
+            try {
+                $db->beginTransaction();
+                
+                // 1. Obtener todas las competencias del programa
+                $competencias = $this->competenciaModel->getByPrograma($id);
+                
+                // 2. Para cada competencia, eliminar sus resultados de aprendizaje
+                foreach ($competencias as $comp) {
+                    $db->query("DELETE FROM resultado_aprendizaje WHERE id_competencia = :id_comp");
+                    $db->bind(':id_comp', $comp->id_competencia);
+                    $db->execute();
+                }
+                
+                // 3. Eliminar todas las competencias del programa
+                $db->query("DELETE FROM competencias WHERE id_programa = :id_prog");
+                $db->bind(':id_prog', $id);
+                $db->execute();
+                
+                // 4. Eliminar el programa
+                if ($this->programaModel->delete($id)) {
+                    $db->commit();
+                    $_SESSION['flash_success'] = 'Programa eliminado correctamente junto con sus competencias y resultados.';
+                } else {
+                    $db->rollBack();
+                    $_SESSION['flash_error'] = 'Error al eliminar el programa.';
+                }
+            } catch (PDOException $e) {
+                if ($db->getConnection()->inTransaction()) {
+                    $db->rollBack();
+                }
+                $_SESSION['flash_error'] = 'No se puede eliminar el programa porque tiene fichas asignadas o clases programadas asociadas.';
             }
         }
         $this->redirect('dashboard/index#pills-programas');
