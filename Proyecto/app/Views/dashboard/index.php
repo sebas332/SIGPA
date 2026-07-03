@@ -771,64 +771,66 @@
                     </div>
                 </div>
 
-                <!-- Grid de Tarjetas de Fichas -->
-                <div class="row g-4">
-                    <?php if (empty($fichas)): ?>
-                        <div class="col-12 text-center py-5 text-muted">
-                            <i class="fa-solid fa-users-slash fa-3x mb-3 text-secondary"></i>
-                            <h5 class="fw-bold">No hay fichas de formación activas</h5>
-                            <p class="small mb-0">Utiliza el botón de Crear Nueva Ficha para agregar el primer grupo.</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($fichas as $f): ?>
-                            <div class="col-12 col-md-6">
-                                <div class="card bg-white shadow-sm ficha-card p-4 h-100">
-                                    <!-- Header Tarjeta -->
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <span class="badge-ficha-id">Ficha #<?= $f->numero_ficha; ?></span>
-                                        <span class="text-secondary small fw-medium">Jornada: <?= $f->jornada_nombre ?? 'Tarde'; ?></span>
-                                    </div>
-
-                                    <!-- Título Programa -->
-                                    <h5 class="fw-bold text-dark mb-4 pb-1"><?= $f->programa_nombre; ?> (<?= $f->programa_codigo ?? '228106'; ?>)</h5>
-
-                                    <!-- Detalles Ficha -->
-                                    <div class="mb-4">
-                                        <div class="detail-row">
-                                            <span>Instructor Líder:</span>
-                                            <span class="text-dark fw-medium"><?= $f->instructor_nombre . ' ' . $f->instructor_apellido; ?></span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span>Cantidad Aprendices:</span>
-                                            <span class="text-dark fw-bold"><?= $f->cantidad_estudiantes; ?> aprendices</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span>Jornada Completa:</span>
-                                            <span class="text-dark fw-medium"><?= $f->jornada_nombre ?? 'Tarde'; ?> (<?= ($f->jornada_nombre === 'Mañana') ? '06:00 - 12:00' : '12:00 - 18:00'; ?>)</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Fechas Separador Inferior -->
-                                    <div class="d-flex justify-content-between text-secondary small pt-3 border-top border-light-subtle mt-auto mb-3" style="font-size: 0.78rem;">
-                                        <span>Inicia: <?= $f->fecha_inicio ?? 'N/A'; ?></span>
-                                        <span>Prácticas: <?= $f->fecha_practicas ?? 'N/A'; ?></span>
-                                        <span>Termina: <?= $f->fecha_fin ?? 'N/A'; ?></span>
-                                    </div>
-                                    
-                                    <?php if ($current_role === 'Coordinador'): ?>
-                                    <div class="d-flex justify-content-end gap-2 mt-2">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="editarFicha(<?= $f->numero_ficha; ?>, <?= $f->cantidad_estudiantes; ?>, '<?= $f->fecha_inicio; ?>', '<?= $f->fecha_practicas; ?>', '<?= $f->fecha_fin; ?>', <?= $f->id_usuario_instructor_lider; ?>, <?= $f->id_programa; ?>, <?= $f->id_jornada; ?>)" title="Editar">
-                                            <i class="fa-solid fa-pen"></i> Editar
-                                        </button>
-                                        <a href="<?= URLROOT; ?>/index.php?route=fichas/delete&id=<?= $f->numero_ficha; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas borrar esta ficha?');" title="Eliminar">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </a>
-                                    </div>
+                <!-- Tabla de Fichas (Refactorizado) -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="tabla-fichas">
+                                <thead class="table-light text-secondary small text-uppercase py-3" style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;">
+                                    <tr>
+                                        <th class="ps-4 py-3">NO. FICHA</th>
+                                        <th class="py-3">PROGRAMA DE FORMACIÓN</th>
+                                        <th class="py-3">JORNADA</th>
+                                        <th class="py-3">INSTRUCTOR LÍDER</th>
+                                        <th class="py-3">APRENDICES</th>
+                                        <th class="text-end pe-4 py-3">ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($fichas)): ?>
+                                        <tr id="no-fichas-row">
+                                            <td colspan="6" class="text-center py-5 text-muted">
+                                                <i class="fa-solid fa-users-slash fa-2x mb-3 text-secondary"></i><br>
+                                                <h5 class="fw-bold">No hay fichas de formación activas</h5>
+                                                <p class="small mb-0">Utiliza el botón de Crear Nueva Ficha para agregar el primer grupo.</p>
+                                            </td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($fichas as $f): ?>
+                                            <tr id="fila-ficha-<?= $f->numero_ficha; ?>">
+                                                <td class="ps-4 fw-bold text-primary fs-6 js-numero-ficha">
+                                                    <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $f->numero_ficha; ?>" class="text-decoration-none">
+                                                        <?= $f->numero_ficha; ?>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark js-programa"><?= $f->programa_nombre; ?></div>
+                                                    <div class="text-muted small js-fechas">Inicia: <?= $f->fecha_inicio ?? 'N/A'; ?> | Fin: <?= $f->fecha_fin ?? 'N/A'; ?></div>
+                                                </td>
+                                                <td><span class="badge bg-dark js-jornada"><?= $f->jornada_nombre ?? 'Tarde'; ?></span></td>
+                                                <td>
+                                                    <span class="text-secondary fw-medium js-instructor"><?= $f->instructor_nombre . ' ' . $f->instructor_apellido; ?></span>
+                                                </td>
+                                                <td><span class="badge bg-secondary-subtle text-secondary-emphasis px-3 py-1 js-estudiantes"><?= $f->cantidad_estudiantes; ?> aprendices</span></td>
+                                                <td class="text-end pe-4">
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $f->numero_ficha; ?>" class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm" title="Ver Detalles">
+                                                            <i class="fa-solid fa-eye"></i>
+                                                        </a>
+                                                        <?php if ($current_role === 'Coordinador'): ?>
+                                                            <button type="button" class="btn btn-sm btn-outline-success rounded-circle shadow-sm btn-gestionar-aprendices" data-ficha="<?= $f->numero_ficha; ?>" data-bs-toggle="modal" data-bs-target="#modalGestionarAprendices" title="Gestionar Aprendices">
+                                                                <i class="fa-solid fa-user-plus"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1996,6 +1998,83 @@
     <?php endif; ?>
 
 </div>
+
+<!-- MODAL GESTIONAR APRENDICES -->
+<?php if ($current_role === 'Coordinador'): ?>
+<div class="modal fade" id="modalGestionarAprendices" tabindex="-1" aria-labelledby="modalGestionarAprendicesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-success text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalGestionarAprendicesLabel"><i class="fa-solid fa-user-graduate me-2"></i>Gestionar Aprendices</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="nav nav-tabs nav-fill bg-light border-bottom-0" id="gestionarTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-medium py-3" id="individual-tab" data-bs-toggle="tab" data-bs-target="#individual" type="button" role="tab" aria-controls="individual" aria-selected="true"><i class="fa-solid fa-user-plus me-2"></i>Registrar y Matricular</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-medium py-3" id="masiva-tab" data-bs-toggle="tab" data-bs-target="#masiva" type="button" role="tab" aria-controls="masiva" aria-selected="false"><i class="fa-solid fa-file-csv me-2"></i>Carga Masiva CSV</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-4" id="gestionarTabsContent">
+                    <!-- Tab Individual (Crear Aprendiz) -->
+                    <div class="tab-pane fade show active" id="individual" role="tabpanel" aria-labelledby="individual-tab">
+                        <form action="<?= URLROOT; ?>/index.php?route=fichas/crearYMatricular" method="POST">
+                            <input type="hidden" name="numero_ficha" class="input-ficha-id">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="nombre" class="form-label fw-medium text-secondary">Nombres</label>
+                                    <input type="text" class="form-control form-control-lg" id="nombre" name="nombre" placeholder="Ej. Carlos Arturo" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="El nombre solo debe contener letras.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="apellido" class="form-label fw-medium text-secondary">Apellidos</label>
+                                    <input type="text" class="form-control form-control-lg" id="apellido" name="apellido" placeholder="Ej. Gómez" required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="El apellido solo debe contener letras.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="documento" class="form-label fw-medium text-secondary">Documento de Identidad (Login)</label>
+                                    <input type="text" inputmode="numeric" class="form-control form-control-lg" id="documento" name="documento" placeholder="Ej. 1020304050" required pattern="[0-9]{6,10}" maxlength="10" title="El documento debe contener solo números, entre 6 y 10 dígitos.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="telefono" class="form-label fw-medium text-secondary">Teléfono de Contacto</label>
+                                    <input type="text" class="form-control form-control-lg" id="telefono" name="telefono" placeholder="Ej. 3019876543" required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="El teléfono debe tener exactamente 10 números.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="correo" class="form-label fw-medium text-secondary">Correo Electrónico</label>
+                                    <input type="email" class="form-control form-control-lg" id="correo" name="correo" placeholder="Ej. correo@soy.sena.edu.co" required pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="El correo debe tener un formato válido (ejemplo@dominio.com).">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="contrasena" class="form-label fw-medium text-secondary">Contraseña Inicial</label>
+                                    <input type="text" class="form-control form-control-lg" id="contrasena" name="contrasena" placeholder="Ej. Pass123*" required pattern="(?=[A-ZÑÁÉÍÓÚ])(?=.*\d)(?=.*[!@#$%^&amp;*(),.?&quot;:{}|&lt;&gt;[\]\\/_\-+=~'`;]).{8,30}" title="La contraseña debe iniciar con mayúscula, tener de 8 a 30 caracteres, e incluir un número y un carácter especial.">
+                                </div>
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-success fw-bold shadow-sm py-2"><i class="fa-solid fa-user-plus me-2"></i>Crear y Matricular Aprendiz</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Tab Masiva -->
+                    <div class="tab-pane fade" id="masiva" role="tabpanel" aria-labelledby="masiva-tab">
+                        <form action="<?= URLROOT; ?>/index.php?route=fichas/inscribirMasivoCSV" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="numero_ficha" class="input-ficha-id">
+                            <div class="alert alert-info small rounded-3">
+                                <i class="fa-solid fa-circle-info me-2"></i> El archivo CSV debe contener una columna (idealmente sin encabezados) donde cada fila sea el <strong>Documento</strong> del aprendiz. Los aprendices deben estar previamente registrados en el sistema.
+                            </div>
+                            <div class="mb-3">
+                                <label for="archivo_csv" class="form-label fw-medium text-secondary">Archivo CSV</label>
+                                <input class="form-control form-control-lg" type="file" id="archivo_csv" name="archivo_csv" accept=".csv" required>
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-dark fw-bold shadow-sm py-2"><i class="fa-solid fa-upload me-2"></i>Procesar Archivo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- MODAL CREAR NUEVA FICHA -->
 <?php if ($current_role === 'Coordinador'): ?>
@@ -3437,6 +3516,171 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (progCompPorcentaje) {
         progCompPorcentaje.addEventListener('input', calcularCompetenciaPrograma);
+    }
+});
+
+// Lógica CRUD 100% Asíncrona para Fichas (Tabla Responsiva)
+document.addEventListener('DOMContentLoaded', function () {
+    const URL_ROOT = '<?= URLROOT; ?>';
+    const formCrearFicha = document.querySelector('#modalCrearFicha form');
+    
+    // Pasar el ID de la ficha al modal "Gestionar Aprendices"
+    const modalGestionar = document.getElementById('modalGestionarAprendices');
+    if (modalGestionar) {
+        modalGestionar.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const fichaId = button.getAttribute('data-ficha');
+            const inputs = modalGestionar.querySelectorAll('.input-ficha-id');
+            inputs.forEach(function(input) {
+                input.value = fichaId;
+            });
+        });
+        
+        // Validación del formulario de creación de aprendiz individual
+        const formCrearAprendiz = modalGestionar.querySelector('form[action*="crearYMatricular"]');
+        if (formCrearAprendiz) {
+            const numFields = formCrearAprendiz.querySelectorAll("input[name='telefono'], input[name='documento']");
+            numFields.forEach(input => {
+                input.addEventListener("input", function() {
+                    this.value = this.value.replace(/\D/g, '');
+                });
+            });
+            const textFields = formCrearAprendiz.querySelectorAll("input[name='nombre'], input[name='apellido']");
+            textFields.forEach(input => {
+                input.addEventListener("input", function() {
+                    this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                });
+            });
+        }
+    }
+    const formEditarFicha = document.querySelector('#modalEditarFicha form');
+    
+    // Función compartida para manejar submit
+    async function handleAjaxForm(e, formElement, isEdit) {
+        e.preventDefault(); 
+        const formData = new FormData(formElement);
+        formData.append('is_ajax', '1'); 
+        
+        const btnSubmit = formElement.querySelector('button[type="submit"]');
+        const btnHtml = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+        btnSubmit.disabled = true;
+
+        try {
+            const response = await fetch(formElement.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                const d = result.data; 
+                const tbody = document.querySelector('#tabla-fichas tbody');
+                
+                const nombreJornada = d.jornada_nombre || d.id_jornada; 
+                const nombreInstructor = (d.instructor_nombre && d.instructor_apellido) ? `${d.instructor_nombre} ${d.instructor_apellido}` : d.id_usuario_instructor_lider;
+                const nombrePrograma = d.programa_nombre || d.id_programa;
+                
+                if (isEdit) {
+                    // Actualización Quirúrgica
+                    const filaFicha = document.getElementById(`fila-ficha-${formData.get('numero_ficha_original')}`);
+                    if (filaFicha) {
+                        filaFicha.id = `fila-ficha-${d.numero_ficha}`;
+                        
+                        const elNumero = filaFicha.querySelector('.js-numero-ficha a');
+                        if (elNumero) {
+                            elNumero.textContent = d.numero_ficha;
+                            elNumero.href = `${URL_ROOT}/index.php?route=fichas/show&id=${d.numero_ficha}`;
+                        }
+                        
+                        const elPrograma = filaFicha.querySelector('.js-programa');
+                        if (elPrograma) elPrograma.textContent = nombrePrograma;
+                        
+                        const elFechas = filaFicha.querySelector('.js-fechas');
+                        if (elFechas) elFechas.textContent = `Inicia: ${d.fecha_inicio} | Fin: ${d.fecha_fin}`;
+                        
+                        const elJornada = filaFicha.querySelector('.js-jornada');
+                        if (elJornada) elJornada.textContent = nombreJornada;
+                        
+                        const elInstructor = filaFicha.querySelector('.js-instructor');
+                        if (elInstructor) elInstructor.textContent = nombreInstructor;
+                        
+                        const elEstudiantes = filaFicha.querySelector('.js-estudiantes');
+                        if (elEstudiantes) elEstudiantes.textContent = `${d.cantidad_estudiantes} aprendices`;
+                        
+                        // Actualizar ID del botón gestionar aprendices si existe
+                        const btnGestionar = filaFicha.querySelector('.btn-gestionar-aprendices');
+                        if (btnGestionar) {
+                            btnGestionar.setAttribute('data-ficha', d.numero_ficha);
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                    
+                    const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha'));
+                    if (modalInst) modalInst.hide();
+                    
+                    Swal.fire({ icon: 'success', title: 'Ficha Actualizada', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                } else {
+                    // Creación (Inyectar fila)
+                    const noFichasRow = document.getElementById('no-fichas-row');
+                    if (noFichasRow) noFichasRow.remove();
+                    
+                    const newRow = document.createElement('tr');
+                    newRow.id = `fila-ficha-${d.numero_ficha}`;
+                    newRow.innerHTML = `
+                        <td class="ps-4 fw-bold text-primary fs-6 js-numero-ficha">
+                            <a href="${URL_ROOT}/index.php?route=fichas/show&id=${d.numero_ficha}" class="text-decoration-none">${d.numero_ficha}</a>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark js-programa">${nombrePrograma}</div>
+                            <div class="text-muted small js-fechas">Inicia: ${d.fecha_inicio} | Fin: ${d.fecha_fin}</div>
+                        </td>
+                        <td><span class="badge bg-dark js-jornada">${nombreJornada}</span></td>
+                        <td><span class="text-secondary fw-medium js-instructor">${nombreInstructor}</span></td>
+                        <td><span class="badge bg-secondary-subtle text-secondary-emphasis px-3 py-1 js-estudiantes">${d.cantidad_estudiantes} aprendices</span></td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="${URL_ROOT}/index.php?route=fichas/show&id=${d.numero_ficha}" class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm" title="Ver Detalles">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-circle shadow-sm btn-gestionar-aprendices" data-ficha="${d.numero_ficha}" data-bs-toggle="modal" data-bs-target="#modalGestionarAprendices" title="Gestionar Aprendices">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(newRow);
+                    
+                    const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalCrearFicha'));
+                    if (modalInst) modalInst.hide();
+                    formElement.reset();
+                    
+                    Swal.fire({ icon: 'success', title: 'Ficha Creada', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                }
+            } else {
+                Swal.fire('Error', result.message || 'Error en la operación', 'error');
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            Swal.fire('Error de Conexión', 'El servidor no respondió a tiempo.', 'error');
+        } finally {
+            btnSubmit.innerHTML = btnHtml;
+            btnSubmit.disabled = false;
+        }
+    }
+
+    if (formCrearFicha) {
+        formCrearFicha.addEventListener('submit', (e) => handleAjaxForm(e, formCrearFicha, false));
+    }
+    
+    if (formEditarFicha) {
+        // Remover event listeners anteriores reemplazando con un clon si fuera necesario (aunque como lo definimos arriba funciona)
+        const oldFormEditarFicha = formEditarFicha.cloneNode(true);
+        formEditarFicha.parentNode.replaceChild(oldFormEditarFicha, formEditarFicha);
+        oldFormEditarFicha.addEventListener('submit', (e) => handleAjaxForm(e, oldFormEditarFicha, true));
     }
 });
 </script>

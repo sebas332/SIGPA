@@ -212,9 +212,6 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 <span class="sga-menu-title"><?= htmlspecialchars($sectionName); ?></span>
                 <?php foreach ($items as $item): 
                     $badgeHtml = "";
-                    if ($item[2] === 'Fichas Académicas') {
-                        $badgeHtml = '<span class="badge bg-warning text-white ms-auto" style="border-radius: 50%; font-size: 0.65rem; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; padding: 0;">4</span>';
-                    }
                     // Activar el link si coincide con el hash o ruta
                     $isActive = false;
                     $itemHash = strpos($item[0], '#') !== false ? substr($item[0], strpos($item[0], '#')) : '';

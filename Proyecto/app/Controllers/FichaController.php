@@ -40,15 +40,18 @@ class FichaController extends BaseController {
         $programas = $this->programaModel->all();
         $jornadas = $this->jornadaModel->all();
         
-        // Filtrar instructores para asignar como líderes
+        // Filtrar instructores para asignar como líderes y aprendices para gestión
         $todosUsuarios = $this->usuarioModel->all();
         $instructores = [];
+        $candidatos = [];
         foreach ($todosUsuarios as $u) {
             $roles = $this->usuarioModel->getRoles($u->id_usuario);
             foreach ($roles as $r) {
                 if ($r->nombre_rol === 'Instructor') {
                     $instructores[] = $u;
-                    break;
+                }
+                if ($r->nombre_rol === 'Aprendiz') {
+                    $candidatos[] = $u;
                 }
             }
         }
@@ -59,6 +62,7 @@ class FichaController extends BaseController {
             'programas' => $programas,
             'jornadas' => $jornadas,
             'instructores' => $instructores,
+            'candidatos' => $candidatos,
             'current_role' => $current_role
         ]);
     }
@@ -79,15 +83,21 @@ class FichaController extends BaseController {
         $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha);
         $programacion = $this->programacionModel->getByFicha($numero_ficha);
 
-        // Obtener todos los aprendices del sistema para poder matricularlos (Coordinador)
+        // Obtener todos los aprendices y datos para los modales (Coordinador)
+        $programas = $this->programaModel->all();
+        $jornadas = $this->jornadaModel->all();
+        
         $todosUsuarios = $this->usuarioModel->all();
         $candidatos = [];
+        $instructores = [];
         foreach ($todosUsuarios as $u) {
             $roles = $this->usuarioModel->getRoles($u->id_usuario);
             foreach ($roles as $r) {
                 if ($r->nombre_rol === 'Aprendiz') {
                     $candidatos[] = $u;
-                    break;
+                }
+                if ($r->nombre_rol === 'Instructor') {
+                    $instructores[] = $u;
                 }
             }
         }
@@ -98,6 +108,9 @@ class FichaController extends BaseController {
             'aprendices' => $aprendices,
             'programacion' => $programacion,
             'candidatos' => $candidatos,
+            'programas' => $programas,
+            'jornadas' => $jornadas,
+            'instructores' => $instructores,
             'current_role' => $_SESSION['current_role'] ?? 'Aprendiz'
         ]);
     }
@@ -120,12 +133,16 @@ class FichaController extends BaseController {
             ];
 
             if ($this->fichaModel->create($data)) {
-                $_SESSION['flash_success'] = 'Ficha creada exitosamente.';
+                $nuevaFicha = $this->fichaModel->find($data['numero_ficha']);
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'success', 'data' => $nuevaFicha]);
+                exit;
             } else {
-                $_SESSION['flash_error'] = 'Error al crear la ficha.';
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al crear la ficha en la base de datos.']);
+                exit;
             }
         }
-        $this->redirect('fichas/index');
     }
 
     /**
@@ -181,12 +198,16 @@ class FichaController extends BaseController {
             ];
 
             if ($this->fichaModel->update($numero_ficha_antiguo, $data)) {
-                $_SESSION['flash_success'] = 'Ficha actualizada exitosamente.';
+                $fichaActualizada = $this->fichaModel->find($data['numero_ficha']);
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'success', 'data' => $fichaActualizada]);
+                exit;
             } else {
-                $_SESSION['flash_error'] = 'Error al actualizar la ficha.';
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar la base de datos.']);
+                exit;
             }
         }
-        $this->redirect('dashboard/index#pills-fichas');
     }
 
     /**
@@ -204,4 +225,144 @@ class FichaController extends BaseController {
         }
         $this->redirect('dashboard/index#pills-fichas');
     }
+
+    /**
+     * Crear un usuario aprendiz y matricularlo directamente en la ficha
+     */
+    public function crearYMatricular() {
+        $this->requireRol('Coordinador');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $numero_ficha = $_POST['numero_ficha'] ?? 0;
+            $nombre = $_POST['nombre'] ?? '';
+            $apellido = $_POST['apellido'] ?? '';
+            $documento = trim($_POST['documento'] ?? '');
+            $telefono = $_POST['telefono'] ?? '';
+            $correo = $_POST['correo'] ?? '';
+            $contrasena = trim($_POST['contrasena'] ?? '');
+            
+            // Validaciones básicas
+            if (empty($nombre) || empty($apellido) || empty($documento) || empty($correo)) {
+                $_SESSION['flash_error'] = 'Por favor, complete todos los campos obligatorios.';
+                $this->redirect('dashboard/index#pills-fichas');
+                return;
+            }
+
+            // Crear el usuario
+            $data = [
+                'nombre' => $nombre,
+                'apellido' => $apellido,
+                'documento' => $documento,
+                'telefono' => $telefono,
+                'correo' => $correo,
+                'titulacion' => 'Aprendiz', // Por defecto para aprendices creados aquí
+                'usuario' => $documento,
+                'contrasena' => !empty($contrasena) ? password_hash($contrasena, PASSWORD_BCRYPT) : ''
+            ];
+
+            if ($this->usuarioModel->create($data)) {
+                $db = Database::getInstance();
+                $id_usuario = $db->lastInsertId();
+                
+                // Buscar el ID del rol "Aprendiz"
+                $rolModel = $this->model('Rol');
+                $roles = $rolModel->all();
+                $id_rol_aprendiz = 0;
+                foreach ($roles as $r) {
+                    if ($r->nombre_rol === 'Aprendiz') {
+                        $id_rol_aprendiz = $r->id_rol;
+                        break;
+                    }
+                }
+                
+                // Asignar rol
+                if ($id_rol_aprendiz > 0) {
+                    $usuarioRolModel = $this->model('UsuarioRol');
+                    $usuarioRolModel->create($id_usuario, $id_rol_aprendiz);
+                }
+                
+                // Matricular en la ficha
+                if ($this->fichaAprendizModel->create($id_usuario, $numero_ficha)) {
+                    $_SESSION['flash_success'] = 'Aprendiz creado y matriculado exitosamente en la ficha.';
+                } else {
+                    $_SESSION['flash_error'] = 'Usuario creado, pero hubo un error al matricularlo en la ficha.';
+                }
+            } else {
+                $_SESSION['flash_error'] = 'Error al registrar el usuario en el sistema. Es posible que el documento ya exista.';
+            }
+            $this->redirect('dashboard/index#pills-fichas');
+        }
+    }
+
+    /**
+     * Matricular un aprendiz individualmente desde el index
+     */
+    public function inscribirAprendizIndex() {
+        $this->requireRol('Coordinador');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $numero_ficha = $_POST['numero_ficha'] ?? 0;
+            $id_usuario_aprendiz = $_POST['id_usuario_aprendiz'] ?? 0;
+
+            if ($this->fichaAprendizModel->create($id_usuario_aprendiz, $numero_ficha)) {
+                $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
+            } else {
+                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha.';
+            }
+            $this->redirect('dashboard/index#pills-fichas');
+        }
+    }
+
+    /**
+     * Carga masiva de aprendices vía CSV
+     */
+    public function inscribirMasivoCSV() {
+        $this->requireRol('Coordinador');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
+            $numero_ficha = $_POST['numero_ficha'] ?? 0;
+            $file = $_FILES['archivo_csv']['tmp_name'];
+            
+            if (!$file) {
+                $_SESSION['flash_error'] = 'Debe subir un archivo CSV.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
+            $handle = fopen($file, 'r');
+            if ($handle === false) {
+                $_SESSION['flash_error'] = 'No se pudo leer el archivo CSV.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
+            $db = Database::getInstance();
+            $db->beginTransaction();
+
+            try {
+                $fila = 0;
+                while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                    $fila++;
+                    $documento = trim($data[0]);
+                    if (empty($documento)) continue;
+
+                    $usuario = $this->usuarioModel->findByDocumento($documento);
+                    
+                    if (!$usuario) {
+                        throw new Exception("El aprendiz con documento $documento no existe en el sistema (Fila $fila).");
+                    }
+
+                    $inscrito = $this->fichaAprendizModel->create($usuario->id_usuario, $numero_ficha);
+                    if (!$inscrito) {
+                        throw new Exception("El aprendiz con documento $documento ya se encuentra inscrito o hubo un error (Fila $fila).");
+                    }
+                }
+                fclose($handle);
+                $db->commit();
+                $_SESSION['flash_success'] = 'Carga masiva completada con éxito.';
+            } catch (Exception $e) {
+                $db->rollBack();
+                if ($handle) fclose($handle);
+                $_SESSION['flash_error'] = 'Carga Masiva Cancelada: ' . $e->getMessage();
+            }
+            
+            $this->redirect('dashboard/index#pills-fichas');
+        }
+    }
 }
+

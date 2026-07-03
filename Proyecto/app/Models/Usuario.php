@@ -42,6 +42,17 @@ class Usuario {
     }
 
     /**
+     * Obtener un usuario por documento
+     * @param string $documento
+     * @return object|false
+     */
+    public function findByDocumento($documento) {
+        $this->db->query("SELECT * FROM usuarios WHERE documento = :documento");
+        $this->db->bind(':documento', $documento);
+        return $this->db->single();
+    }
+
+    /**
      * Crear un nuevo usuario
      * @param array $data
      * @return bool

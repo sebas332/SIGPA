@@ -1,16 +1,18 @@
 <div class="container-fluid px-0">
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
-            <a href="<?= URLROOT; ?>/index.php?route=fichas/index" class="btn btn-outline-secondary btn-sm mb-3 shadow-sm">
-                <i class="fa-solid fa-arrow-left me-2"></i> Volver a Fichas
-            </a>
             <h2 class="fw-bold text-dark mb-1">Detalle de Ficha: <span class="text-primary"><?= $ficha->numero_ficha; ?></span></h2>
             <p class="text-muted small mb-0"><?= $ficha->programa_nombre; ?> | Jornada <span class="badge bg-dark ms-1"><?= $ficha->jornada_nombre; ?></span></p>
         </div>
         <?php if ($current_role === 'Coordinador'): ?>
-            <button type="button" class="btn btn-success shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalInscribirAprendiz">
-                <i class="fa-solid fa-user-plus me-2"></i> Matricular Aprendiz
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-warning shadow-sm fw-medium text-dark" data-bs-toggle="modal" data-bs-target="#modalEditarFicha">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> Editar Ficha
+                </button>
+                <button type="button" class="btn btn-danger shadow-sm fw-medium btn-delete-ficha" data-url="<?= URLROOT; ?>/index.php?route=fichas/delete&id=<?= $ficha->numero_ficha; ?>">
+                    <i class="fa-solid fa-trash me-2"></i> Eliminar Ficha
+                </button>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -178,4 +180,158 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Editar Ficha -->
+<div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-labelledby="modalEditarFichaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-warning text-dark p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalEditarFichaLabel"><i class="fa-solid fa-pen-to-square me-2"></i>Editar Ficha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="<?= URLROOT; ?>/index.php?route=fichas/update" method="POST">
+                <input type="hidden" name="from_show" value="1">
+                <input type="hidden" name="numero_ficha_original" value="<?= $ficha->numero_ficha; ?>">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="numero_ficha" class="form-label fw-medium text-secondary">Número de Ficha</label>
+                            <input type="number" class="form-control form-control-lg" id="numero_ficha" name="numero_ficha" value="<?= $ficha->numero_ficha; ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cantidad_estudiantes" class="form-label fw-medium text-secondary">Cantidad Estudiantes</label>
+                            <input type="number" class="form-control form-control-lg" id="cantidad_estudiantes" name="cantidad_estudiantes" value="<?= $ficha->cantidad_estudiantes; ?>" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="id_programa" class="form-label fw-medium text-secondary">Programa de Formación</label>
+                            <select class="form-select form-select-lg" id="id_programa" name="id_programa" required>
+                                <?php foreach ($programas as $prog): ?>
+                                    <option value="<?= $prog->id_programa; ?>" <?= ($prog->id_programa == $ficha->id_programa) ? 'selected' : ''; ?>>
+                                        <?= $prog->nombre . ' (' . $prog->codigo . ')'; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_usuario_instructor_lider" class="form-label fw-medium text-secondary">Instructor Líder</label>
+                            <select class="form-select form-select-lg" id="id_usuario_instructor_lider" name="id_usuario_instructor_lider" required>
+                                <?php foreach ($instructores as $inst): ?>
+                                    <option value="<?= $inst->id_usuario; ?>" <?= ($inst->id_usuario == $ficha->id_usuario_instructor_lider) ? 'selected' : ''; ?>>
+                                        <?= $inst->nombre . ' ' . $inst->apellido; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_jornada" class="form-label fw-medium text-secondary">Jornada</label>
+                            <select class="form-select form-select-lg" id="id_jornada" name="id_jornada" required>
+                                <?php foreach ($jornadas as $jor): ?>
+                                    <option value="<?= $jor->id_jornada; ?>" <?= ($jor->id_jornada == $ficha->id_jornada) ? 'selected' : ''; ?>>
+                                        <?= $jor->nombre; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label fw-medium text-secondary">Fecha Inicio</label>
+                            <input type="date" class="form-control form-control-lg" id="fecha_inicio" name="fecha_inicio" value="<?= $ficha->fecha_inicio; ?>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_practicas" class="form-label fw-medium text-secondary">Fecha Prácticas</label>
+                            <input type="date" class="form-control form-control-lg" id="fecha_practicas" name="fecha_practicas" value="<?= $ficha->fecha_practicas; ?>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label fw-medium text-secondary">Fecha Fin</label>
+                            <input type="date" class="form-control form-control-lg" id="fecha_fin" name="fecha_fin" value="<?= $ficha->fecha_fin; ?>" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer p-4 border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold shadow-sm text-dark"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const URL_ROOT = '<?= URLROOT; ?>';
+    const deleteBtn = document.querySelector('.btn-delete-ficha');
+    
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function () {
+            const deleteUrl = this.getAttribute('data-url');
+            
+            Swal.fire({
+                title: '¿Eliminar Ficha?',
+                text: "Esta acción no se puede deshacer y puede afectar la información asociada.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fa-solid fa-trash"></i> Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = deleteUrl;
+                }
+            });
+        });
+    }
+
+    // Interceptar el formulario de Editar para manejar la respuesta JSON
+    const formEditarFicha = document.querySelector('#modalEditarFicha form');
+    if (formEditarFicha) {
+        formEditarFicha.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            formData.append('is_ajax', '1');
+            
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            const btnHtml = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btnSubmit.disabled = true;
+
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Cerrar el modal
+                    const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha'));
+                    if (modalInst) modalInst.hide();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Ficha Actualizada',
+                        text: 'Recargando información...',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = `${URL_ROOT}/index.php?route=fichas/show&id=${result.data.numero_ficha}`;
+                    });
+                } else {
+                    Swal.fire('Error', result.message || 'Error al actualizar', 'error');
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                Swal.fire('Error de Conexión', 'El servidor no respondió a tiempo.', 'error');
+            } finally {
+                btnSubmit.innerHTML = btnHtml;
+                btnSubmit.disabled = false;
+            }
+        });
+    }
+});
+</script>
 <?php endif; ?>

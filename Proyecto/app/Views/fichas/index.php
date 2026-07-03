@@ -59,9 +59,16 @@
                                         <i class="fa-solid fa-flag-checkered me-1"></i> <?= $ficha->fecha_fin; ?>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $ficha->numero_ficha; ?>" class="btn btn-outline-primary btn-sm rounded-3 shadow-sm">
-                                            <i class="fa-solid fa-eye me-1"></i> Ver Detalle
-                                        </a>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $ficha->numero_ficha; ?>" class="btn btn-outline-primary btn-sm rounded-3 shadow-sm">
+                                                <i class="fa-solid fa-eye me-1"></i> Ver Detalle
+                                            </a>
+                                            <?php if ($current_role === 'Coordinador'): ?>
+                                                <button type="button" class="btn btn-success btn-sm rounded-3 shadow-sm btn-gestionar-aprendices" data-ficha="<?= $ficha->numero_ficha; ?>" data-bs-toggle="modal" data-bs-target="#modalGestionarAprendices">
+                                                    <i class="fa-solid fa-user-plus me-1"></i> Gestionar Aprendices
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -142,4 +149,83 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Gestionar Aprendices -->
+<div class="modal fade" id="modalGestionarAprendices" tabindex="-1" aria-labelledby="modalGestionarAprendicesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-success text-white p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalGestionarAprendicesLabel"><i class="fa-solid fa-user-graduate me-2"></i>Gestionar Aprendices</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="nav nav-tabs nav-fill bg-light border-bottom-0" id="gestionarTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-medium py-3" id="individual-tab" data-bs-toggle="tab" data-bs-target="#individual" type="button" role="tab" aria-controls="individual" aria-selected="true"><i class="fa-solid fa-user-plus me-2"></i>Carga Individual</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-medium py-3" id="masiva-tab" data-bs-toggle="tab" data-bs-target="#masiva" type="button" role="tab" aria-controls="masiva" aria-selected="false"><i class="fa-solid fa-file-csv me-2"></i>Carga Masiva CSV</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-4" id="gestionarTabsContent">
+                    <!-- Tab Individual -->
+                    <div class="tab-pane fade show active" id="individual" role="tabpanel" aria-labelledby="individual-tab">
+                        <form action="<?= URLROOT; ?>/index.php?route=fichas/inscribirAprendizIndex" method="POST">
+                            <input type="hidden" name="numero_ficha" class="input-ficha-id">
+                            <div class="mb-3">
+                                <label for="id_usuario_aprendiz" class="form-label fw-medium text-secondary">Seleccionar Aprendiz</label>
+                                <select class="form-select form-select-lg" id="id_usuario_aprendiz" name="id_usuario_aprendiz" required>
+                                    <option value="">Buscar o seleccionar aprendiz...</option>
+                                    <?php if(isset($candidatos)): ?>
+                                        <?php foreach ($candidatos as $cand): ?>
+                                            <option value="<?= $cand->id_usuario; ?>"><?= $cand->documento . ' - ' . $cand->nombre . ' ' . $cand->apellido; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-success fw-bold shadow-sm py-2">Matricular Aprendiz</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Tab Masiva -->
+                    <div class="tab-pane fade" id="masiva" role="tabpanel" aria-labelledby="masiva-tab">
+                        <form action="<?= URLROOT; ?>/index.php?route=fichas/inscribirMasivoCSV" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="numero_ficha" class="input-ficha-id">
+                            <div class="alert alert-info small rounded-3">
+                                <i class="fa-solid fa-circle-info me-2"></i> El archivo CSV debe contener una columna (idealmente sin encabezados) donde cada fila sea el <strong>Documento</strong> del aprendiz.
+                            </div>
+                            <div class="mb-3">
+                                <label for="archivo_csv" class="form-label fw-medium text-secondary">Archivo CSV</label>
+                                <input class="form-control form-control-lg" type="file" id="archivo_csv" name="archivo_csv" accept=".csv" required>
+                            </div>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-dark fw-bold shadow-sm py-2"><i class="fa-solid fa-upload me-2"></i>Procesar Archivo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Pasar el ID de la ficha al modal cuando se hace clic en "Gestionar Aprendices"
+    var modalGestionar = document.getElementById('modalGestionarAprendices');
+    if (modalGestionar) {
+        modalGestionar.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var fichaId = button.getAttribute('data-ficha');
+            
+            // Actualizar todos los inputs hidden con la clase 'input-ficha-id'
+            var inputs = modalGestionar.querySelectorAll('.input-ficha-id');
+            inputs.forEach(function(input) {
+                input.value = fichaId;
+            });
+        });
+    }
+});
+</script>
 <?php endif; ?>
