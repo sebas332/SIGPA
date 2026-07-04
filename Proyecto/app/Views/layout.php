@@ -151,9 +151,16 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     $avatarUrl = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop';
     if ($current_role === 'Instructor') $avatarUrl = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=120&auto=format&fit=crop';
     if ($current_role === 'Aprendiz') $avatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop';
-    $profileDirectory = dirname(__DIR__, 2) . '/public/uploads/profiles';
-    $profilePhotos = glob($profileDirectory . '/user_' . (int) $_SESSION['user_id'] . '.*') ?: [];
-    if (!empty($profilePhotos)) $avatarUrl = ASSETROOT . '/uploads/profiles/' . rawurlencode(basename($profilePhotos[0])) . '?v=' . filemtime($profilePhotos[0]);
+    $db = Database::getInstance();
+    $db->query("SELECT foto FROM usuarios WHERE id_usuario = :id");
+    $db->bind(':id', (int) $_SESSION['user_id']);
+    $userFotoRow = $db->single();
+    if ($userFotoRow && !empty($userFotoRow->foto)) {
+        $filePath = dirname(__DIR__, 2) . '/public/uploads/profile/' . $userFotoRow->foto;
+        if (is_file($filePath)) {
+            $avatarUrl = ASSETROOT . '/uploads/profile/' . rawurlencode($userFotoRow->foto) . '?v=' . filemtime($filePath);
+        }
+    }
     
     $menus = [
         'Coordinador' => [
@@ -233,7 +240,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
             <a class="sga-menu-link logout mt-auto" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Cerrar sesión</span></a>
         </nav>
         <a class="sga-sidebar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index">
-            <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
+            <img class="sga-sidebar-avatar-img" src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
             <span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span>
         </a>
     </aside>
@@ -253,7 +260,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 <button class="sga-topbar-button" type="button" title="Ayuda">
                     <i class="fa-regular fa-circle-question"></i>
                 </button>
-                <a class="sga-topbar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index"><img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Perfil"><span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span></a>
+                 <a class="sga-topbar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index"><img class="sga-topbar-avatar-img" src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Perfil"><span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span></a>
             </div>
         </header>
         <main class="sga-content">

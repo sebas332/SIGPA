@@ -444,7 +444,11 @@ if ($ficha->fecha_fin === '1970-01-01') {
                         ?>
                             <div class="aprendiz-row">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar-initials-large"><?= $iniciales; ?></div>
+                                    <?php if (!empty($ap->foto) && is_file(dirname(__DIR__, 2) . '/public/uploads/profile/' . $ap->foto)): ?>
+                                        <img src="<?= ASSETROOT; ?>/uploads/profile/<?= rawurlencode($ap->foto); ?>" alt="Foto" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="avatar-initials-large"><?= $iniciales; ?></div>
+                                    <?php endif; ?>
                                     <div>
                                         <div class="aprendiz-name"><?= htmlspecialchars($ap->nombre . ' ' . $ap->apellido); ?></div>
                                         <div class="aprendiz-meta">Doc: <?= htmlspecialchars($ap->documento ?? 'N/A'); ?> • <?= htmlspecialchars($ap->correo); ?></div>

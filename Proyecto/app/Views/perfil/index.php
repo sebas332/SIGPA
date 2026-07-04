@@ -644,23 +644,115 @@ document.addEventListener("DOMContentLoaded", function () {
     // Hide standard bootstrap alerts if they occur
     document.querySelectorAll('.alert-dismissible').forEach(el => el.style.display = 'none');
 
-    // 1. Image Preview & Validation
+    // 1. Image Preview & Validation & AJAX Upload
     const fotoInput = document.getElementById('foto');
     if (fotoInput) {
         fotoInput.addEventListener('change', function () {
             const file = this.files && this.files[0];
             if (!file) return;
-            if (file.size > 3 * 1024 * 1024) {
+
+            // Validar extensión/tipo
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Imagen muy grande',
-                    text: 'La fotografía no puede superar los 3 MB.',
+                    icon: 'error',
+                    title: 'Formato no permitido',
+                    text: 'Solo se permiten imágenes en formato JPG, JPEG, PNG o WEBP.',
                     confirmButtonColor: '#00A356'
                 });
                 this.value = '';
                 return;
             }
-            document.getElementById('profilePreview').src = URL.createObjectURL(file);
+
+            // Validar tamaño (máximo 5 MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Imagen muy grande',
+                    text: 'La fotografía no puede superar los 5 MB.',
+                    confirmButtonColor: '#00A356'
+                });
+                this.value = '';
+                return;
+            }
+
+            // Crear objeto URL temporal para la previsualización
+            const objectUrl = URL.createObjectURL(file);
+
+            // Confirmar y subir mediante SweetAlert2
+            Swal.fire({
+                title: '¿Confirmar nueva foto de perfil?',
+                text: '¿Deseas guardar esta imagen como tu nueva foto de perfil?',
+                imageUrl: objectUrl,
+                imageWidth: 150,
+                imageHeight: 150,
+                imageAlt: 'Vista previa de la foto',
+                showCancelButton: true,
+                confirmButtonColor: '#00A356',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Subir vía AJAX
+                    const formData = new FormData();
+                    formData.append('foto', file);
+
+                    Swal.fire({
+                        title: 'Subiendo fotografía...',
+                        text: 'Por favor espera un momento.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch('<?= URLROOT; ?>/index.php?route=perfil/uploadFotoAjax', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Actualizar la foto en toda la interfaz en tiempo real
+                            document.querySelectorAll('.sga-sidebar-avatar-img, .sga-topbar-avatar-img, #profilePreview, .banner-welcome-avatar-img').forEach(img => {
+                                img.src = data.newUrl;
+                            });
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Guardada!',
+                                text: 'Tu foto de perfil se ha actualizado correctamente.',
+                                confirmButtonColor: '#00A356',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al subir',
+                                text: data.message || 'Hubo un error procesando tu imagen en el servidor.',
+                                confirmButtonColor: '#00A356'
+                            });
+                        }
+                        fotoInput.value = '';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de red',
+                            text: 'No se pudo establecer comunicación con el servidor.',
+                            confirmButtonColor: '#00A356'
+                        });
+                        fotoInput.value = '';
+                    });
+                } else {
+                    // Limpiar el input si cancela
+                    fotoInput.value = '';
+                }
+            });
         });
     }
 

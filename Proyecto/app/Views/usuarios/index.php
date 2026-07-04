@@ -60,9 +60,13 @@
                             <tr>
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-circle bg-primary-subtle text-primary fw-bold me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%;">
-                                            <?= substr($u->nombre, 0, 1); ?>
-                                        </div>
+                                        <?php if (!empty($u->foto) && is_file(dirname(__DIR__, 2) . '/public/uploads/profile/' . $u->foto)): ?>
+                                            <img src="<?= ASSETROOT; ?>/uploads/profile/<?= rawurlencode($u->foto); ?>" alt="Foto" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" class="me-2">
+                                        <?php else: ?>
+                                            <div class="avatar-circle bg-primary-subtle text-primary fw-bold me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%;">
+                                                <?= substr($u->nombre, 0, 1); ?>
+                                            </div>
+                                        <?php endif; ?>
                                         <div>
                                             <div class="fw-bold text-dark"><?= $u->nombre . ' ' . $u->apellido; ?></div>
                                             <span class="text-muted small"><?= $u->correo; ?></span>

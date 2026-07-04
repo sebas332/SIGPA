@@ -552,8 +552,18 @@
                 <!-- Banner de bienvenida verde esmeralda con el perfil flotante -->
                 <?php
                 $avatarUrlWelcome = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120&auto=format&fit=crop';
-                $profilePhotosWelcome = glob(dirname(__DIR__, 2) . '/public/uploads/profiles/user_' . (int)$_SESSION['user_id'] . '.*') ?: [];
-                if (!empty($profilePhotosWelcome)) $avatarUrlWelcome = ASSETROOT . '/uploads/profiles/' . rawurlencode(basename($profilePhotosWelcome[0])) . '?v=' . filemtime($profilePhotosWelcome[0]);
+                if ($current_role === 'Instructor') $avatarUrlWelcome = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=120&auto=format&fit=crop';
+                if ($current_role === 'Aprendiz') $avatarUrlWelcome = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop';
+                $db = Database::getInstance();
+                $db->query("SELECT foto FROM usuarios WHERE id_usuario = :id");
+                $db->bind(':id', (int) $_SESSION['user_id']);
+                $userFotoRow = $db->single();
+                if ($userFotoRow && !empty($userFotoRow->foto)) {
+                    $filePath = dirname(__DIR__, 2) . '/public/uploads/profile/' . $userFotoRow->foto;
+                    if (is_file($filePath)) {
+                        $avatarUrlWelcome = ASSETROOT . '/uploads/profile/' . rawurlencode($userFotoRow->foto) . '?v=' . filemtime($filePath);
+                    }
+                }
                 ?>
                 <div class="banner-welcome d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
                     <div>
@@ -562,7 +572,7 @@
                         <p>Desde este portal tienes acceso total a la planeación curricular, asignación de instructores líderes, control de novedades y auditoría de asistencia institucional con un nivel óptimo de control.</p>
                     </div>
                     <div class="banner-user-card shadow-sm mt-3 mt-md-0 ms-md-4">
-                        <img src="<?= htmlspecialchars($avatarUrlWelcome, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
+                        <img class="banner-welcome-avatar-img" src="<?= htmlspecialchars($avatarUrlWelcome, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
                         <span>
                             <small>Coordinador Académico</small>
                             <strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong>

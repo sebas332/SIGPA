@@ -170,10 +170,10 @@ class PerfilController extends BaseController {
 
     private function saveProfilePhoto($userId, $file) {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('No fue posible cargar la fotografía.');
+            return;
         }
-        if (($file['size'] ?? 0) > 3 * 1024 * 1024) {
-            throw new RuntimeException('La fotografía no puede superar los 3 MB.');
+        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            throw new RuntimeException('La fotografía no puede superar los 5 MB.');
         }
 
         $finfo = new finfo(FILEINFO_MIME_TYPE);
@@ -183,25 +183,130 @@ class PerfilController extends BaseController {
             throw new RuntimeException('Utiliza una imagen JPG, PNG o WEBP.');
         }
 
-        $directory = dirname(__DIR__, 2) . '/public/uploads/profiles';
+        $directory = dirname(__DIR__, 2) . '/public/uploads/profile';
         if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
             throw new RuntimeException('No fue posible preparar el almacenamiento de imágenes.');
         }
 
-        foreach (glob($directory . '/user_' . (int) $userId . '.*') ?: [] as $oldPhoto) {
-            if (is_file($oldPhoto)) unlink($oldPhoto);
+        // Obtener usuario para eliminar su foto anterior
+        $db = Database::getInstance();
+        $db->query("SELECT foto FROM usuarios WHERE id_usuario = :id");
+        $db->bind(':id', (int) $userId);
+        $userObj = $db->single();
+
+        if ($userObj && !empty($userObj->foto)) {
+            $oldPath = $directory . '/' . $userObj->foto;
+            if (is_file($oldPath)) {
+                unlink($oldPath);
+            }
         }
 
-        $destination = $directory . '/user_' . (int) $userId . '.' . $extensions[$mime];
+        $newFileName = 'profile_' . (int) $userId . '_' . uniqid() . '.' . $extensions[$mime];
+        $destination = $directory . '/' . $newFileName;
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             throw new RuntimeException('No fue posible guardar la fotografía.');
         }
+
+        // Actualizar en base de datos
+        $db->query("UPDATE usuarios SET foto = :foto WHERE id_usuario = :id");
+        $db->bind(':foto', $newFileName);
+        $db->bind(':id', (int) $userId);
+        $db->execute();
     }
 
     private function profilePhotoUrl($userId) {
-        $directory = dirname(__DIR__, 2) . '/public/uploads/profiles';
-        $matches = glob($directory . '/user_' . (int) $userId . '.*') ?: [];
-        return !empty($matches) ? ASSETROOT . '/uploads/profiles/' . rawurlencode(basename($matches[0])) . '?v=' . filemtime($matches[0]) : null;
+        $usuario = $this->usuarioModel->find((int) $userId);
+        if ($usuario && !empty($usuario->foto)) {
+            $filePath = dirname(__DIR__, 2) . '/public/uploads/profile/' . $usuario->foto;
+            if (is_file($filePath)) {
+                return ASSETROOT . '/uploads/profile/' . rawurlencode($usuario->foto) . '?v=' . filemtime($filePath);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Endpoint AJAX para subir la foto de perfil inmediatamente.
+     */
+    public function uploadFotoAjax() {
+        $this->requireLogin();
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user_id'];
+        $file = $_FILES['foto'] ?? null;
+
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => 'No se recibió ningún archivo o hubo un error al subirlo.']);
+            exit;
+        }
+
+        // Validar tamaño (máximo 5 MB)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            echo json_encode(['success' => false, 'message' => 'La imagen no puede superar los 5 MB.']);
+            exit;
+        }
+
+        // Validar tipo MIME
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        $extensions = [
+            'image/jpeg' => 'jpg',
+            'image/jpg'  => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp'
+        ];
+
+        if (!isset($extensions[$mime])) {
+            echo json_encode(['success' => false, 'message' => 'Formato no permitido. Utilice JPG, JPEG, PNG o WEBP.']);
+            exit;
+        }
+
+        // Carpeta destino
+        $directory = dirname(__DIR__, 2) . '/public/uploads/profile';
+        if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
+            echo json_encode(['success' => false, 'message' => 'No fue posible crear la carpeta de almacenamiento.']);
+            exit;
+        }
+
+        // Obtener usuario para eliminar su foto anterior si existe
+        $db = Database::getInstance();
+        $db->query("SELECT foto FROM usuarios WHERE id_usuario = :id");
+        $db->bind(':id', $userId);
+        $userObj = $db->single();
+
+        if ($userObj && !empty($userObj->foto)) {
+            $oldPath = $directory . '/' . $userObj->foto;
+            if (is_file($oldPath)) {
+                unlink($oldPath);
+            }
+        }
+
+        // Generar nombre único para evitar duplicados
+        $newFileName = 'profile_' . $userId . '_' . uniqid() . '.' . $extensions[$mime];
+        $destination = $directory . '/' . $newFileName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            echo json_encode(['success' => false, 'message' => 'No fue posible guardar el archivo en el servidor.']);
+            exit;
+        }
+
+        // Actualizar en base de datos
+        $db->query("UPDATE usuarios SET foto = :foto WHERE id_usuario = :id");
+        $db->bind(':foto', $newFileName);
+        $db->bind(':id', $userId);
+
+        if ($db->execute()) {
+            $newUrl = ASSETROOT . '/uploads/profile/' . rawurlencode($newFileName) . '?v=' . time();
+            echo json_encode(['success' => true, 'newUrl' => $newUrl]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar la base de datos.']);
+        }
+        exit;
     }
 
     /**
