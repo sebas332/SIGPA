@@ -91,16 +91,20 @@ class DashboardController extends BaseController {
             
             $todosUsuarios = $this->usuarioModel->all();
             $instructores = [];
+            $candidatos = [];
             foreach ($todosUsuarios as $u) {
                 $roles = $this->usuarioModel->getRoles($u->id_usuario);
                 foreach ($roles as $r) {
                     if ($r->nombre_rol === 'Instructor') {
                         $instructores[] = $u;
-                        break;
+                    }
+                    if ($r->nombre_rol === 'Aprendiz') {
+                        $candidatos[] = $u;
                     }
                 }
             }
             $data['instructores'] = $instructores;
+            $data['candidatos'] = $candidatos;
 
             // Cargar datos para la pestaña de Gestión de Usuarios y Roles
             $data['usuarios'] = $todosUsuarios;

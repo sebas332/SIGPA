@@ -16,7 +16,7 @@ class FichaAprendiz {
      * @return array
      */
     public function getAprendicesPorFicha($numero_ficha) {
-        $this->db->query("SELECT fa.*, u.nombre, u.apellido, u.correo, u.telefono 
+        $this->db->query("SELECT fa.*, u.nombre, u.apellido, u.correo, u.telefono, u.documento 
                           FROM ficha_aprendiz fa 
                           INNER JOIN usuarios u ON fa.id_usuario_aprendiz = u.id_usuario 
                           WHERE fa.numero_ficha = :numero_ficha 

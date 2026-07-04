@@ -881,81 +881,7 @@
             
             <!-- PESTAÑA 1: FICHAS DE FORMACIÓN -->
             <div class="tab-pane fade" id="pills-fichas" role="tabpanel" aria-labelledby="pills-fichas-tab">
-                
-                <!-- Cabecera del Listado -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <div>
-                            <h5 class="fw-bold text-dark mb-1">Listado de Fichas de Formación</h5>
-                            <p class="text-muted small mb-0">Muestra los grupos de aprendices asignados a programas específicos.</p>
-                        </div>
-                        <button type="button" class="btn-new-ficha" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
-                            <i class="fa-solid fa-circle-plus"></i> Crear Nueva Ficha
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tabla de Fichas (Refactorizado) -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="tabla-fichas">
-                                <thead class="table-light text-secondary small text-uppercase py-3" style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;">
-                                    <tr>
-                                        <th class="ps-4 py-3">NO. FICHA</th>
-                                        <th class="py-3">PROGRAMA DE FORMACIÓN</th>
-                                        <th class="py-3">JORNADA</th>
-                                        <th class="py-3">INSTRUCTOR LÍDER</th>
-                                        <th class="py-3">APRENDICES</th>
-                                        <th class="text-end pe-4 py-3">ACCIONES</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($fichas)): ?>
-                                        <tr id="no-fichas-row">
-                                            <td colspan="6" class="text-center py-5 text-muted">
-                                                <i class="fa-solid fa-users-slash fa-2x mb-3 text-secondary"></i><br>
-                                                <h5 class="fw-bold">No hay fichas de formación activas</h5>
-                                                <p class="small mb-0">Utiliza el botón de Crear Nueva Ficha para agregar el primer grupo.</p>
-                                            </td>
-                                        </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($fichas as $f): ?>
-                                            <tr id="fila-ficha-<?= $f->numero_ficha; ?>">
-                                                <td class="ps-4 fw-bold text-primary fs-6 js-numero-ficha">
-                                                    <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $f->numero_ficha; ?>" class="text-decoration-none">
-                                                        <?= $f->numero_ficha; ?>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <div class="fw-bold text-dark js-programa"><?= $f->programa_nombre; ?></div>
-                                                    <div class="text-muted small js-fechas">Inicia: <?= $f->fecha_inicio ?? 'N/A'; ?> | Fin: <?= $f->fecha_fin ?? 'N/A'; ?></div>
-                                                </td>
-                                                <td><span class="badge bg-dark js-jornada"><?= $f->jornada_nombre ?? 'Tarde'; ?></span></td>
-                                                <td>
-                                                    <span class="text-secondary fw-medium js-instructor"><?= $f->instructor_nombre . ' ' . $f->instructor_apellido; ?></span>
-                                                </td>
-                                                <td><span class="badge bg-secondary-subtle text-secondary-emphasis px-3 py-1 js-estudiantes"><?= $f->cantidad_estudiantes; ?> aprendices</span></td>
-                                                <td class="text-end pe-4">
-                                                    <div class="d-flex justify-content-end gap-2">
-                                                        <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $f->numero_ficha; ?>" class="btn btn-sm btn-outline-secondary rounded-circle shadow-sm" title="Ver Detalles">
-                                                            <i class="fa-solid fa-eye"></i>
-                                                        </a>
-                                                        <?php if ($current_role === 'Coordinador'): ?>
-                                                            <button type="button" class="btn btn-sm btn-outline-success rounded-circle shadow-sm btn-gestionar-aprendices" data-ficha="<?= $f->numero_ficha; ?>" data-bs-toggle="modal" data-bs-target="#modalGestionarAprendices" title="Gestionar Aprendices">
-                                                                <i class="fa-solid fa-user-plus"></i>
-                                                            </button>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <?php include APPROOT . '/Views/fichas/index.php'; ?>
             </div>
 
             <!-- PESTAÑA NUEVA: PROGRAMAS DE FORMACIÓN -->
@@ -2439,74 +2365,7 @@
 </div>
 
 <!-- MODAL EDITAR FICHA -->
-<div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light px-4 py-4">
-                <h5 class="modal-title fw-bold text-dark">Editar Ficha</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="<?= URLROOT; ?>/index.php?route=fichas/update" method="POST">
-                <div class="modal-body px-4 py-4 px-md-5">
-                    <input type="hidden" name="numero_ficha_original" id="edit_numero_ficha_original">
-                    <div class="row g-4 mb-4">
-                        <div class="col-12 col-md-6">
-                            <label class="text-muted small fw-bold mb-2">Número de Ficha</label>
-                            <input type="number" name="numero_ficha" id="edit_numero_ficha" class="form-control shadow-sm" required>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="text-muted small fw-bold mb-2">Programa de Formación</label>
-                            <select name="id_programa" id="edit_id_programa" class="form-select shadow-sm" required>
-                                <?php if(isset($programas)): foreach ($programas as $prog): ?>
-                                    <option value="<?= $prog->id_programa; ?>"><?= $prog->nombre; ?></option>
-                                <?php endforeach; endif; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-4 mb-4">
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Instructor Líder</label>
-                            <select name="id_usuario_instructor_lider" id="edit_instructor_lider" class="form-select shadow-sm" required>
-                                <?php if(isset($instructores)): foreach ($instructores as $inst): ?>
-                                    <option value="<?= $inst->id_usuario; ?>"><?= $inst->nombre . ' ' . $inst->apellido; ?></option>
-                                <?php endforeach; endif; ?>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Jornada</label>
-                            <select name="id_jornada" id="edit_jornada" class="form-select shadow-sm" required>
-                                <?php if(isset($jornadas)): foreach ($jornadas as $jor): ?>
-                                    <option value="<?= $jor->id_jornada; ?>"><?= $jor->nombre; ?></option>
-                                <?php endforeach; endif; ?>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Cant. Estudiantes</label>
-                            <input type="number" name="cantidad_estudiantes" id="edit_cantidad_estudiantes" class="form-control shadow-sm" required>
-                        </div>
-                    </div>
-                    <div class="row g-4 mb-4">
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Fecha Inicio</label>
-                            <input type="date" name="fecha_inicio" id="edit_fecha_inicio" class="form-control shadow-sm" required>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Fecha Prácticas</label>
-                            <input type="date" name="fecha_practicas" id="edit_fecha_practicas" class="form-control shadow-sm">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="text-muted small fw-bold mb-2">Fecha Fin</label>
-                            <input type="date" name="fecha_fin" id="edit_fecha_fin" class="form-control shadow-sm" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="submit" class="btn btn-primary rounded-pill">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 
 <!-- MODAL CREAR AMBIENTE -->
 <div class="modal fade" id="modalCrearAmbiente" tabindex="-1" aria-hidden="true">

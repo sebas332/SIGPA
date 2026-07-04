@@ -77,7 +77,7 @@ class FichaController extends BaseController {
         $ficha = $this->fichaModel->find($numero_ficha);
         if (!$ficha) {
             $_SESSION['flash_error'] = 'La ficha solicitada no existe.';
-            $this->redirect('fichas/index');
+            $this->redirect('dashboard/index#pills-fichas');
         }
 
         $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha);
@@ -88,17 +88,48 @@ class FichaController extends BaseController {
         $jornadas = $this->jornadaModel->all();
         
         $todosUsuarios = $this->usuarioModel->all();
+
+        // Obtener IDs de los aprendices ya matriculados
+        $matriculadosIds = array_map(function($ap) {
+            return (int) $ap->id_usuario_aprendiz;
+        }, $aprendices);
+
         $candidatos = [];
         $instructores = [];
         foreach ($todosUsuarios as $u) {
             $roles = $this->usuarioModel->getRoles($u->id_usuario);
             foreach ($roles as $r) {
                 if ($r->nombre_rol === 'Aprendiz') {
-                    $candidatos[] = $u;
+                    // Filtrar: únicamente aprendices que aún no pertenezcan a esa ficha
+                    if (!in_array((int)$u->id_usuario, $matriculadosIds)) {
+                        $candidatos[] = $u;
+                    }
                 }
                 if ($r->nombre_rol === 'Instructor') {
                     $instructores[] = $u;
                 }
+            }
+        }
+
+        // Métricas resumidas
+        $total_sesiones_programadas = 0;
+        $sesiones_realizadas = 0;
+        foreach ($programacion as $prog) {
+            $total_sesiones_programadas += (int) ($prog->total_sesiones ?? 0);
+            $sesiones_realizadas += (int) ($prog->sesiones_realizadas ?? 0);
+        }
+        $sesiones_pendientes = max(0, $total_sesiones_programadas - $sesiones_realizadas);
+        $porcentaje_avance = $total_sesiones_programadas > 0 ? round(($sesiones_realizadas / $total_sesiones_programadas) * 100) : 0;
+
+        // Extraer competencias y resultados asociados únicos
+        $competencias_asociadas = [];
+        $resultados_asociados = [];
+        foreach ($programacion as $prog) {
+            if (!empty($prog->competencia_nombre)) {
+                $competencias_asociadas[$prog->competencia_nombre] = true;
+            }
+            if (!empty($prog->ra_codigo)) {
+                $resultados_asociados[$prog->ra_codigo] = $prog->ra_descripcion;
             }
         }
 
@@ -111,7 +142,14 @@ class FichaController extends BaseController {
             'programas' => $programas,
             'jornadas' => $jornadas,
             'instructores' => $instructores,
-            'current_role' => $_SESSION['current_role'] ?? 'Aprendiz'
+            'current_role' => $_SESSION['current_role'] ?? 'Aprendiz',
+            // Métricas
+            'total_sesiones_programadas' => $total_sesiones_programadas,
+            'sesiones_realizadas' => $sesiones_realizadas,
+            'sesiones_pendientes' => $sesiones_pendientes,
+            'porcentaje_avance' => $porcentaje_avance,
+            'competencias_asociadas' => array_keys($competencias_asociadas),
+            'resultados_asociados' => $resultados_asociados
         ]);
     }
 
@@ -121,26 +159,98 @@ class FichaController extends BaseController {
     public function create() {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $numero_ficha = $_POST['numero_ficha'] ?? 0;
+            $cantidad_estudiantes = $_POST['cantidad_estudiantes'] ?? 0;
+            $fecha_inicio = $_POST['fecha_inicio'] ?? '';
+            $fecha_practicas = $_POST['fecha_practicas'] ?? '';
+            $fecha_fin = $_POST['fecha_fin'] ?? '';
+            $id_usuario_instructor_lider = $_POST['id_usuario_instructor_lider'] ?? 0;
+            $id_programa = $_POST['id_programa'] ?? 0;
+            $id_jornada = $_POST['id_jornada'] ?? 0;
+
+            $errors = [];
+            if (empty($numero_ficha) || $numero_ficha <= 0) {
+                $errors[] = "El número de ficha debe ser mayor a cero.";
+            } else {
+                if ($this->fichaModel->find($numero_ficha)) {
+                    $errors[] = "El número de ficha ya se encuentra registrado.";
+                }
+            }
+
+            if ($cantidad_estudiantes <= 0) {
+                $errors[] = "La cantidad de cupos debe ser mayor a cero.";
+            }
+
+            if (empty($id_programa)) {
+                $errors[] = "Debe seleccionar un programa de formación.";
+            } else {
+                if (!$this->programaModel->find($id_programa)) {
+                    $errors[] = "El programa de formación seleccionado no existe.";
+                }
+            }
+
+            if (empty($id_usuario_instructor_lider)) {
+                $errors[] = "Debe asignar un instructor líder.";
+            }
+
+            if (empty($id_jornada)) {
+                $errors[] = "Debe seleccionar la jornada.";
+            }
+
+            if (empty($fecha_inicio) || empty($fecha_practicas) || empty($fecha_fin)) {
+                $errors[] = "Todas las fechas son obligatorias.";
+            } else {
+                if ($fecha_inicio > $fecha_practicas) {
+                    $errors[] = "La fecha de inicio de prácticas no puede ser menor a la fecha de inicio.";
+                }
+                if ($fecha_practicas > $fecha_fin) {
+                    $errors[] = "La fecha de finalización no puede ser menor a la de prácticas.";
+                }
+            }
+
+            $is_ajax = isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest');
+
+            if (!empty($errors)) {
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => implode("<br>", $errors)]);
+                    exit;
+                } else {
+                    $_SESSION['flash_error'] = implode("<br>", $errors);
+                    $this->redirect('dashboard/index#pills-fichas');
+                }
+            }
+
             $data = [
-                'numero_ficha' => $_POST['numero_ficha'] ?? 0,
-                'cantidad_estudiantes' => $_POST['cantidad_estudiantes'] ?? 0,
-                'fecha_inicio' => $_POST['fecha_inicio'] ?? '',
-                'fecha_practicas' => $_POST['fecha_practicas'] ?? '',
-                'fecha_fin' => $_POST['fecha_fin'] ?? '',
-                'id_usuario_instructor_lider' => $_POST['id_usuario_instructor_lider'] ?? 0,
-                'id_programa' => $_POST['id_programa'] ?? 0,
-                'id_jornada' => $_POST['id_jornada'] ?? 0
+                'numero_ficha' => $numero_ficha,
+                'cantidad_estudiantes' => $cantidad_estudiantes,
+                'fecha_inicio' => $fecha_inicio,
+                'fecha_practicas' => $fecha_practicas,
+                'fecha_fin' => $fecha_fin,
+                'id_usuario_instructor_lider' => $id_usuario_instructor_lider,
+                'id_programa' => $id_programa,
+                'id_jornada' => $id_jornada
             ];
 
             if ($this->fichaModel->create($data)) {
                 $nuevaFicha = $this->fichaModel->find($data['numero_ficha']);
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'success', 'data' => $nuevaFicha]);
-                exit;
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'success', 'data' => $nuevaFicha]);
+                    exit;
+                } else {
+                    $_SESSION['flash_success'] = 'Ficha creada exitosamente.';
+                    $this->redirect('dashboard/index#pills-fichas');
+                }
             } else {
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error al crear la ficha en la base de datos.']);
-                exit;
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error al guardar en la base de datos.']);
+                    exit;
+                } else {
+                    $_SESSION['flash_error'] = 'Error al crear la ficha en la base de datos.';
+                    $this->redirect('dashboard/index#pills-fichas');
+                }
             }
         }
     }
@@ -154,10 +264,24 @@ class FichaController extends BaseController {
             $numero_ficha = $_POST['numero_ficha'] ?? 0;
             $id_usuario_aprendiz = $_POST['id_usuario_aprendiz'] ?? 0;
 
+            // Validar existencia de la ficha
+            $ficha = $this->fichaModel->find($numero_ficha);
+            if (!$ficha) {
+                $_SESSION['flash_error'] = 'La ficha no existe.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
+            // Validar cupo
+            $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha);
+            if (count($aprendices) >= $ficha->cantidad_estudiantes) {
+                $_SESSION['flash_error'] = 'No se pueden matricular más aprendices. Se ha alcanzado el límite de cupos autorizados (' . $ficha->cantidad_estudiantes . ').';
+                $this->redirect('fichas/show&id=' . $numero_ficha);
+            }
+
             if ($this->fichaAprendizModel->create($id_usuario_aprendiz, $numero_ficha)) {
                 $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
             } else {
-                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha.';
+                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha o supera el cupo.';
             }
             $this->redirect('fichas/show&id=' . $numero_ficha);
         }
@@ -172,9 +296,9 @@ class FichaController extends BaseController {
         $numero_ficha = $_GET['ficha'] ?? 0;
 
         if ($this->fichaAprendizModel->delete($id_ficha_aprendiz)) {
-            $_SESSION['flash_success'] = 'Aprendiz removido de la ficha exitosamente.';
+            $_SESSION['flash_success'] = 'Aprendiz desvinculado de la ficha exitosamente.';
         } else {
-            $_SESSION['flash_error'] = 'Error al remover al aprendiz.';
+            $_SESSION['flash_error'] = 'Error al desvincular al aprendiz.';
         }
         $this->redirect('fichas/show&id=' . $numero_ficha);
     }
@@ -186,26 +310,105 @@ class FichaController extends BaseController {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $numero_ficha_antiguo = $_POST['numero_ficha_original'] ?? 0;
+            $cantidad_estudiantes = $_POST['cantidad_estudiantes'] ?? 0;
+            $fecha_inicio = $_POST['fecha_inicio'] ?? '';
+            $fecha_practicas = $_POST['fecha_practicas'] ?? '';
+            $fecha_fin = $_POST['fecha_fin'] ?? '';
+            $id_usuario_instructor_lider = $_POST['id_usuario_instructor_lider'] ?? 0;
+            $id_programa = $_POST['id_programa'] ?? 0;
+            $id_jornada = $_POST['id_jornada'] ?? 0;
+
+            $errors = [];
+
+            if ($cantidad_estudiantes <= 0) {
+                $errors[] = "La cantidad de cupos debe ser mayor a cero.";
+            } else {
+                // Validar que no se reduzcan los cupos por debajo de los aprendices ya matriculados
+                $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha_antiguo);
+                if ($cantidad_estudiantes < count($aprendices)) {
+                    $errors[] = "No se puede reducir el cupo a $cantidad_estudiantes porque ya hay " . count($aprendices) . " aprendices matriculados.";
+                }
+            }
+
+            if (empty($id_programa)) {
+                $errors[] = "Debe seleccionar un programa de formación.";
+            }
+
+            if (empty($id_usuario_instructor_lider)) {
+                $errors[] = "Debe asignar un instructor líder.";
+            }
+
+            if (empty($id_jornada)) {
+                $errors[] = "Debe seleccionar la jornada.";
+            }
+
+            if (empty($fecha_inicio) || empty($fecha_practicas) || empty($fecha_fin)) {
+                $errors[] = "Todas las fechas son obligatorias.";
+            } else {
+                if ($fecha_inicio > $fecha_practicas) {
+                    $errors[] = "La fecha de inicio de prácticas no puede ser menor a la fecha de inicio.";
+                }
+                if ($fecha_practicas > $fecha_fin) {
+                    $errors[] = "La fecha de finalización no puede ser menor a la de prácticas.";
+                }
+            }
+
+            $is_ajax = isset($_POST['is_ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest');
+            $from_show = isset($_POST['from_show']) && $_POST['from_show'] == '1';
+
+            if (!empty($errors)) {
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => implode("<br>", $errors)]);
+                    exit;
+                } else {
+                    $_SESSION['flash_error'] = implode("<br>", $errors);
+                    if ($from_show) {
+                        $this->redirect('fichas/show&id=' . $numero_ficha_antiguo);
+                    } else {
+                        $this->redirect('dashboard/index#pills-fichas');
+                    }
+                }
+            }
+
             $data = [
-                'numero_ficha' => $_POST['numero_ficha'] ?? 0,
-                'cantidad_estudiantes' => $_POST['cantidad_estudiantes'] ?? 0,
-                'fecha_inicio' => $_POST['fecha_inicio'] ?? '',
-                'fecha_practicas' => $_POST['fecha_practicas'] ?? '',
-                'fecha_fin' => $_POST['fecha_fin'] ?? '',
-                'id_usuario_instructor_lider' => $_POST['id_usuario_instructor_lider'] ?? 0,
-                'id_programa' => $_POST['id_programa'] ?? 0,
-                'id_jornada' => $_POST['id_jornada'] ?? 0
+                'numero_ficha' => $numero_ficha_antiguo,
+                'cantidad_estudiantes' => $cantidad_estudiantes,
+                'fecha_inicio' => $fecha_inicio,
+                'fecha_practicas' => $fecha_practicas,
+                'fecha_fin' => $fecha_fin,
+                'id_usuario_instructor_lider' => $id_usuario_instructor_lider,
+                'id_programa' => $id_programa,
+                'id_jornada' => $id_jornada
             ];
 
             if ($this->fichaModel->update($numero_ficha_antiguo, $data)) {
-                $fichaActualizada = $this->fichaModel->find($data['numero_ficha']);
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'success', 'data' => $fichaActualizada]);
-                exit;
+                $fichaActualizada = $this->fichaModel->find($numero_ficha_antiguo);
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'success', 'data' => $fichaActualizada]);
+                    exit;
+                } else {
+                    $_SESSION['flash_success'] = 'Ficha actualizada exitosamente.';
+                    if ($from_show) {
+                        $this->redirect('fichas/show&id=' . $numero_ficha_antiguo);
+                    } else {
+                        $this->redirect('dashboard/index#pills-fichas');
+                    }
+                }
             } else {
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar la base de datos.']);
-                exit;
+                if ($is_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error al actualizar la ficha.']);
+                    exit;
+                } else {
+                    $_SESSION['flash_error'] = 'Error al actualizar la ficha.';
+                    if ($from_show) {
+                        $this->redirect('fichas/show&id=' . $numero_ficha_antiguo);
+                    } else {
+                        $this->redirect('dashboard/index#pills-fichas');
+                    }
+                }
             }
         }
     }
@@ -217,11 +420,39 @@ class FichaController extends BaseController {
         $this->requireRol('Coordinador');
         $id = $_GET['id'] ?? 0;
         if ($id > 0) {
+            // 1. Validar si tiene aprendices matriculados
+            $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($id);
+            if (count($aprendices) > 0) {
+                $_SESSION['flash_error'] = 'No se puede eliminar la ficha porque tiene ' . count($aprendices) . ' aprendices matriculados.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
+            // 2. Validar si tiene programaciones académicas activas
+            $programacion = $this->programacionModel->getByFicha($id);
+            if (count($programacion) > 0) {
+                $_SESSION['flash_error'] = 'No se puede eliminar la ficha porque tiene programaciones académicas activas.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
+            // 3. Validar si tiene asistencias registradas
+            $db = Database::getInstance();
+            $db->query("SELECT COUNT(*) as total FROM asistencia a 
+                        INNER JOIN programacion_academica pa ON a.id_programacion = pa.id_programacion 
+                        WHERE pa.numero_ficha = :numero_ficha");
+            $db->bind(':numero_ficha', $id);
+            $res = $db->single();
+            if ($res && $res->total > 0) {
+                $_SESSION['flash_error'] = 'No se puede eliminar la ficha porque tiene asistencias registradas.';
+                $this->redirect('dashboard/index#pills-fichas');
+            }
+
             if ($this->fichaModel->delete($id)) {
                 $_SESSION['flash_success'] = 'Ficha eliminada correctamente.';
             } else {
-                $_SESSION['flash_error'] = 'Error al eliminar la ficha. Asegúrese de que no tenga aprendices matriculados o sesiones programadas.';
+                $_SESSION['flash_error'] = 'Error al eliminar la ficha en la base de datos.';
             }
+        } else {
+            $_SESSION['flash_error'] = 'ID de ficha no válido.';
         }
         $this->redirect('dashboard/index#pills-fichas');
     }
