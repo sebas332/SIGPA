@@ -182,4 +182,14 @@ class Usuario {
         }
         return false;
     }
+
+    /**
+     * Verificar si un correo electrónico ya está registrado por otro usuario.
+     */
+    public function emailExistsForOtherUser($email, $userId) {
+        $this->db->query("SELECT id_usuario FROM usuarios WHERE correo = :correo AND id_usuario != :id LIMIT 1");
+        $this->db->bind(':correo', $email);
+        $this->db->bind(':id', $userId);
+        return $this->db->single() !== false;
+    }
 }

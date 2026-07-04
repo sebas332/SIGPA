@@ -203,8 +203,10 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
 <div class="sga-app">
     <aside class="sga-sidebar" id="sgaSidebar">
         <a class="sga-brand" href="<?= URLROOT; ?>/index.php?route=dashboard/index">
-            <span class="sga-brand-icon"><i class="fa-solid fa-box-open"></i></span>
-            <span><strong>InsideBox SGA</strong><small>Gestión Educativa Integral</small></span>
+            <span class="sga-brand-icon">
+                <img src="<?= ASSETROOT; ?>/logo-sigpa-icon.png" alt="SIGPA" style="width: 26px; height: 26px; object-fit: contain;">
+            </span>
+            <span class="sga-brand-text">SIGPA</span>
         </a>
         <label class="sga-menu-search"><i class="fa-solid fa-magnifying-glass"></i><input id="menuSearch" type="search" placeholder="Buscar en el sistema..."></label>
         <nav class="sga-menu" aria-label="Menú principal">

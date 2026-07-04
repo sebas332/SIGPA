@@ -122,8 +122,8 @@ body {
     flex-direction: column;
     width: 280px;
     padding: 1.5rem 1.25rem;
-    border-right: 1px solid var(--sga-border);
-    background-color: var(--sga-sidebar-bg);
+    border-right: 1px solid rgba(0, 163, 86, 0.25);
+    background: linear-gradient(to bottom, rgba(0, 163, 86, 0.18) 0%, rgba(0, 163, 86, 0.06) 100%);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.015);
 }
 
@@ -138,14 +138,20 @@ body {
 
 .sga-brand-icon {
     display: grid;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     place-items: center;
     border-radius: 12px;
-    background: var(--gradient-brand);
-    color: #ffffff;
-    font-size: 1.15rem;
-    box-shadow: 0 4px 10px rgba(57, 169, 0, 0.2);
+    background: #ffffff;
+    border: 1px solid rgba(0, 163, 86, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 163, 86, 0.08);
+}
+
+.sga-brand-text {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #00A356;
+    letter-spacing: -0.5px;
 }
 
 .sga-brand > span:last-child {
@@ -903,6 +909,8 @@ body {
     .sga-sidebar {
         transform: translateX(-105%);
         transition: transform 0.25s ease;
+        background: linear-gradient(to bottom, rgba(0, 163, 86, 0.20) 0%, rgba(0, 163, 86, 0.08) 100%) !important;
+        border-right: 1px solid rgba(0, 163, 86, 0.25) !important;
     }
     .sga-workspace {
         margin-left: 0;
