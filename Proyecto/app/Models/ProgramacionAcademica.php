@@ -215,4 +215,62 @@ class ProgramacionAcademica {
         
         return $filtradas;
     }
+
+    /**
+     * Valida conflictos antes de registrar o modificar una programación
+     * @param array $data
+     * @return string|null Mensaje del conflicto o null si no hay conflicto
+     */
+    public function getConflictMessage($data) {
+        // 1. Obtener sesiones asignadas para calcular total_sesiones y fecha fin
+        $this->db->query("SELECT sesiones_asignadas FROM resultado_aprendizaje WHERE id_resultado = :id_resultado");
+        $this->db->bind(':id_resultado', $data['id_resultado_aprendizaje']);
+        $res = $this->db->single();
+        if (!$res || (int)$res->sesiones_asignadas <= 0) {
+            return "El resultado de aprendizaje no tiene sesiones asignadas válidas.";
+        }
+        $new_total_sesiones = (int)$res->sesiones_asignadas;
+
+        // Calcular primera y última sesión de la nueva programación
+        $first_session_N = $this->getFirstSessionDate($data['fecha_inicio'], $data['id_dias']);
+        $last_session_N = date('Y-m-d', strtotime("+" . (($new_total_sesiones - 1) * 7) . " days", strtotime($first_session_N)));
+
+        // 2. Consultar registros existentes en el mismo día
+        $this->db->query("SELECT * FROM programacion_academica WHERE id_dias = :id_dias");
+        $this->db->bind(':id_dias', $data['id_dias']);
+        $existing = $this->db->resultSet();
+
+        foreach ($existing as $e) {
+            // Verificar solapamiento de horas
+            if (($data['hora_inicio'] < $e->hora_fin) && ($data['hora_fin'] > $e->hora_inicio)) {
+                // Verificar solapamiento de fechas
+                $first_session_E = $this->getFirstSessionDate($e->fecha_inicio, $e->id_dias);
+                $last_session_E = date('Y-m-d', strtotime("+" . (($e->total_sesiones - 1) * 7) . " days", strtotime($first_session_E)));
+
+                if (($first_session_N <= $last_session_E) && ($first_session_E <= $last_session_N)) {
+                    // Hay solapamiento de día, hora y fecha. Verificar tipo de conflicto:
+                    if ((int)$e->id_usuario === (int)$data['id_usuario']) {
+                        return "El instructor ya tiene una programación en ese horario.";
+                    }
+                    if ((int)$e->id_numero_ambiente === (int)$data['id_numero_ambiente']) {
+                        return "El ambiente ya se encuentra ocupado.";
+                    }
+                    if ((int)$e->numero_ficha === (int)$data['numero_ficha']) {
+                        return "La ficha / grupo ya tiene una programación asignada para ese horario.";
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private function getFirstSessionDate($fecha_inicio, $id_dias) {
+        $timestamp = strtotime($fecha_inicio);
+        $dayOfWeek = date('N', $timestamp); // 1 = Lunes, ..., 7 = Domingo
+        $diff = $id_dias - $dayOfWeek;
+        if ($diff < 0) {
+            $diff += 7;
+        }
+        return date('Y-m-d', strtotime("+$diff days", $timestamp));
+    }
 }
