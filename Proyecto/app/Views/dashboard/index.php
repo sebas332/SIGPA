@@ -3911,6 +3911,10 @@ document.addEventListener('DOMContentLoaded', function () {
 // Variable global para almacenar el mes y año actual de visualización del calendario
 var calendarDate = new Date(2026, 6, 1); // Inicializado en Julio 2026 como en la imagen
 
+// Variables globales para la sincronización y roles
+const currentRole = '<?= $current_role; ?>';
+const urlRoot = '<?= URLROOT; ?>';
+
 // Almacenar localmente toda la programación académica
 window.programacionDataGlobal = <?= json_encode($programacion) ?>;
 
@@ -3928,6 +3932,8 @@ function inicializarCalendario() {
     setupAsignarHorarioModal();
     
     renderizarCalendario();
+    renderizarLista();
+    iniciarMonitoreoProgramacion();
 }
 
 function navegarMes(offset) {
@@ -4354,6 +4360,7 @@ function setupAsignarHorarioModal() {
                 });
 
                 renderizarCalendario();
+                renderizarLista();
                 formCrear.reset();
                 selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
                 selectCompetencia.disabled = true;
@@ -4439,5 +4446,106 @@ function toggleFichaMasiva(rolId) {
         contenedor.style.display = 'none';
         select.removeAttribute('required');
     }
+}
+
+function renderizarLista() {
+    const cardBody = document.querySelector('#cardListaCompleta .card-body');
+    if (!cardBody) return;
+
+    const data = window.programacionDataGlobal;
+
+    if (!data || data.length === 0) {
+        cardBody.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
+                <h5 class="fw-bold">No hay sesiones de formación programadas</h5>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary small text-uppercase py-3" style="font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="ps-4 py-3">FICHA</th>
+                        <th class="py-3">DÍA / HORAS</th>
+                        <th class="py-3">INSTRUCTOR</th>
+                        <th class="py-3">AMBIENTE</th>
+                        <th class="py-3">RAP EVALUADO</th>
+                        <th class="text-end pe-4 py-3">AVANCE SESIONES</th>
+                        ${currentRole === 'Coordinador' ? '<th class="text-end pe-4 py-3">ACCIÓN</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    data.forEach(prog => {
+        const pct = prog.total_sesiones > 0 ? Math.round((prog.sesiones_realizadas / prog.total_sesiones) * 100) : 75;
+        const horaInicio = prog.hora_inicio.substring(0, 5);
+        const horaFin = prog.hora_fin.substring(0, 5);
+        
+        html += `
+            <tr>
+                <td class="ps-4"><span class="badge-ficha-table">#${prog.numero_ficha}</span></td>
+                <td>
+                    <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> ${prog.nombre_dia}</div>
+                    <div class="text-muted small">${horaInicio} - ${horaFin}</div>
+                </td>
+                <td class="text-dark small fw-medium">${prog.instructor_nombre} ${prog.instructor_apellido}</td>
+                <td><span class="badge-ambiente-table">${prog.ambiente_nombre}</span></td>
+                <td class="text-muted small" style="max-width: 320px;">${prog.ra_descripcion}</td>
+                <td class="text-end pe-4">
+                    <div class="fw-bold text-dark small mb-1">${prog.sesiones_realizadas} / ${prog.total_sesiones}</div>
+                    <div class="progress-sena"><div class="progress-sena-bar" style="width: ${pct}%;"></div></div>
+                </td>
+                ${currentRole === 'Coordinador' ? `
+                    <td class="text-end pe-4">
+                        <a href="${urlRoot}/index.php?route=programacion/delete&id=${prog.id_programacion}" class="btn btn-outline-danger btn-sm shadow-sm" onclick="return confirm('¿Seguro que deseas eliminar esta programación?');" data-bs-toggle="tooltip" title="Eliminar Programación">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
+                    </td>
+                ` : ''}
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    cardBody.innerHTML = html;
+    
+    // Inicializar tooltips de bootstrap si existen
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+}
+
+function iniciarMonitoreoProgramacion() {
+    setInterval(() => {
+        fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    // Comparar los datos actuales con los nuevos
+                    const serializadoActual = JSON.stringify(window.programacionDataGlobal);
+                    const serializadoNuevo = JSON.stringify(res.data);
+                    
+                    if (serializadoActual !== serializadoNuevo) {
+                        window.programacionDataGlobal = res.data;
+                        renderizarCalendario();
+                        renderizarLista();
+                    }
+                }
+            })
+            .catch(err => console.error("Error al sincronizar la programación:", err));
+    }, 5000); // Sincronizar cada 5 segundos
 }
 </script>

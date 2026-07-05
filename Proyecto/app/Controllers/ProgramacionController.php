@@ -78,6 +78,14 @@ class ProgramacionController extends BaseController {
                 'fecha_inicio' => $_POST['fecha_inicio'] ?? date('Y-m-d')
             ];
 
+            // Validar conflictos
+            $conflictMessage = $this->programacionModel->getConflictMessage($data);
+            if ($conflictMessage) {
+                $_SESSION['flash_error'] = $conflictMessage;
+                $this->redirect('programacion/index');
+                return;
+            }
+
             try {
                 if ($this->programacionModel->create($data)) {
                     $_SESSION['flash_success'] = 'Programación académica registrada exitosamente.';
@@ -178,6 +186,13 @@ class ProgramacionController extends BaseController {
             'fecha_inicio' => $input['fecha_inicio'] ?? date('Y-m-d')
         ];
 
+        // Validar conflictos
+        $conflictMessage = $this->programacionModel->getConflictMessage($data);
+        if ($conflictMessage) {
+            echo json_encode(['success' => false, 'message' => $conflictMessage]);
+            exit;
+        }
+
         try {
             if ($this->programacionModel->create($data)) {
                 $db = Database::getInstance();
@@ -194,6 +209,37 @@ class ProgramacionController extends BaseController {
         } catch (Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
+        exit;
+    }
+
+    /**
+     * Obtener programación en tiempo real según el rol del usuario logueado (AJAX)
+     */
+    public function get_programacion_ajax() {
+        header('Content-Type: application/json');
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'No autorizado.']);
+            exit;
+        }
+
+        $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
+        $user_id = $_SESSION['user_id'];
+
+        if ($current_role === 'Coordinador') {
+            $programacion = $this->programacionModel->all();
+        } elseif ($current_role === 'Instructor') {
+            $programacion = $this->programacionModel->getByInstructor($user_id);
+        } else {
+            $programacion = $this->programacionModel->getByAprendiz($user_id);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $programacion
+        ]);
         exit;
     }
 
