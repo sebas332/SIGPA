@@ -156,7 +156,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     $db->bind(':id', (int) $_SESSION['user_id']);
     $userFotoRow = $db->single();
     if ($userFotoRow && !empty($userFotoRow->foto)) {
-        $filePath = dirname(__DIR__, 2) . '/public/uploads/profile/' . $userFotoRow->foto;
+        $filePath = APPROOT . '/../public/uploads/profile/' . $userFotoRow->foto;
         if (is_file($filePath)) {
             $avatarUrl = ASSETROOT . '/uploads/profile/' . rawurlencode($userFotoRow->foto) . '?v=' . filemtime($filePath);
         }
@@ -246,23 +246,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     </aside>
     <button id="sidebarBackdrop" class="sga-sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>
     <section class="sga-workspace">
-        <header class="sga-topbar">
-            <button id="menuToggle" class="sga-topbar-button menu-button" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button>
-            <label class="sga-global-search mx-auto"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Buscar..."></label>
-            <div class="sga-topbar-actions">
-                <?php if (isset($_SESSION['user_roles']) && count($_SESSION['user_roles']) > 1): ?>
-                <div class="dropdown"><button class="sga-topbar-button" data-bs-toggle="dropdown" title="Cambiar rol"><i class="fa-solid fa-user-tag"></i></button><ul class="dropdown-menu dropdown-menu-end border-0 shadow"><?php foreach ($_SESSION['user_roles'] as $rol): ?><li><a class="dropdown-item <?= $rol === $current_role ? 'active bg-success' : ''; ?>" href="<?= URLROOT; ?>/index.php?route=auth/switchRole&role=<?= urlencode($rol); ?>"><?= htmlspecialchars($rol); ?></a></li><?php endforeach; ?></ul></div>
-                <?php endif; ?>
-                <button class="sga-topbar-button" type="button" title="Notificaciones">
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="badge-notify"></span>
-                </button>
-                <button class="sga-topbar-button" type="button" title="Ayuda">
-                    <i class="fa-regular fa-circle-question"></i>
-                </button>
-                 <a class="sga-topbar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index"><img class="sga-topbar-avatar-img" src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Perfil"><span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span></a>
-            </div>
-        </header>
+
         <main class="sga-content">
 <?php else: ?>
 <main class="container-fluid py-4 px-4 px-md-5">

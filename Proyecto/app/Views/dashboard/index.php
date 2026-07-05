@@ -539,15 +539,7 @@
             <!-- PESTAÑA: VISIÓN GENERAL -->
             <div class="tab-pane fade show active" id="pills-vision" role="tabpanel" aria-labelledby="pills-vision-tab">
                 
-                <!-- Título y Bienvenida -->
-                <div class="d-flex flex-column mb-4">
-                    <h2 class="fw-bold text-dark mb-1" style="font-size: 1.85rem; letter-spacing: -0.5px;">¡Te damos la bienvenida, <?= htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?>! 👋</h2>
-                    <div class="text-secondary small d-flex align-items-center gap-1">
-                        <span>Coordinación Académica</span>
-                        <span>•</span>
-                        <span>SGA - Gestión Académica Integral</span>
-                    </div>
-                </div>
+
 
                 <!-- Banner de bienvenida verde esmeralda con el perfil flotante -->
                 <?php
@@ -559,7 +551,7 @@
                 $db->bind(':id', (int) $_SESSION['user_id']);
                 $userFotoRow = $db->single();
                 if ($userFotoRow && !empty($userFotoRow->foto)) {
-                    $filePath = dirname(__DIR__, 2) . '/public/uploads/profile/' . $userFotoRow->foto;
+                    $filePath = APPROOT . '/../public/uploads/profile/' . $userFotoRow->foto;
                     if (is_file($filePath)) {
                         $avatarUrlWelcome = ASSETROOT . '/uploads/profile/' . rawurlencode($userFotoRow->foto) . '?v=' . filemtime($filePath);
                     }
@@ -571,14 +563,14 @@
                         <h3>¡Hola, Coordinadora <?= htmlspecialchars(explode(' ', $_SESSION['user_name'])[0]); ?>!</h3>
                         <p>Desde este portal tienes acceso total a la planeación curricular, asignación de instructores líderes, control de novedades y auditoría de asistencia institucional con un nivel óptimo de control.</p>
                     </div>
-                    <div class="banner-user-card shadow-sm mt-3 mt-md-0 ms-md-4">
+                    <a href="<?= URLROOT; ?>/index.php?route=perfil/index" class="banner-user-card shadow-sm mt-3 mt-md-0 ms-md-4 text-decoration-none" style="transition: all 0.25s ease;">
                         <img class="banner-welcome-avatar-img" src="<?= htmlspecialchars($avatarUrlWelcome, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
                         <span>
-                            <small>Coordinador Académico</small>
+                            <small><?= htmlspecialchars($current_role); ?> Académico</small>
                             <strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong>
                             <div class="user-email"><?= htmlspecialchars($usuario->correo ?? 'arestrepo@sena.edu.co'); ?></div>
                         </span>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Tarjetas Estadísticas con Sparklines -->
