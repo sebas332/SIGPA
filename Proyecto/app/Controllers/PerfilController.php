@@ -34,138 +34,188 @@ class PerfilController extends BaseController {
 
     public function update() {
         $this->requireLogin();
+        header('Content-Type: application/json');
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->redirect('perfil/index');
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit;
         }
 
         $token = $_POST['csrf_token'] ?? '';
         if (empty($_SESSION['profile_csrf']) || !hash_equals($_SESSION['profile_csrf'], $token)) {
-            $_SESSION['flash_error'] = 'La sesión del formulario expiró. Intenta nuevamente.';
-            $this->redirect('perfil/index');
+            echo json_encode(['success' => false, 'message' => 'La sesión del formulario expiró o es inválida. Intenta nuevamente.']);
+            exit;
         }
 
         $id = (int) $_SESSION['user_id'];
-        $nombre = trim($_POST['nombre'] ?? '');
-        $apellido = trim($_POST['apellido'] ?? '');
-        $telefono = trim($_POST['telefono'] ?? '');
-        $correo = trim($_POST['correo'] ?? '');
-        $titulacion = trim($_POST['titulacion'] ?? '');
-        $password = $_POST['contrasena'] ?? '';
-
-        // Validaciones del servidor
-        if ($nombre === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/u', $nombre)) {
-            $_SESSION['flash_error'] = 'El nombre es obligatorio (2-50 caracteres, solo letras, espacios y tildes).';
-            $this->redirect('perfil/index');
+        $usuarioDb = $this->usuarioModel->find($id);
+        if (!$usuarioDb) {
+            echo json_encode(['success' => false, 'message' => 'No fue posible verificar tus datos.']);
+            exit;
         }
 
-        if ($apellido === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/u', $apellido)) {
-            $_SESSION['flash_error'] = 'El apellido es obligatorio (2-50 caracteres, solo letras, espacios y tildes).';
-            $this->redirect('perfil/index');
-        }
+        $action = $_POST['action'] ?? 'personal';
 
-        $correo = strtolower(str_replace(' ', '', $correo));
-        if ($correo === '' || !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['flash_error'] = 'Formato de correo electrónico no válido.';
-            $this->redirect('perfil/index');
-        }
+        if ($action === 'personal') {
+            $fieldsToUpdate = [];
 
-        if ($this->usuarioModel->emailExistsForOtherUser($correo, $id)) {
-            $_SESSION['flash_error'] = 'El correo electrónico ya está registrado por otro usuario.';
-            $this->redirect('perfil/index');
-        }
-
-        if ($telefono === '' || !preg_match('/^[0-9]{10}$/', $telefono)) {
-            $_SESSION['flash_error'] = 'El teléfono móvil debe tener exactamente 10 dígitos numéricos.';
-            $this->redirect('perfil/index');
-        }
-
-        if ($titulacion === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\.\-]{1,80}$/u', $titulacion)) {
-            $_SESSION['flash_error'] = 'La titulación es obligatoria (máximo 80 caracteres, solo letras, puntos y guiones).';
-            $this->redirect('perfil/index');
-        }
-
-        $passwordActual = $_POST['contrasena_actual'] ?? '';
-        $passwordConfirm = $_POST['contrasena_confirm'] ?? '';
-        $passwordToUpdate = '';
-
-        if ($password !== '') {
-            if ($passwordActual === '') {
-                $_SESSION['flash_error'] = 'Debes ingresar tu contraseña actual para realizar el cambio.';
-                $this->redirect('perfil/index');
+            // 1. Nombre
+            if (isset($_POST['nombre'])) {
+                $nombre = trim($_POST['nombre']);
+                if ($nombre !== $usuarioDb->nombre) {
+                    if ($nombre === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/u', $nombre)) {
+                        echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio (2-50 caracteres, solo letras, espacios y tildes).']);
+                        exit;
+                    }
+                    $fieldsToUpdate['nombre'] = $nombre;
+                }
             }
 
-            $usuarioDb = $this->usuarioModel->find($id);
-            if (!$usuarioDb) {
-                $_SESSION['flash_error'] = 'No fue posible verificar tus datos.';
-                $this->redirect('perfil/index');
+            // 2. Apellido
+            if (isset($_POST['apellido'])) {
+                $apellido = trim($_POST['apellido']);
+                if ($apellido !== $usuarioDb->apellido) {
+                    if ($apellido === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/u', $apellido)) {
+                        echo json_encode(['success' => false, 'message' => 'El apellido es obligatorio (2-50 caracteres, solo letras, espacios y tildes).']);
+                        exit;
+                    }
+                    $fieldsToUpdate['apellido'] = $apellido;
+                }
+            }
+
+            // 3. Correo
+            if (isset($_POST['correo'])) {
+                $correo = trim($_POST['correo']);
+                $correo = strtolower(str_replace(' ', '', $correo));
+                if ($correo !== $usuarioDb->correo) {
+                    if ($correo === '' || !filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                        echo json_encode(['success' => false, 'message' => 'Formato de correo electrónico no válido.']);
+                        exit;
+                    }
+                    if ($this->usuarioModel->emailExistsForOtherUser($correo, $id)) {
+                        echo json_encode(['success' => false, 'message' => 'El correo electrónico ya está registrado por otro usuario.']);
+                        exit;
+                    }
+                    $fieldsToUpdate['correo'] = $correo;
+                }
+            }
+
+            // 4. Telefono
+            if (isset($_POST['telefono'])) {
+                $telefono = trim($_POST['telefono']);
+                if ($telefono !== $usuarioDb->telefono) {
+                    if ($telefono === '' || !preg_match('/^[0-9]{10}$/', $telefono)) {
+                        echo json_encode(['success' => false, 'message' => 'El teléfono móvil debe tener exactamente 10 dígitos numéricos.']);
+                        exit;
+                    }
+                    $fieldsToUpdate['telefono'] = $telefono;
+                }
+            }
+
+            // 5. Titulación o Profesión
+            if (isset($_POST['titulacion'])) {
+                $titulacion = trim($_POST['titulacion']);
+                if ($titulacion !== $usuarioDb->titulacion) {
+                    if ($titulacion === '' || !preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\.\-]{1,80}$/u', $titulacion)) {
+                        echo json_encode(['success' => false, 'message' => 'La titulación es obligatoria (máximo 80 caracteres, solo letras, puntos y guiones).']);
+                        exit;
+                    }
+                    $fieldsToUpdate['titulacion'] = $titulacion;
+                }
+            }
+
+            if (empty($fieldsToUpdate)) {
+                echo json_encode(['success' => true, 'message' => 'No se detectaron cambios para guardar.', 'no_changes' => true]);
+                exit;
+            }
+
+            try {
+                $updated = $this->usuarioModel->updateProfileFields($id, $fieldsToUpdate);
+                if (!$updated) {
+                    throw new RuntimeException('No fue posible actualizar los datos.');
+                }
+
+                if (isset($fieldsToUpdate['nombre']) || isset($fieldsToUpdate['apellido'])) {
+                    $newNombre = $fieldsToUpdate['nombre'] ?? $usuarioDb->nombre;
+                    $newApellido = $fieldsToUpdate['apellido'] ?? $usuarioDb->apellido;
+                    $_SESSION['user_name'] = $newNombre . ' ' . $newApellido;
+                }
+                if (isset($fieldsToUpdate['titulacion'])) {
+                    $_SESSION['user_titulacion'] = $fieldsToUpdate['titulacion'];
+                }
+
+                echo json_encode(['success' => true, 'message' => 'Tu perfil fue actualizado correctamente.']);
+                exit;
+            } catch (Throwable $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                exit;
+            }
+        } else if ($action === 'security') {
+            $password = $_POST['contrasena'] ?? '';
+            $passwordActual = $_POST['contrasena_actual'] ?? '';
+            $passwordConfirm = $_POST['contrasena_confirm'] ?? '';
+
+            if ($password === '') {
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña no puede estar vacía.']);
+                exit;
+            }
+
+            if ($passwordActual === '') {
+                echo json_encode(['success' => false, 'message' => 'Debes ingresar tu contraseña actual para realizar el cambio.']);
+                exit;
             }
 
             $isCurrentValid = ($passwordActual === $usuarioDb->contraseña || password_verify($passwordActual, $usuarioDb->contraseña));
             if (!$isCurrentValid) {
-                $_SESSION['flash_error'] = 'La contraseña actual es incorrecta.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La contraseña actual es incorrecta.']);
+                exit;
             }
 
             if ($password !== $passwordConfirm) {
-                $_SESSION['flash_error'] = 'La nueva contraseña y la confirmación no coinciden.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña y la confirmación no coinciden.']);
+                exit;
             }
 
             if ($password === $passwordActual) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe ser diferente de la contraseña actual.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe ser diferente de la contraseña actual.']);
+                exit;
             }
 
             if (strlen($password) < 8) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe tener al menos 8 caracteres.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe tener al menos 8 caracteres.']);
+                exit;
             }
             if (!preg_match('/[A-Z]/', $password)) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe contener al menos una letra mayúscula.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe contener al menos una letra mayúscula.']);
+                exit;
             }
             if (!preg_match('/[a-z]/', $password)) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe contener al menos una letra minúscula.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe contener al menos una letra minúscula.']);
+                exit;
             }
             if (!preg_match('/[0-9]/', $password)) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe contener al menos un número.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe contener al menos un número.']);
+                exit;
             }
             if (!preg_match('/[!@#$%^&*(),.?":{}|<>_\-\[\]]/', $password)) {
-                $_SESSION['flash_error'] = 'La nueva contraseña debe contener al menos un carácter especial.';
-                $this->redirect('perfil/index');
+                echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe contener al menos un carácter especial.']);
+                exit;
             }
 
             $passwordToUpdate = password_hash($password, PASSWORD_BCRYPT);
-        }
 
-        try {
-            if (!empty($_FILES['foto']['name'])) {
-                $this->saveProfilePhoto($id, $_FILES['foto']);
+            try {
+                $updated = $this->usuarioModel->updateProfileFields($id, ['contrasena' => $passwordToUpdate]);
+                if (!$updated) {
+                    throw new RuntimeException('No fue posible actualizar la contraseña.');
+                }
+                echo json_encode(['success' => true, 'message' => 'Tu contraseña fue actualizada correctamente.']);
+                exit;
+            } catch (Throwable $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                exit;
             }
-
-            $updated = $this->usuarioModel->updateProfile($id, [
-                'nombre' => $nombre,
-                'apellido' => $apellido,
-                'telefono' => $telefono,
-                'correo' => $correo,
-                'titulacion' => $titulacion,
-                'contrasena' => $passwordToUpdate
-            ]);
-
-            if (!$updated) {
-                throw new RuntimeException('No fue posible actualizar los datos.');
-            }
-
-            $_SESSION['user_name'] = $nombre . ' ' . $apellido;
-            $_SESSION['user_titulacion'] = $titulacion;
-            $_SESSION['flash_success'] = 'Tu perfil fue actualizado correctamente.';
-        } catch (Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
         }
-
-        $this->redirect('perfil/index');
     }
 
     private function saveProfilePhoto($userId, $file) {

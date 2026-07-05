@@ -25,3 +25,11 @@ define('URLROOT', $protocol . $host . $scriptDir);
 define('ASSETROOT', URLROOT . '/public');
 
 define('SITENAME', 'Sistema de Gestión Académica');
+
+// Configuración SMTP para Recuperación de Contraseñas (PHPMailer)
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_USER', 'tu_correo@gmail.com');
+define('SMTP_PASS', 'tu_contraseña_de_aplicación');
+define('SMTP_PORT', 587);
+define('SMTP_SECURE', 'tls'); // 'ssl' o 'tls'
+define('SMTP_FROM_NAME', 'SGA - Sistema de Gestión Académica');

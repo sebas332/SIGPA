@@ -190,7 +190,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end mt-5 mb-4">
-                        <button type="submit" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
+                        <button type="submit" id="btnSavePersonal" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
                             <i class="fa-regular fa-floppy-disk" style="font-size: 0.95rem;"></i> Guardar Cambios Académicos
                         </button>
                     </div>
@@ -257,7 +257,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end mt-5 mb-4">
-                        <button type="submit" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
+                        <button type="submit" id="btnSaveSecurity" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
                             <i class="fa-solid fa-lock" style="font-size: 0.95rem;"></i> Cambiar Contraseña Segura
                         </button>
                     </div>
@@ -765,12 +765,20 @@ document.addEventListener("DOMContentLoaded", function () {
         titulacion: document.getElementById('titulacion')
     };
 
+    const initialValues = {
+        nombre: inputs.nombre ? inputs.nombre.value : '',
+        apellido: inputs.apellido ? inputs.apellido.value : '',
+        correo: inputs.correo ? inputs.correo.value : '',
+        telefono: inputs.telefono ? inputs.telefono.value : '',
+        titulacion: inputs.titulacion ? inputs.titulacion.value : ''
+    };
+
     const validationStates = {
-        nombre: false,
-        apellido: false,
-        correo: false,
-        telefono: false,
-        titulacion: false
+        nombre: true,
+        apellido: true,
+        correo: true,
+        telefono: true,
+        titulacion: true
     };
 
     function validateField(input, showUI = true) {
@@ -839,33 +847,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Handle AJAX check for email separately when locally valid
         if (id === 'correo') {
+            const cleaned = val.replace(/\s+/g, '').toLowerCase();
+            const group = input.closest('.input-group-custom');
+            const statusIcon = group ? group.querySelector('.validation-status-icon') : null;
+
             if (isValid) {
-                const group = input.closest('.input-group-custom');
-                const statusIcon = group ? group.querySelector('.validation-status-icon') : null;
-                if (statusIcon && showUI) {
-                    statusIcon.className = "validation-status-icon fa-solid fa-circle-notch fa-spin";
-                    statusIcon.style.color = "#00A356";
-                    statusIcon.style.opacity = "1";
-                }
-                
-                fetch(`<?= URLROOT; ?>/index.php?route=perfil/checkEmailAjax&email=${encodeURIComponent(cleaned)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.valid) {
-                            validationStates.correo = true;
-                            if (showUI) updateUIState(input, true, "");
-                        } else {
+                if (cleaned === initialValues.correo) {
+                    validationStates.correo = true;
+                    if (showUI) updateUIState(input, true, "");
+                    checkFormValidity();
+                } else {
+                    validationStates.correo = false;
+                    checkFormValidity();
+
+                    if (statusIcon && showUI) {
+                        statusIcon.className = "validation-status-icon fa-solid fa-circle-notch fa-spin";
+                        statusIcon.style.color = "#00A356";
+                        statusIcon.style.opacity = "1";
+                    }
+
+                    fetch(`<?= URLROOT; ?>/index.php?route=perfil/checkEmailAjax&email=${encodeURIComponent(cleaned)}`)
+                        .then(res => {
+                            if (!res.ok) throw new Error("Error de red.");
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data.valid) {
+                                validationStates.correo = true;
+                                if (showUI) updateUIState(input, true, "");
+                            } else {
+                                validationStates.correo = false;
+                                if (showUI) updateUIState(input, false, data.message);
+                            }
+                            checkFormValidity();
+                        })
+                        .catch(err => {
+                            console.error(err);
                             validationStates.correo = false;
-                            if (showUI) updateUIState(input, false, data.message);
-                        }
-                        checkFormValidity();
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        validationStates.correo = true;
-                        checkFormValidity();
-                    });
+                            if (showUI) updateUIState(input, false, "Error al verificar el correo.");
+                            checkFormValidity();
+                        });
+                }
             } else {
+                validationStates.correo = false;
+                if (showUI) updateUIState(input, false, errorMsg);
                 checkFormValidity();
             }
         } else {
@@ -913,10 +938,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function checkFormValidity() {
-        const btn = document.querySelector('#personal button[type="submit"]');
+        const btn = document.getElementById('btnSavePersonal');
         if (!btn) return;
+
+        const hasChanges = Object.keys(inputs).some(key => {
+            return inputs[key] && inputs[key].value !== initialValues[key];
+        });
+
         const allValid = Object.values(validationStates).every(state => state === true);
-        if (allValid) {
+
+        if (hasChanges && allValid) {
             btn.disabled = false;
             btn.style.opacity = "1";
             btn.style.cursor = "pointer";
@@ -930,7 +961,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Bind real-time input and blur events
     Object.values(inputs).forEach(input => {
         if (!input) return;
-        
+
         input.addEventListener('input', function () {
             if (input.id === 'telefono') {
                 input.value = input.value.replace(/[^0-9]/g, '');
@@ -951,6 +982,127 @@ document.addEventListener("DOMContentLoaded", function () {
         if (input) validateField(input, false);
     });
 
+    // Prevent default form submit (enter key, etc.)
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+    }
+
+    // Submit handler for Personal Information
+    const btnSavePersonal = document.getElementById('btnSavePersonal');
+    if (btnSavePersonal) {
+        btnSavePersonal.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const changedFields = {};
+            let hasChanges = false;
+            Object.keys(inputs).forEach(key => {
+                if (inputs[key] && inputs[key].value !== initialValues[key]) {
+                    changedFields[key] = inputs[key].value;
+                    hasChanges = true;
+                }
+            });
+
+            if (!hasChanges) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Atención',
+                    text: 'No se detectaron cambios para guardar.',
+                    confirmButtonColor: '#00A356'
+                });
+                return;
+            }
+
+            const allValid = Object.values(validationStates).every(state => state === true);
+            if (!allValid) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Formulario inválido',
+                    text: 'Por favor, corrige los errores en el formulario antes de guardar.',
+                    confirmButtonColor: '#00A356'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Guardando cambios académicos...',
+                text: 'Por favor espera un momento.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const formData = new FormData();
+            formData.append('action', 'personal');
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            Object.keys(changedFields).forEach(key => {
+                formData.append(key, changedFields[key]);
+            });
+
+            fetch('<?= URLROOT; ?>/index.php?route=perfil/update', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return res.json();
+                } else {
+                    return res.text().then(text => {
+                        throw new Error("Respuesta no válida del servidor: " + text);
+                    });
+                }
+            })
+            .then(data => {
+                Swal.close();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: data.message || 'Tu perfil fue actualizado correctamente.',
+                        confirmButtonColor: '#00A356',
+                        timer: 3000
+                    });
+
+                    // Update initial values
+                    Object.keys(changedFields).forEach(key => {
+                        initialValues[key] = changedFields[key];
+                    });
+
+                    // Update layouts
+                    if (changedFields.nombre || changedFields.apellido) {
+                        const newName = `${inputs.nombre.value} ${inputs.apellido.value}`;
+                        document.querySelectorAll('.sga-sidebar-user span strong, .sga-topbar-user span strong, .profile-title-area h3').forEach(el => {
+                            el.textContent = newName;
+                        });
+                    }
+
+                    checkFormValidity();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Atención',
+                        text: data.message || 'No fue posible guardar los cambios.',
+                        confirmButtonColor: '#00A356'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de red / servidor',
+                    text: err.message || 'No se pudo establecer comunicación con el servidor.',
+                    confirmButtonColor: '#00A356'
+                });
+            });
+        });
+    }
+
     // 3. PASSWORD VALIDATION (Tab 2)
     const passInputs = {
         actual: document.getElementById('contrasena_actual'),
@@ -962,12 +1114,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const actualVal = passInputs.actual.value;
         const nuevaVal = passInputs.nueva.value;
         const confirmVal = passInputs.confirmar.value;
-        const btn = document.querySelector('#security button[type="submit"]');
+        const btn = document.getElementById('btnSaveSecurity');
 
         let isActualValid = true;
         let isNuevaValid = true;
         let isConfirmValid = true;
-        
+
         let actualError = "";
         let nuevaError = "";
         let confirmError = "";
@@ -1053,6 +1205,97 @@ document.addEventListener("DOMContentLoaded", function () {
         passInputs.actual.addEventListener('blur', () => validatePasswords(true));
         passInputs.nueva.addEventListener('blur', () => validatePasswords(true));
         passInputs.confirmar.addEventListener('blur', () => validatePasswords(true));
+    }
+
+    // Submit handler for Password change
+    const btnSaveSecurity = document.getElementById('btnSaveSecurity');
+    if (btnSaveSecurity) {
+        btnSaveSecurity.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const actualVal = passInputs.actual.value;
+            const nuevaVal = passInputs.nueva.value;
+            const confirmVal = passInputs.confirmar.value;
+
+            if (actualVal === "" || nuevaVal === "" || confirmVal === "") {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Campos vacíos',
+                    text: 'Debes rellenar todos los campos de contraseña.',
+                    confirmButtonColor: '#00A356'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Actualizando contraseña...',
+                text: 'Por favor espera un momento.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const formData = new FormData();
+            formData.append('action', 'security');
+            formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+            formData.append('contrasena_actual', actualVal);
+            formData.append('contrasena', nuevaVal);
+            formData.append('contrasena_confirm', confirmVal);
+
+            fetch('<?= URLROOT; ?>/index.php?route=perfil/update', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return res.json();
+                } else {
+                    return res.text().then(text => {
+                        throw new Error("Respuesta no válida del servidor: " + text);
+                    });
+                }
+            })
+            .then(data => {
+                Swal.close();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: data.message || 'Tu contraseña fue actualizada correctamente.',
+                        confirmButtonColor: '#00A356',
+                        timer: 3000
+                    });
+
+                    // Clear inputs and reset UI
+                    passInputs.actual.value = "";
+                    passInputs.nueva.value = "";
+                    passInputs.confirmar.value = "";
+                    resetPasswordUI(passInputs.actual);
+                    resetPasswordUI(passInputs.nueva);
+                    resetPasswordUI(passInputs.confirmar);
+                    validatePasswords(false);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Atención',
+                        text: data.message || 'No fue posible cambiar la contraseña.',
+                        confirmButtonColor: '#00A356'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de red / servidor',
+                    text: err.message || 'No se pudo establecer comunicación con el servidor.',
+                    confirmButtonColor: '#00A356'
+                });
+            });
+        });
     }
 });
 </script>

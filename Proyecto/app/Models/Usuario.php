@@ -184,6 +184,33 @@ class Usuario {
     }
 
     /**
+     * Actualizar dinámicamente columnas específicas en el perfil de usuario.
+     * @param int $id
+     * @param array $fields
+     * @return bool
+     */
+    public function updateProfileFields($id, $fields) {
+        if (empty($fields)) {
+            return true;
+        }
+        $query = "UPDATE usuarios SET ";
+        $sets = [];
+        foreach ($fields as $column => $value) {
+            $colName = ($column === 'contrasena') ? '`contraseña`' : $column;
+            $sets[] = "{$colName} = :{$column}";
+        }
+        $query .= implode(', ', $sets);
+        $query .= " WHERE id_usuario = :id";
+        
+        $this->db->query($query);
+        foreach ($fields as $column => $value) {
+            $this->db->bind(":{$column}", $value);
+        }
+        $this->db->bind(':id', (int) $id);
+        return $this->db->execute();
+    }
+
+    /**
      * Verificar si un correo electrónico ya está registrado por otro usuario.
      */
     public function emailExistsForOtherUser($email, $userId) {
@@ -191,5 +218,55 @@ class Usuario {
         $this->db->bind(':correo', $email);
         $this->db->bind(':id', $userId);
         return $this->db->single() !== false;
+    }
+
+    /**
+     * Buscar un usuario por su correo electrónico.
+     * @param string $email
+     * @return object|false
+     */
+    public function findByEmail($email) {
+        $this->db->query("SELECT * FROM usuarios WHERE correo = :correo");
+        $this->db->bind(':correo', $email);
+        return $this->db->single();
+    }
+
+    /**
+     * Guardar el token de restablecimiento de contraseña y su expiración.
+     * @param int $userId
+     * @param string $token
+     * @param string $expiry
+     * @return bool
+     */
+    public function saveResetToken($userId, $token, $expiry) {
+        $this->db->query("UPDATE usuarios SET reset_token = :token, reset_expira = :expiry WHERE id_usuario = :id");
+        $this->db->bind(':token', $token);
+        $this->db->bind(':expiry', $expiry);
+        $this->db->bind(':id', (int) $userId);
+        return $this->db->execute();
+    }
+
+    /**
+     * Buscar un usuario que posea un determinado token de restablecimiento activo (no vencido).
+     * @param string $token
+     * @return object|false
+     */
+    public function findByResetToken($token) {
+        $this->db->query("SELECT * FROM usuarios WHERE reset_token = :token AND reset_expira > NOW() LIMIT 1");
+        $this->db->bind(':token', $token);
+        return $this->db->single();
+    }
+
+    /**
+     * Actualizar contraseña de usuario y limpiar columnas del token.
+     * @param int $userId
+     * @param string $hashedPassword
+     * @return bool
+     */
+    public function updatePasswordAndClearToken($userId, $hashedPassword) {
+        $this->db->query("UPDATE usuarios SET `contraseña` = :pass, reset_token = NULL, reset_expira = NULL WHERE id_usuario = :id");
+        $this->db->bind(':pass', $hashedPassword);
+        $this->db->bind(':id', (int) $userId);
+        return $this->db->execute();
     }
 }

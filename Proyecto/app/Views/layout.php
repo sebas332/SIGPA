@@ -11,8 +11,8 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($titulo) ? $titulo . ' - ' . SITENAME : SITENAME; ?></title>
     <!-- Favicon Oficial del SENA -->
-    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" type="image/svg+xml">
-    <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Sena_Colombia_logo.svg" type="image/svg+xml">
+    <link rel="icon" href="<?= ASSETROOT; ?>/logo-sena.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="<?= ASSETROOT; ?>/logo-sena.svg" type="image/svg+xml">
     <!-- Bootstrap 5 CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome Icons CDN -->

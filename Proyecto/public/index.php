@@ -21,6 +21,10 @@ $route = $_GET['route'] ?? $defaultRoute;
 $parts = explode('/', $route);
 $controllerSlug = $parts[0] ?? 'Auth';
 $methodName = $parts[1] ?? 'index';
+
+// Convertir kebab-case a camelCase para el nombre del método (ej. 'reset-password' -> 'resetPassword')
+$methodName = str_replace(' ', '', lcfirst(ucwords(str_replace('-', ' ', $methodName))));
+
 $controllerName = ucfirst($controllerSlug) . 'Controller';
 $controllerFile = __DIR__ . '/../app/Controllers/' . $controllerName . '.php';
 
