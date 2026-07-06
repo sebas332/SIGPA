@@ -173,6 +173,50 @@ class AmbienteController extends BaseController {
         $this->redirect('dashboard/index#pills-ambientes');
     }
 
+    public function liberar() {
+        $this->requireRol('Coordinador');
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_programacion = $_POST['id_programacion'] ?? 0;
+            $fecha = $_POST['fecha'] ?? '';
+            
+            if ($id_programacion && $fecha) {
+                $db = Database::getInstance();
+                $db->query("SELECT id_numero_ambiente FROM programacion_academica WHERE id_programacion = :id");
+                $db->bind(':id', $id_programacion);
+                $prog = $db->single();
+                
+                if ($prog) {
+                    $descripcion = "ESPACIO_LIBERADO|ID_PROG:" . $id_programacion;
+                    
+                    $db->query("SELECT id_novedad FROM novedad_ambiente WHERE descripcion = :desc AND fecha_reporte = :fecha LIMIT 1");
+                    $db->bind(':desc', $descripcion);
+                    $db->bind(':fecha', $fecha);
+                    if ($db->single()) {
+                        echo json_encode(['status' => 'success']);
+                        exit;
+                    }
+
+                    $db->query("INSERT INTO novedad_ambiente (id_numero_ambiente, id_usuario, descripcion, fecha_reporte) 
+                                VALUES (:id_ambiente, :id_usuario, :descripcion, :fecha)");
+                    $db->bind(':id_ambiente', $prog->id_numero_ambiente);
+                    $db->bind(':id_usuario', $_SESSION['user_id'] ?? 1);
+                    $db->bind(':descripcion', $descripcion);
+                    $db->bind(':fecha', $fecha);
+                    
+                    if ($db->execute()) {
+                        echo json_encode(['status' => 'success']);
+                        exit;
+                    }
+                }
+            }
+        }
+        
+        echo json_encode(['status' => 'error', 'message' => 'Datos inválidos o error en el servidor.']);
+        exit;
+    }
+
     /**
      * Actualizar un ambiente existente (Coordinador)
      */
