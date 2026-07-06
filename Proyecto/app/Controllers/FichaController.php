@@ -56,6 +56,12 @@ class FichaController extends BaseController {
             }
         }
 
+        // Calcular aprendices matriculados por ficha para mostrar los cupos ocupados
+        $matriculados_counts = [];
+        foreach ($fichas as $f) {
+            $matriculados_counts[$f->numero_ficha] = count($this->fichaAprendizModel->getAprendicesPorFicha($f->numero_ficha));
+        }
+
         $this->render('fichas/index', [
             'titulo' => 'Listado de Fichas',
             'fichas' => $fichas,
@@ -63,7 +69,8 @@ class FichaController extends BaseController {
             'jornadas' => $jornadas,
             'instructores' => $instructores,
             'candidatos' => $candidatos,
-            'current_role' => $current_role
+            'current_role' => $current_role,
+            'matriculados_counts' => $matriculados_counts
         ]);
     }
 
@@ -191,10 +198,26 @@ class FichaController extends BaseController {
 
             if (empty($id_usuario_instructor_lider)) {
                 $errors[] = "Debe asignar un instructor líder.";
+            } else {
+                $roles_instructor = $this->usuarioModel->getRoles($id_usuario_instructor_lider);
+                $is_instructor = false;
+                foreach ($roles_instructor as $rol) {
+                    if ($rol->nombre_rol === 'Instructor') {
+                        $is_instructor = true;
+                        break;
+                    }
+                }
+                if (!$is_instructor) {
+                    $errors[] = "El usuario seleccionado como líder no tiene el rol de Instructor.";
+                }
             }
 
             if (empty($id_jornada)) {
                 $errors[] = "Debe seleccionar la jornada.";
+            } else {
+                if (!$this->jornadaModel->find($id_jornada)) {
+                    $errors[] = "La jornada seleccionada no existe.";
+                }
             }
 
             if (empty($fecha_inicio) || empty($fecha_practicas) || empty($fecha_fin)) {
@@ -286,7 +309,7 @@ class FichaController extends BaseController {
                 AuditLogger::log('Matrícula de Aprendiz', 'ficha_aprendiz', $numero_ficha, 'Aprendiz ID: ' . $id_usuario_aprendiz);
                 $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
             } else {
-                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha o supera el cupo.';
+                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en una ficha activa.';
             }
             $this->redirect('fichas/show&id=' . $numero_ficha);
         }
@@ -339,14 +362,34 @@ class FichaController extends BaseController {
 
             if (empty($id_programa)) {
                 $errors[] = "Debe seleccionar un programa de formación.";
+            } else {
+                if (!$this->programaModel->find($id_programa)) {
+                    $errors[] = "El programa de formación seleccionado no existe.";
+                }
             }
 
             if (empty($id_usuario_instructor_lider)) {
                 $errors[] = "Debe asignar un instructor líder.";
+            } else {
+                $roles_instructor = $this->usuarioModel->getRoles($id_usuario_instructor_lider);
+                $is_instructor = false;
+                foreach ($roles_instructor as $rol) {
+                    if ($rol->nombre_rol === 'Instructor') {
+                        $is_instructor = true;
+                        break;
+                    }
+                }
+                if (!$is_instructor) {
+                    $errors[] = "El usuario seleccionado como líder no tiene el rol de Instructor.";
+                }
             }
 
             if (empty($id_jornada)) {
                 $errors[] = "Debe seleccionar la jornada.";
+            } else {
+                if (!$this->jornadaModel->find($id_jornada)) {
+                    $errors[] = "La jornada seleccionada no existe.";
+                }
             }
 
             if (empty($fecha_inicio) || empty($fecha_practicas) || empty($fecha_fin)) {
@@ -548,7 +591,7 @@ class FichaController extends BaseController {
             if ($this->fichaAprendizModel->create($id_usuario_aprendiz, $numero_ficha)) {
                 $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
             } else {
-                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha.';
+                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en una ficha activa.';
             }
             $this->redirect('dashboard/index#pills-fichas');
         }
@@ -592,7 +635,7 @@ class FichaController extends BaseController {
 
                     $inscrito = $this->fichaAprendizModel->create($usuario->id_usuario, $numero_ficha);
                     if (!$inscrito) {
-                        throw new Exception("El aprendiz con documento $documento ya se encuentra inscrito o hubo un error (Fila $fila).");
+                        throw new Exception("El aprendiz con documento $documento ya se encuentra matriculado en otra ficha activa (Fila $fila).");
                     }
                 }
                 fclose($handle);

@@ -2278,7 +2278,7 @@
                         <select name="numero_ficha" id="ficha_carga" class="form-select shadow-sm">
                             <option value="">Seleccione la ficha destino...</option>
                             <?php if (isset($fichas)): foreach ($fichas as $f): ?>
-                                <option value="<?= $f->numero_ficha; ?>"><?= $f->numero_ficha; ?> - <?= $f->nombre_programa ?? 'Programa No Asignado'; ?></option>
+                                <option value="<?= $f->numero_ficha; ?>"><?= $f->numero_ficha; ?> - <?= $f->programa_nombre ?? 'Programa No Asignado'; ?></option>
                             <?php endforeach; endif; ?>
                         </select>
                     </div>

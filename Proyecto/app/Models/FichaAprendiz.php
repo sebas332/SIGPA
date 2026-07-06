@@ -32,12 +32,11 @@ class FichaAprendiz {
      * @return bool
      */
     public function create($id_usuario_aprendiz, $numero_ficha) {
-        // Validar si ya está inscrito en la ficha
-        $this->db->query("SELECT * FROM ficha_aprendiz WHERE id_usuario_aprendiz = :id_aprendiz AND numero_ficha = :numero_ficha");
+        // Validar si ya está inscrito en CUALQUIER ficha
+        $this->db->query("SELECT * FROM ficha_aprendiz WHERE id_usuario_aprendiz = :id_aprendiz");
         $this->db->bind(':id_aprendiz', $id_usuario_aprendiz);
-        $this->db->bind(':numero_ficha', $numero_ficha);
         if ($this->db->single()) {
-            return false; // Ya inscrito
+            return false; // Ya inscrito en una ficha
         }
 
         $this->db->query("INSERT INTO ficha_aprendiz (id_usuario_aprendiz, numero_ficha) VALUES (:id_aprendiz, :numero_ficha)");

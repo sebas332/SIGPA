@@ -109,6 +109,58 @@ class ProgramacionAcademica {
         return null;
     }
 
+    public function getByInstructor($id_usuario) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE pa.id_usuario = :id
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':id', $id_usuario);
+        return $this->db->resultSet();
+    }
+
+    public function getByAprendiz($id_usuario) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN ficha_aprendiz fa ON fa.numero_ficha = f.numero_ficha
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE fa.id_usuario_aprendiz = :id
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':id', $id_usuario);
+        return $this->db->resultSet();
+    }
+
+    public function getByFicha($numero_ficha) {
+        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+                          a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
+                          c.nombre as competencia_nombre 
+                          FROM programacion_academica pa 
+                          INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
+                          INNER JOIN ambientes a ON pa.id_numero_ambiente = a.id_numero_ambiente 
+                          INNER JOIN dias d ON pa.id_dias = d.id_dias 
+                          INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE pa.numero_ficha = :ficha
+                          ORDER BY pa.fecha_inicio DESC, pa.hora_inicio");
+        $this->db->bind(':ficha', $numero_ficha);
+        return $this->db->resultSet();
+    }
+
     // Métodos estándar (Find, Update, Delete, otros getBy...)
     public function find($id) {
         $this->db->query("SELECT pa.*, f.numero_ficha, j.nombre as jornada_nombre, 
