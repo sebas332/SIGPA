@@ -501,10 +501,7 @@ class ProgramaController extends BaseController {
                 $_SESSION['flash_error'] = 'Error al actualizar el programa: ' . $e->getMessage();
             }
         }
-        if (!empty($_POST['is_modal'])) {
-            echo "<script>window.parent.location.reload();</script>";
-            exit;
-        }
+
         $this->redirect('dashboard/index#pills-programas');
     }
 }

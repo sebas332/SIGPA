@@ -3317,14 +3317,16 @@ function abrirModalEditarPrograma(idPrograma) {
     const modal = new bootstrap.Modal(document.getElementById('modalEditarPrograma'));
     modal.show();
 
-    document.getElementById('loaderEditarPrograma').style.display = 'flex';
+    document.getElementById('loaderEditarPrograma').classList.remove('d-none');
+    document.getElementById('loaderEditarPrograma').classList.add('d-flex');
     document.getElementById('contenedorEditarPrograma').innerHTML = '';
 
     fetch('<?= URLROOT; ?>/index.php?route=programas/editarCompleto&id=' + idPrograma + '&ajax=1')
         .then(response => response.text())
         .then(html => {
             document.getElementById('contenedorEditarPrograma').innerHTML = html;
-            document.getElementById('loaderEditarPrograma').style.display = 'none';
+            document.getElementById('loaderEditarPrograma').classList.remove('d-flex');
+            document.getElementById('loaderEditarPrograma').classList.add('d-none');
             
             // Re-ejecutar scripts dentro del HTML inyectado
             const scripts = document.getElementById('contenedorEditarPrograma').querySelectorAll('script');
@@ -3338,7 +3340,8 @@ function abrirModalEditarPrograma(idPrograma) {
         .catch(error => {
             console.error('Error cargando el formulario:', error);
             document.getElementById('contenedorEditarPrograma').innerHTML = '<div class="alert alert-danger m-4">Error al cargar la información. Intenta nuevamente.</div>';
-            document.getElementById('loaderEditarPrograma').style.display = 'none';
+            document.getElementById('loaderEditarPrograma').classList.remove('d-flex');
+            document.getElementById('loaderEditarPrograma').classList.add('d-none');
         });
 }
 
