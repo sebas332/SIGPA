@@ -295,4 +295,34 @@ class AmbienteController extends BaseController {
         }
         $this->redirect('dashboard/index#pills-ambientes');
     }
+
+    /**
+     * Obtener programación académica para un ambiente específico (AJAX)
+     */
+    public function get_programacion() {
+        header('Content-Type: application/json');
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'No autorizado.']);
+            exit;
+        }
+
+        $id = $_GET['id'] ?? 0;
+        if ($id > 0) {
+            $programacionModel = $this->model('ProgramacionAcademica');
+            $data = $programacionModel->getByAmbiente($id);
+            echo json_encode([
+                'success' => true,
+                'data' => $data
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => 'ID de ambiente no válido.'
+            ]);
+        }
+        exit;
+    }
 }

@@ -1528,6 +1528,344 @@
                         background-color: #dc3545;
                         color: #ffffff;
                     }
+
+                    /* Estilos para el Detalle y Calendario de Disponibilidad del Ambiente */
+                    .btn-volver-ambientes {
+                        background: #ffffff;
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                        border-radius: 10px;
+                        padding: 0.5rem 1rem;
+                        font-weight: 500;
+                        color: #475569;
+                        transition: all 0.2s;
+                    }
+                    .btn-volver-ambientes:hover {
+                        background: #f8fafc;
+                        color: #0f172a;
+                    }
+                    .env-detail-sidebar {
+                        background: #ffffff;
+                        border: 1px solid rgba(0, 0, 0, 0.06);
+                        border-radius: 20px;
+                        padding: 1.5rem;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -2px rgba(0,0,0,0.01);
+                    }
+                    .env-detail-img-container {
+                        border-radius: 16px;
+                        overflow: hidden;
+                        position: relative;
+                        aspect-ratio: 16/10;
+                        background: #0f172a;
+                    }
+                    .env-detail-img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                    .env-detail-badge-id {
+                        display: inline-block;
+                        background: #e2e8f0;
+                        color: #334155;
+                        font-weight: 700;
+                        font-size: 0.72rem;
+                        padding: 0.25rem 0.6rem;
+                        border-radius: 6px;
+                        margin-top: 1rem;
+                    }
+                    .env-detail-title {
+                        font-size: 1.35rem;
+                        font-weight: 700;
+                        color: #0f172a;
+                        margin-top: 0.5rem;
+                        margin-bottom: 0.25rem;
+                    }
+                    .env-detail-badge-type {
+                        display: inline-block;
+                        background: #e8f5e9;
+                        color: #39A900;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        padding: 0.25rem 0.6rem;
+                        border-radius: 6px;
+                        margin-bottom: 1.25rem;
+                    }
+                    .env-detail-spec-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        padding: 0.6rem 0;
+                        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+                    }
+                    .env-detail-spec-item:last-child {
+                        border-bottom: none;
+                    }
+                    .env-detail-spec-icon {
+                        color: #64748b;
+                        font-size: 1rem;
+                        width: 20px;
+                        text-align: center;
+                    }
+                    .env-detail-spec-label {
+                        font-size: 0.8rem;
+                        color: #64748b;
+                    }
+                    .env-detail-spec-val {
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: #0f172a;
+                        margin-left: auto;
+                    }
+                    .env-detail-equip-section {
+                        margin-top: 1.5rem;
+                        border-top: 1px solid rgba(0, 0, 0, 0.06);
+                        padding-top: 1rem;
+                    }
+                    .env-detail-btn {
+                        border-radius: 12px;
+                        padding: 0.65rem 1rem;
+                        font-weight: 600;
+                        font-size: 0.85rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        width: 100%;
+                        transition: all 0.2s;
+                        border: 1px solid transparent;
+                    }
+                    .env-detail-btn-primary {
+                        background: #39A900;
+                        color: #ffffff;
+                        border-color: #39A900;
+                    }
+                    .env-detail-btn-primary:hover {
+                        background: #308e00;
+                        border-color: #308e00;
+                    }
+                    .env-detail-btn-danger {
+                        background: transparent;
+                        color: #dc3545;
+                        border-color: #dc3545;
+                    }
+                    .env-detail-btn-danger:hover {
+                        background: #dc3545;
+                        color: #ffffff;
+                    }
+                    .env-detail-btn-secondary {
+                        background: transparent;
+                        color: #64748b;
+                        border-color: #cbd5e1;
+                    }
+                    .env-detail-btn-secondary:hover {
+                        background: #f8fafc;
+                        color: #0f172a;
+                    }
+
+                    /* Stat cards */
+                    .env-stat-card {
+                        background: #ffffff;
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        border-radius: 16px;
+                        padding: 1rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -2px rgba(0,0,0,0.01);
+                        flex: 1;
+                        min-width: 180px;
+                    }
+                    .env-stat-icon-wrapper {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.1rem;
+                        flex-shrink: 0;
+                    }
+                    .env-stat-icon-green { background-color: #e8f5e9; color: #39A900; }
+                    .env-stat-icon-orange { background-color: #fff7ed; color: #ea580c; }
+                    .env-stat-icon-blue { background-color: #e0f2fe; color: #0288d1; }
+                    .env-stat-icon-purple { background-color: #f3e8ff; color: #7c3aed; }
+                    .env-stat-value {
+                        font-size: 1.35rem;
+                        font-weight: 700;
+                        color: #0f172a;
+                        line-height: 1.1;
+                    }
+                    .env-stat-title {
+                        font-size: 0.78rem;
+                        font-weight: 500;
+                        color: #64748b;
+                    }
+                    .env-stat-desc {
+                        font-size: 0.7rem;
+                        color: #94a3b8;
+                    }
+
+                    /* Calendar styling */
+                    .env-cal-header-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .env-cal-btn {
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                        background: #ffffff;
+                        color: #475569;
+                        padding: 0.4rem 0.75rem;
+                        border-radius: 8px;
+                        font-size: 0.82rem;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                    }
+                    .env-cal-btn:hover {
+                        background: #f8fafc;
+                        color: #0f172a;
+                    }
+                    .env-calendar-container {
+                        background: #ffffff;
+                        border: 1px solid rgba(0, 0, 0, 0.06);
+                        border-radius: 20px;
+                        padding: 1.5rem;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -2px rgba(0,0,0,0.01);
+                    }
+                    .env-calendar-days-grid {
+                        display: grid;
+                        grid-template-columns: repeat(7, 1fr);
+                        gap: 8px;
+                    }
+                    .env-calendar-day-name {
+                        text-align: center;
+                        font-size: 0.8rem;
+                        font-weight: 700;
+                        color: #475569;
+                        padding: 0.5rem 0;
+                        text-transform: capitalize;
+                    }
+                    .env-calendar-cell {
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        background: #ffffff;
+                        border-radius: 12px;
+                        height: 115px;
+                        padding: 0.5rem;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        transition: all 0.2s;
+                        position: relative;
+                    }
+                    .env-calendar-cell:hover {
+                        border-color: rgba(0,0,0,0.12);
+                        box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03);
+                    }
+                    .env-calendar-cell.other-month {
+                        background: #f8fafc;
+                    }
+                    .env-calendar-cell.other-month .env-calendar-day-num {
+                        color: #94a3b8;
+                    }
+                    .env-calendar-day-num {
+                        font-size: 0.9rem;
+                        font-weight: 700;
+                        color: #334155;
+                    }
+                    .env-calendar-cell.sunday .env-calendar-day-num {
+                        color: #ef4444;
+                    }
+                    .env-calendar-cell.today {
+                        border: 2px solid #39A900 !important;
+                        background-color: rgba(57, 169, 0, 0.01);
+                    }
+                    .env-cell-dot {
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 50%;
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                    }
+                    .env-cell-dot-free { background-color: #39A900; }
+                    .env-cell-dot-reserved { background-color: #0288d1; }
+                    .env-cell-dot-class { background-color: #ea580c; }
+                    .env-cell-dot-maint { background-color: #7c3aed; }
+                    .env-cell-dot-inactive { background-color: #ef4444; }
+
+                    .env-calendar-session-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        margin-top: 0.5rem;
+                        flex-grow: 1;
+                        justify-content: flex-start;
+                        overflow-y: auto;
+                        max-height: 70px;
+                    }
+                    .env-calendar-session-list::-webkit-scrollbar {
+                        width: 3px;
+                    }
+                    .env-calendar-session-list::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .env-calendar-session-list::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 3px;
+                    }
+                    .env-cal-session-card {
+                        border-radius: 8px;
+                        padding: 0.4rem;
+                        font-size: 0.65rem;
+                        font-weight: 600;
+                        line-height: 1.2;
+                        transition: all 0.2s;
+                        cursor: pointer;
+                        border: 1px solid transparent;
+                    }
+                    .env-cal-session-card-blue {
+                        background-color: #e0f2fe;
+                        border-left: 3px solid #0288d1;
+                        border-color: #bae6fd;
+                        color: #0369a1;
+                    }
+                    .env-cal-session-card-blue:hover {
+                        background-color: #bae6fd;
+                    }
+                    .env-cal-session-card-orange {
+                        background-color: #fff7ed;
+                        border-left: 3px solid #ea580c;
+                        border-color: #fed7aa;
+                        color: #c2410c;
+                    }
+                    .env-cal-session-card-orange:hover {
+                        background-color: #fed7aa;
+                    }
+                    .env-cal-session-card-purple {
+                        background-color: #f3e8ff;
+                        border-left: 3px solid #7c3aed;
+                        border-color: #e9d5ff;
+                        color: #6b21a8;
+                    }
+                    .env-cal-session-card-purple:hover {
+                        background-color: #e9d5ff;
+                    }
+                    .env-cal-session-card-red {
+                        background-color: #fef2f2;
+                        border-left: 3px solid #ef4444;
+                        border-color: #fee2e2;
+                        color: #991b1b;
+                    }
+                    .env-cal-session-card-red:hover {
+                        background-color: #fee2e2;
+                    }
+
+                    /* Legend dot */
+                    .env-legend-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        display: inline-block;
+                    }
                 </style>
 
                 <?php
@@ -1545,6 +1883,7 @@
                 $porcentaje_activos = $total_ambientes > 0 ? round(($total_activos / $total_ambientes) * 100) : 0;
                 ?>
 
+                <div id="env-catalog-view">
                 <!-- Cabecera -->
                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
                     <div class="d-flex align-items-center gap-3">
@@ -1717,7 +2056,7 @@
                                         </div>
 
                                         <!-- Detalles -->
-                                        <div class="col-12 col-sm-7 p-3 d-flex flex-column justify-content-between">
+                                        <div class="col-12 col-sm-7 p-3 d-flex flex-column justify-content-between" style="cursor: pointer;" onclick="verDisponibilidad(<?= $amb->id_numero_ambiente; ?>, '<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(addslashes($amb->tipo)); ?>', <?= $amb->capacidad; ?>, <?= $amb->computadores; ?>, '<?= htmlspecialchars(addslashes($amb->especialidad_ambiente)); ?>', <?= $amb->aire; ?>, <?= $amb->ventilador; ?>, <?= $amb->tablero; ?>, <?= $amb->tv; ?>, <?= $amb->disponibilidad; ?>, '<?= $amb->fecha_creacion ?>', '<?= !empty($ambFotos) ? $ambFotos[0]->url : 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=600&auto=format&fit=crop' ?>')">
                                             <div>
                                                 <h5 class="fw-bold text-dark mb-1 card-title-text"><?= htmlspecialchars($amb->nombre); ?></h5>
                                                 <div class="small text-secondary mb-2 d-flex align-items-center gap-2">
@@ -1762,10 +2101,10 @@
                                                 </div>
                                                 <?php if ($current_role === 'Coordinador'): ?>
                                                     <div class="d-flex gap-2">
-                                                        <button class="btn env-action-btn-edit d-flex align-items-center gap-1" onclick="editarAmbiente(<?= $amb->id_numero_ambiente; ?>, '<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(addslashes($amb->tipo)); ?>', <?= $amb->capacidad; ?>, <?= $amb->computadores; ?>, '<?= htmlspecialchars(addslashes($amb->especialidad_ambiente)); ?>', <?= $amb->aire; ?>, <?= $amb->ventilador; ?>, <?= $amb->tablero; ?>, <?= $amb->tv; ?>, <?= $amb->disponibilidad; ?>)">
+                                                        <button class="btn env-action-btn-edit d-flex align-items-center gap-1" onclick="event.stopPropagation(); editarAmbiente(<?= $amb->id_numero_ambiente; ?>, '<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(addslashes($amb->tipo)); ?>', <?= $amb->capacidad; ?>, <?= $amb->computadores; ?>, '<?= htmlspecialchars(addslashes($amb->especialidad_ambiente)); ?>', <?= $amb->aire; ?>, <?= $amb->ventilador; ?>, <?= $amb->tablero; ?>, <?= $amb->tv; ?>, <?= $amb->disponibilidad; ?>)">
                                                             <i class="fa-solid fa-pen"></i> Editar
                                                         </button>
-                                                        <a href="<?= URLROOT; ?>/index.php?route=ambientes/delete&id=<?= $amb->id_numero_ambiente; ?>" class="btn env-action-btn-delete d-flex align-items-center justify-content-center" onclick="return confirm('¿Seguro que deseas borrar este ambiente?');">
+                                                        <a href="<?= URLROOT; ?>/index.php?route=ambientes/delete&id=<?= $amb->id_numero_ambiente; ?>" class="btn env-action-btn-delete d-flex align-items-center justify-content-center" onclick="event.stopPropagation(); return confirm('¿Seguro que deseas borrar este ambiente?');">
                                                             <i class="fa-solid fa-trash"></i>
                                                         </a>
                                                     </div>
@@ -1792,9 +2131,559 @@
                         </ul>
                     </nav>
                 </div>
+                </div><!-- Fin de env-catalog-view -->
+
+                <!-- VISTA DETALLE Y CALENDARIO DE AMBIENTE -->
+                <div id="env-detail-view" class="d-none">
+                    <!-- Botón Volver -->
+                    <div class="mb-4">
+                        <button type="button" class="btn-volver-ambientes" onclick="volverAlCatalogo()">
+                            <i class="fa-solid fa-arrow-left me-2"></i> Volver a Ambientes
+                        </button>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Columna Izquierda: Ficha del Ambiente -->
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <div class="env-detail-sidebar">
+                                <div class="env-detail-img-container">
+                                    <img id="detail-env-image" src="" class="env-detail-img" alt="Ambiente">
+                                    <span id="detail-env-status-badge" class="env-badge-status env-badge-status-active" style="top: 0.75rem; left: 0.75rem;">✔ ACTIVO</span>
+                                </div>
+                                
+                                <span id="detail-env-code" class="env-detail-badge-id">Amb. 1</span>
+                                <h3 id="detail-env-name" class="env-detail-title">Laboratorio de Software 1</h3>
+                                <span id="detail-env-type-badge" class="env-detail-badge-type">Convencional</span>
+
+                                <div class="env-detail-specs">
+                                    <div class="env-detail-spec-item">
+                                        <i class="fa-solid fa-users env-detail-spec-icon"></i>
+                                        <span class="env-detail-spec-label">Capacidad</span>
+                                        <span id="detail-env-capacity" class="env-detail-spec-val">35 personas</span>
+                                    </div>
+                                    <div class="env-detail-spec-item">
+                                        <i class="fa-solid fa-desktop env-detail-spec-icon"></i>
+                                        <span class="env-detail-spec-label">Equipos (PCs)</span>
+                                        <span id="detail-env-pcs" class="env-detail-spec-val">35</span>
+                                    </div>
+                                    <div class="env-detail-spec-item">
+                                        <i class="fa-solid fa-building env-detail-spec-icon"></i>
+                                        <span class="env-detail-spec-label">Tipo de Ambiente</span>
+                                        <span id="detail-env-type" class="env-detail-spec-val">Convencional</span>
+                                    </div>
+                                    <div class="env-detail-spec-item">
+                                        <i class="fa-solid fa-screwdriver-wrench env-detail-spec-icon"></i>
+                                        <span class="env-detail-spec-label">Último mantenimiento</span>
+                                        <span id="detail-env-maintenance" class="env-detail-spec-val">02/07/2026</span>
+                                    </div>
+                                </div>
+
+                                <!-- Equipamiento -->
+                                <div class="env-detail-equip-section">
+                                    <h6 class="fw-bold text-dark small mb-3">Equipamiento</h6>
+                                    <div id="detail-env-equip-badges" class="d-flex flex-wrap gap-1">
+                                        <!-- Generado dinámicamente -->
+                                    </div>
+                                </div>
+
+                                <!-- Acciones -->
+                                <div class="mt-4 pt-3 border-top border-light-subtle d-flex flex-column gap-2">
+                                    <?php if ($current_role === 'Coordinador'): ?>
+                                        <button type="button" id="detail-btn-edit" class="env-detail-btn env-detail-btn-primary">
+                                            <i class="fa-solid fa-pen"></i> Editar Ambiente
+                                        </button>
+                                        <a href="#" id="detail-btn-toggle-disp" class="env-detail-btn env-detail-btn-danger text-decoration-none">
+                                            <i class="fa-solid fa-power-off"></i> Desactivar Ambiente
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="#" id="detail-btn-view-ficha" class="env-detail-btn env-detail-btn-secondary text-decoration-none">
+                                        <i class="fa-regular fa-file-lines"></i> Ver Novedades
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Calendario y Disponibilidad -->
+                        <div class="col-12 col-md-8 col-lg-9">
+                            <div class="env-calendar-container">
+                                <!-- Cabecera del Calendario -->
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
+                                    <div>
+                                        <h4 class="fw-bold text-dark mb-1">Disponibilidad del Ambiente</h4>
+                                        <p class="text-muted small mb-0">Calendario de ocupación y disponibilidad del ambiente.</p>
+                                    </div>
+                                    <div class="env-cal-header-controls">
+                                        <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(0)">Hoy</button>
+                                        <div class="btn-group">
+                                            <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(-1)">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(1)">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <button type="button" class="env-cal-btn"><i class="fa-regular fa-calendar"></i></button>
+                                        <select class="form-select form-select-sm border-secondary-subtle" style="width: auto; border-radius: 8px;">
+                                            <option>Mes</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Tarjetas de Métricas del Mes -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6 col-lg-3">
+                                        <div class="env-stat-card">
+                                            <div class="env-stat-icon-wrapper env-stat-icon-green">
+                                                <i class="fa-regular fa-circle-check"></i>
+                                            </div>
+                                            <div>
+                                                <div id="stat-dias-libres" class="env-stat-value">16</div>
+                                                <div class="env-stat-title">Días libres</div>
+                                                <div class="env-stat-desc">Este mes</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="env-stat-card">
+                                            <div class="env-stat-icon-wrapper env-stat-icon-orange">
+                                                <i class="fa-solid fa-users"></i>
+                                            </div>
+                                            <div>
+                                                <div id="stat-dias-ocupados" class="env-stat-value">10</div>
+                                                <div class="env-stat-title">Días ocupados</div>
+                                                <div class="env-stat-desc">Este mes</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="env-stat-card">
+                                            <div class="env-stat-icon-wrapper env-stat-icon-blue">
+                                                <i class="fa-regular fa-calendar-days"></i>
+                                            </div>
+                                            <div>
+                                                <div id="stat-proxima-reserva" class="env-stat-value" style="font-size: 0.95rem;">Mañana</div>
+                                                <div class="env-stat-title">Próxima reserva</div>
+                                                <div id="stat-proxima-reserva-time" class="env-stat-desc">7:00 AM - 11:00 AM</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <div class="env-stat-card">
+                                            <div class="env-stat-icon-wrapper env-stat-icon-purple">
+                                                <i class="fa-solid fa-chart-pie"></i>
+                                            </div>
+                                            <div>
+                                                <div id="stat-uso-ambiente" class="env-stat-value">62%</div>
+                                                <div class="env-stat-title">Uso del ambiente</div>
+                                                <div class="env-stat-desc">Este mes</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nombre del Mes actual -->
+                                <h3 id="env-calendar-month-name" class="fw-bold text-dark mb-4">Julio 2026</h3>
+
+                                <!-- Grid de Días -->
+                                <div class="env-calendar-container-inner mb-4">
+                                    <div class="env-calendar-days-grid mb-2">
+                                        <div class="env-calendar-day-name">Lun</div>
+                                        <div class="env-calendar-day-name">Mar</div>
+                                        <div class="env-calendar-day-name">Mié</div>
+                                        <div class="env-calendar-day-name">Jue</div>
+                                        <div class="env-calendar-day-name">Vie</div>
+                                        <div class="env-calendar-day-name">Sáb</div>
+                                        <div class="env-calendar-day-name">Dom</div>
+                                    </div>
+                                    <div class="env-calendar-days-grid" id="gridDiasCalendarioAmbiente">
+                                        <!-- Generado dinámicamente con JS -->
+                                    </div>
+                                </div>
+
+                                <!-- Leyenda y Acción de Reservar -->
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top">
+                                    <div class="d-flex flex-wrap gap-3 align-items-center">
+                                        <div class="d-flex align-items-center gap-2 small text-secondary">
+                                            <span class="env-legend-dot" style="background-color: #39A900;"></span> Libre
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 small text-secondary">
+                                            <span class="env-legend-dot" style="background-color: #0288d1;"></span> Reservado
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 small text-secondary">
+                                            <span class="env-legend-dot" style="background-color: #ea580c;"></span> Clase Programada
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 small text-secondary">
+                                            <span class="env-legend-dot" style="background-color: #7c3aed;"></span> Mantenimiento
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 small text-secondary">
+                                            <span class="env-legend-dot" style="background-color: #ef4444;"></span> No disponible
+                                        </div>
+                                    </div>
+                                    <?php if ($current_role === 'Coordinador'): ?>
+                                        <button type="button" class="btn btn-success px-4 py-2 d-flex align-items-center gap-2 shadow-sm fw-semibold" style="background-color: #39A900; border-color: #39A900; border-radius: 25px;" onclick="reservarAmbienteActual()">
+                                            <i class="fa-regular fa-calendar-plus fs-5"></i> Reservar Ambiente
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Script del motor de filtros de ambientes -->
                 <script>
+                    // Variables globales para la vista de detalle de ambientes
+                    var selectedAmbiente = null;
+                    var calendarDateAmbiente = new Date(2026, 6, 1);
+                    var programacionAmbienteData = [];
+
+                    function verDisponibilidad(id, nombre, tipo, capacidad, computadores, especialidad, aire, ventilador, tablero, tv, disponibilidad, fecha_creacion, url_foto) {
+                        selectedAmbiente = {
+                            id: id,
+                            nombre: nombre,
+                            tipo: tipo,
+                            capacidad: capacidad,
+                            computadores: computadores,
+                            especialidad: especialidad,
+                            aire: aire,
+                            ventilador: ventilador,
+                            tablero: tablero,
+                            tv: tv,
+                            disponibilidad: disponibilidad,
+                            fecha_creacion: fecha_creacion,
+                            url_foto: url_foto
+                        };
+                        
+                        document.getElementById('detail-env-image').src = url_foto;
+                        document.getElementById('detail-env-image').onerror = function() {
+                            this.src = 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=600&auto=format&fit=crop';
+                        };
+                        
+                        const statusBadge = document.getElementById('detail-env-status-badge');
+                        if (disponibilidad == 1) {
+                            statusBadge.innerText = '✔ ACTIVO';
+                            statusBadge.className = 'env-badge-status env-badge-status-active';
+                        } else {
+                            statusBadge.innerText = '✖ INACTIVO';
+                            statusBadge.className = 'env-badge-status env-badge-status-inactive';
+                        }
+                        
+                        document.getElementById('detail-env-code').innerText = `Amb. ${id}`;
+                        document.getElementById('detail-env-name').innerText = nombre;
+                        
+                        const typeBadge = document.getElementById('detail-env-type-badge');
+                        typeBadge.innerText = tipo;
+                        typeBadge.className = `env-detail-badge-type ${tipo.toLowerCase() === 'especializado' ? 'bg-info-subtle text-info' : 'bg-success-subtle text-success'}`;
+                        
+                        document.getElementById('detail-env-capacity').innerText = `${capacidad} personas`;
+                        document.getElementById('detail-env-pcs').innerText = computadores;
+                        document.getElementById('detail-env-type').innerText = tipo;
+                        
+                        let fechaMantenimiento = 'No registrada';
+                        if (fecha_creacion) {
+                            const parts = fecha_creacion.split(' ')[0].split('-');
+                            if (parts.length === 3) {
+                                fechaMantenimiento = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                            }
+                        }
+                        document.getElementById('detail-env-maintenance').innerText = fechaMantenimiento;
+                        
+                        const equipBadges = document.getElementById('detail-env-equip-badges');
+                        equipBadges.innerHTML = '';
+                        if (aire == 1) equipBadges.innerHTML += `<span class="env-equip-badge env-equip-aire">Aire</span>`;
+                        if (ventilador == 1) equipBadges.innerHTML += `<span class="env-equip-badge env-equip-ventilador">Ventilador</span>`;
+                        if (tablero == 1) equipBadges.innerHTML += `<span class="env-equip-badge env-equip-tablero">Tablero</span>`;
+                        if (tv == 1) equipBadges.innerHTML += `<span class="env-equip-badge env-equip-tv">TV</span>`;
+                        if (aire != 1 && ventilador != 1 && tablero != 1 && tv != 1) equipBadges.innerHTML += `<span class="text-secondary small">Ninguno</span>`;
+                        
+                        const btnEdit = document.getElementById('detail-btn-edit');
+                        if (btnEdit) {
+                            btnEdit.setAttribute('onclick', `editarAmbiente(${id}, '${nombre.replace(/'/g, "\\'")}', '${tipo}', ${capacidad}, ${computadores}, '${(especialidad || '').replace(/'/g, "\\'")}', ${aire}, ${ventilador}, ${tablero}, ${tv}, ${disponibilidad})`);
+                        }
+                        
+                        const btnToggle = document.getElementById('detail-btn-toggle-disp');
+                        if (btnToggle) {
+                            btnToggle.href = `${urlRoot}/index.php?route=ambientes/toggleDisponibilidad&id=${id}`;
+                            btnToggle.innerHTML = disponibilidad == 1 ? '<i class="fa-solid fa-power-off"></i> Desactivar Ambiente' : '<i class="fa-solid fa-power-off"></i> Activar Ambiente';
+                            btnToggle.className = disponibilidad == 1 ? 'env-detail-btn env-detail-btn-danger text-decoration-none' : 'env-detail-btn env-detail-btn-primary text-decoration-none';
+                        }
+                        
+                        const btnFicha = document.getElementById('detail-btn-view-ficha');
+                        if (btnFicha) {
+                            btnFicha.href = `${urlRoot}/index.php?route=ambientes/novedad&id=${id}`;
+                        }
+                        
+                        document.getElementById('env-catalog-view').classList.add('d-none');
+                        document.getElementById('env-detail-view').classList.remove('d-none');
+                        
+                        calendarDateAmbiente = new Date(2026, 6, 1);
+                        cargarProgramacionAmbiente(id);
+                    }
+
+                    function volverAlCatalogo() {
+                        selectedAmbiente = null;
+                        document.getElementById('env-detail-view').classList.add('d-none');
+                        document.getElementById('env-catalog-view').classList.remove('d-none');
+                    }
+
+                    function reservarAmbienteActual() {
+                        if (!selectedAmbiente) return;
+                        
+                        const modalEl = document.getElementById('modalAsignarHorario');
+                        if (!modalEl) {
+                            Swal.fire('Atención', 'Para realizar una reserva, diríjase a la pestaña Programación Académica y use el formulario de asignación.', 'info');
+                            return;
+                        }
+                        
+                        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                        
+                        const selectAmbiente = document.getElementById('modal_id_numero_ambiente');
+                        if (selectAmbiente) {
+                            selectAmbiente.value = selectedAmbiente.id;
+                            selectAmbiente.dispatchEvent(new Event('change'));
+                        }
+                    }
+
+                    function navegarMesAmbiente(dir) {
+                        if (dir === 0) {
+                            calendarDateAmbiente = new Date();
+                        } else {
+                            calendarDateAmbiente.setMonth(calendarDateAmbiente.getMonth() + dir);
+                        }
+                        renderizarCalendarioAmbiente();
+                    }
+
+                    function cargarProgramacionAmbiente(id) {
+                        const grid = document.getElementById('gridDiasCalendarioAmbiente');
+                        grid.innerHTML = `
+                            <div class="col-12 text-center py-5">
+                                <div class="spinner-border text-success" role="status">
+                                    <span class="visually-hidden">Cargando disponibilidad...</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        fetch(`${urlRoot}/index.php?route=ambientes/get_programacion&id=${id}`)
+                            .then(res => res.json())
+                            .then(res => {
+                                if (res.success) {
+                                    programacionAmbienteData = res.data;
+                                } else {
+                                    console.error("Error al cargar la programación del ambiente:", res.message);
+                                    programacionAmbienteData = [];
+                                }
+                                renderizarCalendarioAmbiente();
+                            })
+                            .catch(err => {
+                                console.error("Error en fetch de programación:", err);
+                                programacionAmbienteData = [];
+                                renderizarCalendarioAmbiente();
+                            });
+                    }
+
+                    function renderizarCalendarioAmbiente() {
+                        const grid = document.getElementById('gridDiasCalendarioAmbiente');
+                        const labelMesAnio = document.getElementById('env-calendar-month-name');
+                        
+                        if (!grid || !labelMesAnio || !selectedAmbiente) return;
+                        
+                        grid.innerHTML = '';
+                        
+                        const year = calendarDateAmbiente.getFullYear();
+                        const month = calendarDateAmbiente.getMonth();
+                        
+                        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                        labelMesAnio.innerText = meses[month] + ' ' + year;
+                        
+                        const primerDiaMes = new Date(year, month, 1);
+                        const startDay = primerDiaMes.getDay();
+                        const localStartDay = startDay === 0 ? 7 : startDay;
+                        
+                        const diasEnMes = new Date(year, month + 1, 0).getDate();
+                        const diasEnMesAnterior = new Date(year, month, 0).getDate();
+                        
+                        for (let i = localStartDay - 1; i > 0; i--) {
+                            const diaNum = diasEnMesAnterior - i + 1;
+                            const prevDate = new Date(year, month - 1, diaNum);
+                            crearCeldaDiaAmbiente(prevDate, true, grid);
+                        }
+                        
+                        const hoy = new Date();
+                        for (let i = 1; i <= diasEnMes; i++) {
+                            const currentDate = new Date(year, month, i);
+                            const esHoy = currentDate.getDate() === hoy.getDate() && currentDate.getMonth() === hoy.getMonth() && currentDate.getFullYear() === hoy.getFullYear();
+                            crearCeldaDiaAmbiente(currentDate, false, grid, esHoy);
+                        }
+                        
+                        const celdasTotales = grid.children.length;
+                        const celdasRestantes = celdasTotales % 7 === 0 ? 0 : 7 - (celdasTotales % 7);
+                        for (let i = 1; i <= celdasRestantes; i++) {
+                            const nextDate = new Date(year, month + 1, i);
+                            crearCeldaDiaAmbiente(nextDate, true, grid);
+                        }
+                        
+                        calcularMetricasMesAmbiente(year, month);
+                    }
+
+                    function crearCeldaDiaAmbiente(date, esOtroMes, grid, esHoy = false) {
+                        const diaNum = date.getDate();
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(diaNum).padStart(2, '0');
+                        const dateStr = `${yyyy}-${mm}-${dd}`;
+                        const dayOfWeek = date.getDay();
+                        
+                        const sesiones = programacionAmbienteData.filter(s => s.fecha_inicio === dateStr);
+                        
+                        const celda = document.createElement('div');
+                        celda.className = 'env-calendar-cell';
+                        if (esOtroMes) celda.className += ' other-month';
+                        if (esHoy) celda.className += ' today';
+                        if (dayOfWeek === 0) celda.className += ' sunday';
+                        
+                        let html = `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="env-calendar-day-num">${diaNum}</span>
+                        `;
+                        
+                        if (selectedAmbiente.disponibilidad === 0) {
+                            html += `<span class="env-cell-dot env-cell-dot-inactive" title="No disponible"></span>`;
+                        } else if (sesiones.length > 0) {
+                            const dotType = (parseInt(sesiones[0].id_programacion) % 2 === 0) ? 'env-cell-dot-reserved' : 'env-cell-dot-class';
+                            html += `<span class="env-cell-dot ${dotType}"></span>`;
+                        } else {
+                            html += `<span class="env-cell-dot env-cell-dot-free" title="Libre"></span>`;
+                        }
+                        
+                        html += `
+                            </div>
+                            <div class="env-calendar-session-list">
+                        `;
+                        
+                        if (selectedAmbiente.disponibilidad === 0) {
+                            html += `
+                                <div class="env-cal-session-card env-cal-session-card-red">
+                                    <i class="fa-solid fa-ban me-1"></i> No disponible
+                                </div>
+                            `;
+                        } else {
+                            sesiones.forEach(s => {
+                                const isBlue = (parseInt(s.id_programacion) % 2 === 0);
+                                const cardClass = isBlue ? 'env-cal-session-card-blue' : 'env-cal-session-card-orange';
+                                const icon = isBlue ? '<i class="fa-solid fa-desktop me-1"></i>' : '<i class="fa-solid fa-users me-1"></i>';
+                                const horaIni = s.hora_inicio.substring(0, 5);
+                                const horaFin = s.hora_fin.substring(0, 5);
+                                
+                                html += `
+                                    <div class="env-cal-session-card ${cardClass}" onclick="event.stopPropagation(); mostrarDetalleSessionAmbiente('${s.instructor_nombre} ${s.instructor_apellido}', '${encodeURIComponent(JSON.stringify(s))}')">
+                                        <div class="fw-bold">${horaIni} - ${horaFin}</div>
+                                        <div class="text-truncate">${icon} ${s.competencia_nombre || s.ra_descripcion || 'Formación'}</div>
+                                    </div>
+                                `;
+                            });
+                        }
+                        
+                        html += `</div>`;
+                        celda.innerHTML = html;
+                        grid.appendChild(celda);
+                    }
+
+                    function mostrarDetalleSessionAmbiente(instructor, infoEscapada) {
+                        const s = JSON.parse(decodeURIComponent(infoEscapada));
+                        Swal.fire({
+                            title: `<strong class="text-dark"><i class="fa-solid fa-clock text-success me-2"></i>Detalle de Formación</strong>`,
+                            html: `
+                                <div class="text-start py-2 px-3 small">
+                                    <p class="mb-2"><strong>Ficha:</strong> <span class="badge bg-secondary">#${s.numero_ficha}</span></p>
+                                    <p class="mb-2"><strong>Instructor:</strong> ${instructor}</p>
+                                    <p class="mb-2"><strong>Ambiente:</strong> ${s.ambiente_nombre}</p>
+                                    <p class="mb-2"><strong>Horario:</strong> ${s.nombre_dia} (${s.hora_inicio.substring(0, 5)} - ${s.hora_fin.substring(0, 5)})</p>
+                                    <p class="mb-2"><strong>Competencia:</strong> ${s.competencia_nombre || 'N/A'}</p>
+                                    <p class="mb-0"><strong>Resultado:</strong> [${s.ra_codigo}] ${s.ra_descripcion}</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Cerrar',
+                            confirmButtonColor: '#39A900',
+                            customClass: {
+                                popup: 'rounded-4 border-0'
+                            }
+                        });
+                    }
+
+                    function calcularMetricasMesAmbiente(year, month) {
+                        const totalDays = new Date(year, month + 1, 0).getDate();
+                        
+                        let workingDays = 0;
+                        let diasOcupados = 0;
+                        const occupiedDates = new Set();
+                        
+                        for (let i = 1; i <= totalDays; i++) {
+                            const d = new Date(year, month, i);
+                            if (d.getDay() !== 0) {
+                                workingDays++;
+                            }
+                        }
+                        
+                        programacionAmbienteData.forEach(s => {
+                            const parts = s.fecha_inicio.split('-');
+                            if (parts.length === 3) {
+                                const sYear = parseInt(parts[0], 10);
+                                const sMonth = parseInt(parts[1], 10) - 1;
+                                if (sYear === year && sMonth === month) {
+                                    occupiedDates.add(s.fecha_inicio);
+                                }
+                            }
+                        });
+                        
+                        diasOcupados = occupiedDates.size;
+                        let diasLibres = workingDays - diasOcupados;
+                        if (diasLibres < 0) diasLibres = 0;
+                        
+                        document.getElementById('stat-dias-libres').innerText = diasLibres;
+                        document.getElementById('stat-dias-ocupados').innerText = diasOcupados;
+                        
+                        const usagePct = workingDays > 0 ? Math.round((diasOcupados / workingDays) * 100) : 0;
+                        document.getElementById('stat-uso-ambiente').innerText = usagePct + '%';
+                        
+                        const hoyStr = new Date().toISOString().split('T')[0];
+                        const proximas = programacionAmbienteData
+                            .filter(s => s.fecha_inicio >= hoyStr)
+                            .sort((a, b) => {
+                                if (a.fecha_inicio !== b.fecha_inicio) {
+                                    return a.fecha_inicio.localeCompare(b.fecha_inicio);
+                                }
+                                return a.hora_inicio.localeCompare(b.hora_inicio);
+                            });
+                            
+                        const proximaCardValue = document.getElementById('stat-proxima-reserva');
+                        const proximaCardTime = document.getElementById('stat-proxima-reserva-time');
+                        
+                        if (proximas.length > 0) {
+                            const prox = proximas[0];
+                            const fechaParts = prox.fecha_inicio.split('-');
+                            const fechaFormat = `${fechaParts[2]}/${fechaParts[1]}`;
+                            
+                            let diaLabel = fechaFormat;
+                            const d = new Date(prox.fecha_inicio + 'T00:00:00');
+                            const hoy = new Date();
+                            const mañana = new Date();
+                            mañana.setDate(hoy.getDate() + 1);
+                            
+                            if (d.toDateString() === hoy.toDateString()) {
+                                diaLabel = 'Hoy';
+                            } else if (d.toDateString() === mañana.toDateString()) {
+                                diaLabel = 'Mañana';
+                            }
+                            
+                            proximaCardValue.innerText = diaLabel;
+                            proximaCardTime.innerText = `${prox.hora_inicio.substring(0, 5)} - ${prox.hora_fin.substring(0, 5)}`;
+                        } else {
+                            proximaCardValue.innerText = 'Ninguna';
+                            proximaCardTime.innerText = 'Sin reservas futuras';
+                        }
+                    }
+
                     document.addEventListener("DOMContentLoaded", function() {
                         const searchInput = document.getElementById("env-search-input");
                         const filterEstado = document.getElementById("env-filter-estado");
@@ -5157,6 +6046,51 @@ function setupAsignarHorarioModal() {
 
 document.addEventListener('DOMContentLoaded', function() {
     inicializarCalendario();
+    
+    // Auto-open reservation modal if reserve_amb parameter is present
+    const hash = window.location.hash;
+    let targetAmbId = null;
+    
+    if (hash && hash.includes('pills-programacion')) {
+        const tabEl = document.getElementById('pills-programacion-tab');
+        if (tabEl) {
+            tabEl.click();
+        }
+        
+        // Parse reserve_amb parameter from hash
+        const parts = hash.split('&');
+        parts.forEach(part => {
+            if (part.startsWith('reserve_amb=')) {
+                targetAmbId = part.split('=')[1];
+            }
+        });
+    }
+    
+    if (!targetAmbId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        targetAmbId = urlParams.get('reserve_amb');
+        if (targetAmbId) {
+            const tabEl = document.getElementById('pills-programacion-tab');
+            if (tabEl) {
+                tabEl.click();
+            }
+        }
+    }
+    
+    if (targetAmbId) {
+        setTimeout(() => {
+            const modalEl = document.getElementById('modalAsignarHorario');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                const selectAmbiente = document.getElementById('modal_id_numero_ambiente');
+                if (selectAmbiente) {
+                    selectAmbiente.value = targetAmbId;
+                    selectAmbiente.dispatchEvent(new Event('change'));
+                }
+            }
+        }, 600);
+    }
     
     // Lógica para Carga Masiva de Usuarios
     const formMasivoUsuarios = document.querySelector("#modalCargaMasivaUsuarios form");
