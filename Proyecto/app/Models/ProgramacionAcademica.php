@@ -15,9 +15,16 @@ class ProgramacionAcademica {
      * Obtener toda la programación académica
      */
     public function all() {
-        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+        $this->db->query("SELECT pa.id_programacion, pa.numero_ficha, pa.id_usuario, pa.id_numero_ambiente, pa.id_dias, pa.hora_inicio, pa.hora_fin, pa.id_resultado_aprendizaje, pa.fecha_inicio, 
+                          f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
-                          c.nombre as competencia_nombre 
+                          c.nombre as competencia_nombre,
+                          ra.sesiones_asignadas as total_sesiones,
+                          (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
@@ -72,9 +79,16 @@ class ProgramacionAcademica {
      * Obtener detalle directo para una fecha (Sin proyecciones)
      */
     public function getByFechaDetalle($fecha) {
-        $this->db->query("SELECT pa.*, f.numero_ficha, j.nombre as jornada_nombre, u.nombre as instructor_nombre, 
+        $this->db->query("SELECT pa.id_programacion, pa.numero_ficha, pa.id_usuario, pa.id_numero_ambiente, pa.id_dias, pa.hora_inicio, pa.hora_fin, pa.id_resultado_aprendizaje, pa.fecha_inicio, 
+                          f.numero_ficha, j.nombre as jornada_nombre, u.nombre as instructor_nombre, 
                           u.apellido as instructor_apellido, a.nombre as ambiente_nombre, d.nombre_dia, 
-                          ra.codigo as ra_codigo, c.nombre as competencia_nombre 
+                          ra.codigo as ra_codigo, c.nombre as competencia_nombre,
+                          ra.sesiones_asignadas as total_sesiones,
+                          (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN jornada j ON f.id_jornada = j.id_jornada
@@ -110,9 +124,16 @@ class ProgramacionAcademica {
     }
 
     public function getByInstructor($id_usuario) {
-        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+        $this->db->query("SELECT pa.id_programacion, pa.numero_ficha, pa.id_usuario, pa.id_numero_ambiente, pa.id_dias, pa.hora_inicio, pa.hora_fin, pa.id_resultado_aprendizaje, pa.fecha_inicio, 
+                          f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
-                          c.nombre as competencia_nombre 
+                          c.nombre as competencia_nombre,
+                          ra.sesiones_asignadas as total_sesiones,
+                          (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
@@ -127,9 +148,16 @@ class ProgramacionAcademica {
     }
 
     public function getByAprendiz($id_usuario) {
-        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+        $this->db->query("SELECT pa.id_programacion, pa.numero_ficha, pa.id_usuario, pa.id_numero_ambiente, pa.id_dias, pa.hora_inicio, pa.hora_fin, pa.id_resultado_aprendizaje, pa.fecha_inicio, 
+                          f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
-                          c.nombre as competencia_nombre 
+                          c.nombre as competencia_nombre,
+                          ra.sesiones_asignadas as total_sesiones,
+                          (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN ficha_aprendiz fa ON fa.numero_ficha = f.numero_ficha
@@ -145,9 +173,16 @@ class ProgramacionAcademica {
     }
 
     public function getByFicha($numero_ficha) {
-        $this->db->query("SELECT pa.*, f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
+        $this->db->query("SELECT pa.id_programacion, pa.numero_ficha, pa.id_usuario, pa.id_numero_ambiente, pa.id_dias, pa.hora_inicio, pa.hora_fin, pa.id_resultado_aprendizaje, pa.fecha_inicio, 
+                          f.numero_ficha, u.nombre as instructor_nombre, u.apellido as instructor_apellido, 
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
-                          c.nombre as competencia_nombre 
+                          c.nombre as competencia_nombre,
+                          ra.sesiones_asignadas as total_sesiones,
+                          (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 

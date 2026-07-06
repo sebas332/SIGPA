@@ -87,6 +87,63 @@ class AmbienteController extends BaseController {
     }
 
     /**
+     * Guardar novedad desde el dashboard del Instructor
+     */
+    public function guardarNovedad() {
+        $this->requireRol('Instructor');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_numero_ambiente = $_POST['id_numero_ambiente'] ?? '';
+            $descripcion = trim($_POST['descripcion'] ?? '');
+            $fecha_reporte = $_POST['fecha_reporte'] ?? date('Y-m-d');
+            
+            if ($id_numero_ambiente !== '' && !empty($descripcion)) {
+                $data = [
+                    'id_numero_ambiente' => $id_numero_ambiente,
+                    'id_usuario' => $_SESSION['user_id'],
+                    'descripcion' => $descripcion,
+                    'fecha_reporte' => $fecha_reporte
+                ];
+                
+                if ($this->novedadModel->create($data)) {
+                    $db_inst = Database::getInstance();
+                    $new_nov_id = $db_inst->lastInsertId();
+                    
+                    $_SESSION['flash_success'] = 'Novedad registrada y enviada al Coordinador con éxito.';
+                    AuditLogger::log('Reporte de Novedad', 'novedad_ambiente', $new_nov_id, 'Ambiente ID: ' . $id_numero_ambiente . ', Detalle: ' . $descripcion);
+                } else {
+                    $_SESSION['flash_error'] = 'Error al registrar la incidencia en la base de datos.';
+                }
+            } else {
+                $_SESSION['flash_error'] = 'Debe seleccionar un ambiente y escribir la descripción.';
+            }
+        }
+        $this->redirect('dashboard/index#pills-inst-novedad');
+    }
+
+    /**
+     * Resolver novedad desde el dashboard del Coordinador
+     */
+    public function resolverNovedad() {
+        $this->requireRol('Coordinador');
+        $id_novedad = $_GET['id'] ?? 0;
+        
+        if ($id_novedad > 0) {
+            $db = Database::getInstance();
+            $db->query("DELETE FROM novedad_ambiente WHERE id_novedad = :id");
+            $db->bind(':id', $id_novedad);
+            if ($db->execute()) {
+                $_SESSION['flash_success'] = 'Estado actualizado: La avería ha sido marcada como resuelta.';
+                AuditLogger::log('Novedad Resuelta', 'novedad_ambiente', $id_novedad, 'Novedad ID: ' . $id_novedad . ' resuelta/eliminada.');
+            } else {
+                $_SESSION['flash_error'] = 'Error al intentar marcar la incidencia como resuelta.';
+            }
+        }
+        
+        $this->redirect('dashboard/index#pills-novedades');
+    }
+
+    /**
      * Procesar subida de múltiples fotos
      */
     private function procesarFotos($id_numero_ambiente) {

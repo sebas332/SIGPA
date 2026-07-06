@@ -3090,16 +3090,18 @@
                             <div class="d-flex flex-column flex-sm-row gap-3">
                                 <div>
                                     <label class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">SESIÓN PROGRAMADA</label>
-                                    <select name="sesion_programada" class="select-sena form-select shadow-sm">
-                                        <option value="2721345_lunes">Ficha 2721345 (Lunes)</option>
-                                        <option value="2721345_miercoles">Ficha 2721345 (Miércoles)</option>
-                                        <option value="2721345_viernes">Ficha 2721345 (Viernes)</option>
-                                        <option value="2839485_martes">Ficha 2839485 (Martes)</option>
+                                    <select name="id_programacion" id="id_programacion_select" class="select-sena form-select shadow-sm" required>
+                                        <option value="">Seleccione una sesión...</option>
+                                        <?php if (!empty($programacion)): ?>
+                                            <?php foreach ($programacion as $prog): ?>
+                                                <option value="<?= $prog->id_programacion; ?>">Ficha <?= $prog->numero_ficha; ?> (<?= $prog->nombre_dia; ?>)</option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">FECHA DE SESIÓN</label>
-                                    <input type="date" name="fecha_asistencia" class="input-date-sena form-control shadow-sm" value="2026-06-29">
+                                    <input type="date" name="fecha_asistencia" class="input-date-sena form-control shadow-sm" value="<?= date('Y-m-d'); ?>" required>
                                 </div>
                             </div>
                         </div>
@@ -3112,7 +3114,7 @@
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 pb-3 border-bottom border-light-subtle gap-3">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="fa-solid fa-user-group text-secondary"></i>
-                                <h6 class="fw-bold text-dark mb-0">Planilla de Aprendices (<?= count($aprendices) > 0 ? count($aprendices) : 4; ?> registrados)</h6>
+                                <h6 class="fw-bold text-dark mb-0">Planilla de Aprendices (<span id="countAprendices">0</span> registrados)</h6>
                             </div>
                             <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
                                 <span id="estadoAsistenciaMasiva" class="text-secondary small fw-medium" aria-live="polite">Puedes marcar cada aprendiz individualmente</span>
@@ -3123,111 +3125,101 @@
                         </div>
 
                         <!-- Listado Conmutable -->
-                        <div class="list-group list-group-flush">
-                            
-                            <?php if (empty($aprendices)): ?>
-                                <!-- Fila 1: Hasler Gómez -->
-                                <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                    <div class="d-flex align-items-center gap-4">
-                                        <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_hasler')">
-                                            <i class="fa-solid fa-check"></i>
-                                        </button>
-                                        <input type="hidden" name="asistencia[1][estado]" id="estado_hasler" value="1">
-                                        <input type="hidden" name="asistencia[1][nombre]" value="Hasler Gómez">
-                                        <div>
-                                            <div class="fw-bold text-dark fs-6 mb-1">Hasler Gómez</div>
-                                            <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
-                                        </div>
-                                    </div>
-                                    <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                        <input type="text" name="asistencia[1][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                    </div>
-                                </div>
-
-                                <!-- Fila 2: Sofía Ramírez (Permite conmutar a Falla exactamente como en la Imagen 2) -->
-                                <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                    <div class="d-flex align-items-center gap-4">
-                                        <button type="button" class="btn-estado-toggle falla shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_sofia')">
-                                            F
-                                        </button>
-                                        <input type="hidden" name="asistencia[2][estado]" id="estado_sofia" value="0">
-                                        <input type="hidden" name="asistencia[2][nombre]" value="Sofía Ramírez">
-                                        <div>
-                                            <div class="fw-bold text-dark fs-6 mb-1">Sofía Ramírez</div>
-                                            <span class="lbl-estado text-danger fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">INASISTENCIA (FALLA)</span>
-                                        </div>
-                                    </div>
-                                    <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                        <input type="text" name="asistencia[2][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                    </div>
-                                </div>
-
-                                <!-- Fila 3: Mateo Alzate -->
-                                <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                    <div class="d-flex align-items-center gap-4">
-                                        <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_mateo')">
-                                            <i class="fa-solid fa-check"></i>
-                                        </button>
-                                        <input type="hidden" name="asistencia[3][estado]" id="estado_mateo" value="1">
-                                        <input type="hidden" name="asistencia[3][nombre]" value="Mateo Alzate">
-                                        <div>
-                                            <div class="fw-bold text-dark fs-6 mb-1">Mateo Alzate</div>
-                                            <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
-                                        </div>
-                                    </div>
-                                    <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                        <input type="text" name="asistencia[3][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                    </div>
-                                </div>
-
-                                <!-- Fila 4: Laura Montoya -->
-                                <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                    <div class="d-flex align-items-center gap-4">
-                                        <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_laura')">
-                                            <i class="fa-solid fa-check"></i>
-                                        </button>
-                                        <input type="hidden" name="asistencia[4][estado]" id="estado_laura" value="1">
-                                        <input type="hidden" name="asistencia[4][nombre]" value="Laura Montoya">
-                                        <div>
-                                            <div class="fw-bold text-dark fs-6 mb-1">Laura Montoya</div>
-                                            <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
-                                        </div>
-                                    </div>
-                                    <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                        <input type="text" name="asistencia[4][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                    </div>
-                                </div>
-
-                            <?php else: ?>
-                                <!-- Fila dinámica real con la base de datos manteniendo el diseño de conmutación -->
-                                <?php foreach ($aprendices as $index => $apr): ?>
-                                    <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                        <div class="d-flex align-items-center gap-4">
-                                            <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_apr_<?= $apr->id_usuario; ?>')">
-                                                <i class="fa-solid fa-check"></i>
-                                            </button>
-                                            <input type="hidden" name="asistencia[<?= $apr->id_usuario; ?>][estado]" id="estado_apr_<?= $apr->id_usuario; ?>" value="1">
-                                            <input type="hidden" name="asistencia[<?= $apr->id_usuario; ?>][id_usuario]" value="<?= $apr->id_usuario; ?>">
-                                            <div>
-                                                <div class="fw-bold text-dark fs-6 mb-1"><?= $apr->nombre . ' ' . $apr->apellido; ?></div>
-                                                <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
-                                            </div>
-                                        </div>
-                                        <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                            <input type="text" name="asistencia[<?= $apr->id_usuario; ?>][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-
+                        <div class="list-group list-group-flush" id="listaAprendicesContainer">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-hand-pointer fa-2x mb-3 text-secondary"></i>
+                                <p class="mb-0 fw-medium">Seleccione una Sesión Programada para cargar la planilla de aprendices.</p>
+                            </div>
                         </div>
 
                         <!-- Botón de Envío de Planilla -->
                         <div class="mt-5 d-flex justify-content-end">
-                            <button type="button" class="btn-sena-lg" onclick="alert('¡Planilla Digital de Asistencia guardada y notificada con éxito!');">
+                            <button type="submit" class="btn-sena-lg">
                                 Guardar Planilla de Asistencia
                             </button>
                         </div>
+                        
+                        <script>
+                            const aprendicesPorProgramacion = <?= isset($aprendicesPorProgramacion) ? $aprendicesPorProgramacion : '{}'; ?>;
+                            const listaContainer = document.getElementById('listaAprendicesContainer');
+                            const countAprendices = document.getElementById('countAprendices');
+                            const selectProgramacion = document.getElementById('id_programacion_select');
+
+                            selectProgramacion.addEventListener('change', function() {
+                                const idProg = this.value;
+                                listaContainer.innerHTML = '';
+                                
+                                if (!idProg || !aprendicesPorProgramacion[idProg] || aprendicesPorProgramacion[idProg].length === 0) {
+                                    countAprendices.innerText = '0';
+                                    listaContainer.innerHTML = `
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="fa-solid fa-users-slash fa-2x mb-3 text-secondary"></i>
+                                            <p class="mb-0 fw-medium">No hay aprendices registrados en la ficha correspondiente a esta sesión.</p>
+                                        </div>
+                                    `;
+                                    return;
+                                }
+
+                                const aprendices = aprendicesPorProgramacion[idProg];
+                                countAprendices.innerText = aprendices.length;
+                                
+                                let html = '';
+                                aprendices.forEach(apr => {
+                                    html += `
+                                        <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
+                                            <div class="d-flex align-items-center gap-4">
+                                                <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_apr_${apr.id_usuario}')">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                                <input type="hidden" name="asistencia[${apr.id_usuario}][estado]" id="estado_apr_${apr.id_usuario}" value="1">
+                                                <input type="hidden" name="asistencia[${apr.id_usuario}][id_usuario]" value="${apr.id_usuario}">
+                                                <div>
+                                                    <div class="fw-bold text-dark fs-6 mb-1">${apr.nombre} ${apr.apellido}</div>
+                                                    <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
+                                                </div>
+                                            </div>
+                                            <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
+                                                <input type="text" name="asistencia[${apr.id_usuario}][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                listaContainer.innerHTML = html;
+                            });
+
+                            // Funciones de conmutación de asistencia
+                            function toggleEstadoAsistencia(btn, hiddenId) {
+                                const hiddenInput = document.getElementById(hiddenId);
+                                const lblEstado = btn.parentElement.querySelector('.lbl-estado');
+                                
+                                if (hiddenInput.value === "1") {
+                                    hiddenInput.value = "0";
+                                    btn.className = "btn-estado-toggle falla shadow-sm";
+                                    btn.innerHTML = "F";
+                                    lblEstado.className = "lbl-estado text-danger fw-bold small";
+                                    lblEstado.innerText = "INASISTENCIA (FALLA)";
+                                } else {
+                                    hiddenInput.value = "1";
+                                    btn.className = "btn-estado-toggle presente shadow-sm";
+                                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                                    lblEstado.className = "lbl-estado text-success fw-bold small";
+                                    lblEstado.innerText = "ASISTE (PRESENTE)";
+                                }
+                            }
+
+                            function marcarTodosPresentes() {
+                                const btns = listaContainer.querySelectorAll('.btn-estado-toggle');
+                                btns.forEach(btn => {
+                                    const hiddenInput = btn.nextElementSibling;
+                                    const lblEstado = btn.parentElement.querySelector('.lbl-estado');
+                                    hiddenInput.value = "1";
+                                    btn.className = "btn-estado-toggle presente shadow-sm";
+                                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                                    lblEstado.className = "lbl-estado text-success fw-bold small";
+                                    lblEstado.innerText = "ASISTE (PRESENTE)";
+                                });
+                            }
+                        </script>
 
                     </div>
 
@@ -3252,17 +3244,20 @@
                             <!-- Columna 1: Seleccionar Ambiente -->
                             <div class="col-12 col-md-8">
                                 <label class="text-muted small fw-bold mb-2">Seleccionar Ambiente Físico</label>
-                                <select name="id_numero_ambiente" class="select-sena form-select shadow-sm w-100">
-                                    <option value="1">Ambiente 102 - (ADSO / Programación de Videojuegos)</option>
-                                    <option value="2">Ambiente 204 - (Gestión de Redes / Telecomunicaciones)</option>
-                                    <option value="3">Ambiente 105 - (Diseño e Integración Multimedia)</option>
+                                <select name="id_numero_ambiente" class="select-sena form-select shadow-sm w-100" required>
+                                    <option value="">Seleccione un ambiente...</option>
+                                    <?php if (!empty($ambientes)): ?>
+                                        <?php foreach ($ambientes as $amb): ?>
+                                            <option value="<?= $amb->id_numero_ambiente; ?>">Ambiente <?= $amb->id_numero_ambiente; ?> - <?= $amb->nombre; ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </select>
                             </div>
 
                             <!-- Columna 2: Fecha del Reporte -->
                             <div class="col-12 col-md-4">
                                 <label class="text-muted small fw-bold mb-2">Fecha del Reporte</label>
-                                <input type="date" name="fecha_reporte" class="input-date-sena form-control shadow-sm w-100" value="2026-06-29">
+                                <input type="date" name="fecha_reporte" class="input-date-sena form-control shadow-sm w-100" value="<?= date('Y-m-d'); ?>" required>
                             </div>
                         </div>
 

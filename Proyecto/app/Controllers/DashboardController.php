@@ -120,23 +120,13 @@ class DashboardController extends BaseController {
             $data['ambientes'] = $this->ambienteModel->all();
             $data['ambientes_count'] = count($data['ambientes']);
             
-            // Cargar los aprendices para la planilla digital de asistencia verificando sus roles en la tabla usuario_rol
-            $todosUsuarios = $this->usuarioModel->all();
-            $listaApr = [];
-            foreach ($todosUsuarios as $u) {
-                $roles = $this->usuarioModel->getRoles($u->id_usuario);
-                $esAprendiz = false;
-                foreach ($roles as $r) {
-                    if (stripos($r->nombre_rol, 'Aprendiz') !== false) {
-                        $esAprendiz = true;
-                        break;
-                    }
-                }
-                if ($esAprendiz) {
-                    $listaApr[] = $u;
-                }
+            // Cargar aprendices agrupados por la sesión programada (ficha correspondiente) en formato JSON
+            $aprendicesPorProgramacion = [];
+            $fichaAprendizModel = $this->model('FichaAprendiz');
+            foreach ($data['programacion'] as $prog) {
+                $aprendicesPorProgramacion[$prog->id_programacion] = $fichaAprendizModel->getAprendicesPorFicha($prog->numero_ficha);
             }
-            $data['aprendices'] = $listaApr;
+            $data['aprendicesPorProgramacion'] = json_encode($aprendicesPorProgramacion);
 
         } elseif ($current_role === 'Aprendiz') {
             $data['programacion'] = $this->programacionModel->getByAprendiz($user_id);

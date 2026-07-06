@@ -4,6 +4,9 @@
  * Define constantes globales para la conexión a la base de datos y estructura de rutas.
  */
 
+// Configuración de Zona Horaria (Colombia)
+date_default_timezone_set('America/Bogota');
+
 // Credenciales de la Base de Datos
 define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');

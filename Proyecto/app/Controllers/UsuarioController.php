@@ -66,7 +66,7 @@ class UsuarioController extends BaseController {
 
             if (!empty($errores)) {
                 $_SESSION['flash_error'] = implode("<br>", $errores);
-                $this->redirect('usuarios/index');
+                $this->redirect('dashboard/index#pills-usuarios');
                 return;
             }
 
@@ -95,7 +95,7 @@ class UsuarioController extends BaseController {
                 $_SESSION['flash_error'] = 'Error al registrar el usuario.';
             }
         }
-        $this->redirect('usuarios/index');
+        $this->redirect('dashboard/index#pills-usuarios');
     }
 
     public function asignarRol() {
@@ -131,7 +131,7 @@ class UsuarioController extends BaseController {
                 }
             }
         }
-        $this->redirect('usuarios/index');
+        $this->redirect('dashboard/index#pills-usuarios');
     }
 
     /**

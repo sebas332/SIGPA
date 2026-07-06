@@ -100,6 +100,48 @@ class AsistenciaController extends BaseController {
     }
 
     /**
+     * Guarda la planilla de asistencia (AJAX o normal)
+     */
+    public function guardarPlanilla() {
+        $this->requireRol('Instructor');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_programacion = $_POST['id_programacion'] ?? 0;
+            $fecha = $_POST['fecha_asistencia'] ?? date('Y-m-d');
+            $asistencias = $_POST['asistencia'] ?? [];
+
+            if (empty($id_programacion) || empty($asistencias)) {
+                $_SESSION['flash_error'] = 'Debe seleccionar una sesión y asegurar que la ficha tenga aprendices.';
+                $this->redirect('dashboard/index#pills-inst-asistencia');
+                return;
+            }
+
+            $exito = true;
+            $errores_db = [];
+            foreach ($asistencias as $id_aprendiz => $dataAsistencia) {
+                $asistio = $dataAsistencia['estado'] ?? 0;
+                $obs = trim($dataAsistencia['observacion'] ?? '');
+                
+                try {
+                    $this->asistenciaModel->guardar($id_programacion, $id_aprendiz, $fecha, $asistio, $obs);
+                } catch (Exception $e) {
+                    $exito = false;
+                    $errores_db[] = $e->getMessage();
+                }
+            }
+
+            if ($exito) {
+                $_SESSION['flash_success'] = '¡Planilla Digital de Asistencia guardada y notificada con éxito!';
+                AuditLogger::log('Registro de Asistencia', 'asistencia', $id_programacion, 'Guardó planilla de asistencia para la fecha: ' . $fecha);
+            } else {
+                $error_str = implode(" | ", array_unique($errores_db));
+                $_SESSION['flash_error'] = 'Ocurrieron errores al registrar: ' . $error_str;
+            }
+        }
+        $this->redirect('dashboard/index#pills-inst-asistencia');
+    }
+
+    /**
      * Ver reportes e historial de asistencia
      */
     public function reporte() {
