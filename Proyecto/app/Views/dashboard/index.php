@@ -484,6 +484,87 @@
     text-decoration: underline;
     color: #1d4ed8;
 }
+
+/* SGA Custom styling for unified calendar/scheduling filter bar */
+.unified-filter-bar {
+    border-radius: 20px !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+@media (min-width: 992px) {
+    .unified-filter-bar {
+        border-radius: 9999px !important;
+        border: 1px solid #4a5568 !important; /* Coincide con el color de borde gris oscuro de la imagen */
+    }
+}
+
+.btn-nav-mes {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px !important;
+    background-color: #ffffff;
+    color: #475569;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-nav-mes:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+
+.badge-mes-actual {
+    font-family: var(--bs-font-sans-serif);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    color: #1e293b;
+}
+
+.select-filtro-custom {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    background-color: #f8fafc !important;
+    height: 38px;
+    padding: 0 28px 0 16px !important;
+    min-width: 120px;
+    width: auto;
+    transition: all 0.2s ease;
+}
+.select-filtro-custom:hover {
+    border-color: #cbd5e1 !important;
+    background-color: #f1f5f9 !important;
+}
+.select-filtro-custom:focus {
+    border-color: #94a3b8 !important;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.15) !important;
+}
+
+.select-filtro-highlighted {
+    background-color: #ffffff !important;
+    border: 1.5px solid #10b981 !important;
+    color: #059669 !important;
+    font-weight: 600 !important;
+}
+.select-filtro-highlighted:hover {
+    background-color: #f0fdf4 !important;
+    border-color: #059669 !important;
+}
+.select-filtro-highlighted:focus {
+    border-color: #047857 !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
 </style>
 
 <div class="container-fluid px-0">
@@ -1070,56 +1151,62 @@
                     </div>
                 </div>
 
-                <!-- Buscador y Selector de Vista -->
-                <div class="row mb-4 align-items-center g-3">
-                    <div class="col-md-6">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <select id="filtroFicha" class="form-select form-select-lg border shadow-sm rounded-pill" style="font-size: 0.9rem;">
-                                    <option value="">Todas las Fichas</option>
-                                    <?php foreach ($fichas as $f): ?>
-                                        <option value="<?= $f->numero_ficha; ?>">Ficha <?= $f->numero_ficha; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <select id="filtroAmbiente" class="form-select form-select-lg border shadow-sm rounded-pill" style="font-size: 0.9rem;">
-                                    <option value="">Todos los Ambientes</option>
-                                    <?php foreach ($ambientes as $a): ?>
-                                        <option value="<?= $a->nombre; ?>"><?= $a->nombre; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
-                            <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
-                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendario" style="background-color: #39A900;" onclick="cambiarVista('calendario')">
-                                <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
-                            </button>
-                            <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaLista" onclick="cambiarVista('lista')">
-                                <i class="fa-solid fa-list me-1"></i> Lista Completa
-                            </button>
-                        </div>
+                <!-- Selector de Vista -->
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
+                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
+                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendario" style="background-color: #39A900;" onclick="cambiarVista('calendario')">
+                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaLista" onclick="cambiarVista('lista')">
+                            <i class="fa-solid fa-list me-1"></i> Lista Completa
+                        </button>
                     </div>
                 </div>
 
-                <!-- Barra de Navegación del Mes -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" id="seccionNavegacionMes" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="navegarMes(-1)" style="width: 40px; height: 40px;">
+                <!-- Barra de Navegación del Mes y Filtros Unificados SGA -->
+                <div class="card bg-white shadow-sm unified-filter-bar mb-4" id="seccionNavegacionMes">
+                    <div class="card-body p-2 d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
+                        <!-- Left Side: Calendar Nav -->
+                        <div class="d-flex align-items-center gap-2 flex-nowrap">
+                            <button type="button" class="btn btn-nav-mes" onclick="navegarMes(-1)">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </button>
-                            <span class="fs-5 fw-bold text-dark px-3 py-1 rounded bg-light text-uppercase d-flex align-items-center justify-content-center" id="nombreMesAnio" style="min-width: 180px; font-size: 1.1rem; letter-spacing: 0.5px;">Julio 2026</span>
-                            <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="navegarMes(1)" style="width: 40px; height: 40px;">
+                            <span class="badge-mes-actual d-flex align-items-center justify-content-center" id="nombreMesAnio" style="min-width: 130px;">Julio 2026</span>
+                            <button type="button" class="btn btn-nav-mes" onclick="navegarMes(1)">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
-                        <button type="button" class="btn btn-outline-success rounded-pill px-4 fw-bold" onclick="irMesActual()">
-                            Hoy (Mes Actual)
-                        </button>
+                        
+                        <!-- Right Side: Dropdown Filters -->
+                        <div class="d-flex align-items-center gap-2 ms-lg-auto flex-wrap flex-lg-nowrap">
+                            <!-- Todos los días -->
+                            <select id="filtroDiaSemana" class="form-select select-filtro-custom">
+                                <option value="">Todos los días</option>
+                                <option value="Lunes">Lunes</option>
+                                <option value="Martes">Martes</option>
+                                <option value="Miércoles">Miércoles</option>
+                                <option value="Jueves">Jueves</option>
+                                <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Domingo">Domingo</option>
+                            </select>
+
+                            <!-- Instructores (Todos) (Highlight verde conforme a la imagen) -->
+                            <select id="filtroInstructor" class="form-select select-filtro-custom select-filtro-highlighted">
+                                <option value="">Instructores (Todos)</option>
+                            </select>
+
+                            <!-- Ambientes (Todos) -->
+                            <select id="filtroAmbiente" class="form-select select-filtro-custom">
+                                <option value="">Ambientes (Todos)</option>
+                            </select>
+
+                            <!-- Fichas (Todas) -->
+                            <select id="filtroFicha" class="form-select select-filtro-custom">
+                                <option value="">Fichas (Todas)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -1202,67 +1289,488 @@
             <!-- PESTAÑA 3: AMBIENTES FÍSICOS -->
             <div class="tab-pane fade" id="pills-ambientes" role="tabpanel" aria-labelledby="pills-ambientes-tab">
                 
-                <div class="mb-4 pb-1">
-                    <h5 class="fw-bold text-dark mb-1">Ambientes de Aprendizaje SENA</h5>
-                    <p class="text-muted small mb-0">Muestra la capacidad instalada y equipamiento de las salas de formación.</p>
+                <style>
+                    /* Inserción de estilos CSS específicos para ambientes */
+                    .env-kpi-card {
+                        background: #ffffff;
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                        border-radius: 16px;
+                        padding: 1.25rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -2px rgba(0,0,0,0.01);
+                        transition: all 0.2s ease;
+                    }
+                    .env-kpi-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+                    }
+                    .env-kpi-icon-wrapper {
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.25rem;
+                        flex-shrink: 0;
+                    }
+                    .env-kpi-icon-green { background-color: #e8f5e9; color: #39A900; }
+                    .env-kpi-icon-blue { background-color: #e0f2fe; color: #0288d1; }
+                    .env-kpi-icon-purple { background-color: #f3e8ff; color: #7c3aed; }
+                    .env-kpi-icon-orange { background-color: #fff7ed; color: #ea580c; }
+
+                    .env-kpi-value {
+                        font-size: 1.6rem;
+                        font-weight: 700;
+                        color: #0f172a;
+                        line-height: 1.2;
+                    }
+                    .env-kpi-title {
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        color: #64748b;
+                    }
+                    .env-kpi-desc {
+                        font-size: 0.75rem;
+                        color: #64748b;
+                        margin-top: 0.15rem;
+                    }
+                    .env-kpi-desc-trend {
+                        color: #15803d;
+                        font-weight: 600;
+                    }
+
+                    .env-search-box {
+                        position: relative;
+                    }
+                    .env-search-box input {
+                        padding-left: 2.5rem;
+                        border-radius: 10px;
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                    }
+                    .env-search-box i {
+                        position: absolute;
+                        left: 0.95rem;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        color: #94a3b8;
+                    }
+                    .env-filter-select {
+                        border-radius: 10px;
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                        font-weight: 500;
+                        color: #334155;
+                        background-color: #ffffff;
+                    }
+                    .env-filter-btn {
+                        border-radius: 10px;
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                        font-weight: 500;
+                        color: #475569;
+                        background-color: #ffffff;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .env-filter-btn:hover {
+                        background-color: #f8fafc;
+                    }
+                    .env-toggle-btn {
+                        border: 1px solid rgba(0, 0, 0, 0.08);
+                        background-color: #ffffff;
+                        color: #64748b;
+                        border-radius: 10px;
+                        padding: 0.5rem 0.75rem;
+                    }
+                    .env-toggle-btn.active {
+                        background-color: #e8f5e9;
+                        color: #39A900;
+                        border-color: #39A900;
+                    }
+
+                    .env-card {
+                        border: 1px solid rgba(0,0,0,0.06) !important;
+                        border-radius: 16px !important;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0,0,0,0.02) !important;
+                        transition: all 0.25s ease !important;
+                        background: #ffffff;
+                    }
+                    .env-card:hover {
+                        transform: translateY(-3px) !important;
+                        box-shadow: 0 12px 20px -3px rgba(0,0,0,0.06) !important;
+                    }
+                    .env-card-img-container {
+                        height: 100%;
+                        min-height: 180px;
+                        background: #0f172a;
+                        overflow: hidden;
+                        position: relative;
+                    }
+                    .env-card-img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        opacity: 0.85;
+                        transition: transform 0.3s ease;
+                    }
+                    .env-card:hover .env-card-img {
+                        transform: scale(1.03);
+                    }
+                    .env-badge-status {
+                        position: absolute;
+                        top: 0.75rem;
+                        left: 0.75rem;
+                        z-index: 10;
+                        border-radius: 6px;
+                        padding: 0.25rem 0.6rem;
+                        font-size: 0.72rem;
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                        text-transform: uppercase;
+                    }
+                    .env-badge-status-active {
+                        background-color: #39A900;
+                        color: #ffffff;
+                    }
+                    .env-badge-status-inactive {
+                        background-color: #64748b;
+                        color: #ffffff;
+                    }
+                    .env-badge-id {
+                        position: absolute;
+                        top: 0.75rem;
+                        right: 2.5rem;
+                        z-index: 10;
+                        background-color: rgba(15, 23, 42, 0.85);
+                        color: #ffffff;
+                        border-radius: 6px;
+                        padding: 0.25rem 0.6rem;
+                        font-size: 0.72rem;
+                        font-weight: 600;
+                    }
+                    .env-card-options {
+                        position: absolute;
+                        top: 0.75rem;
+                        right: 0.75rem;
+                        z-index: 10;
+                    }
+                    .env-card-options .dropdown-toggle::after {
+                        display: none;
+                    }
+                    .env-card-options .btn-link {
+                        color: #ffffff;
+                        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+                        padding: 0;
+                        line-height: 1;
+                    }
+
+                    .env-equip-badge {
+                        font-size: 0.72rem;
+                        font-weight: 600;
+                        padding: 0.3rem 0.6rem;
+                        border-radius: 8px;
+                        border: 1px solid transparent;
+                    }
+                    .env-equip-aire { background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+                    .env-equip-ventilador { background-color: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+                    .env-equip-tablero { background-color: #fce7f3; color: #a21caf; border-color: #fbcfe8; }
+                    .env-equip-tv { background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+                    .env-equip-proyector { background-color: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+                    .env-equip-extractor { background-color: #fef9c3; color: #854d0e; border-color: #fef08a; }
+                    .env-equip-osciloscopio { background-color: #ecfeff; color: #0e7490; border-color: #cffafe; }
+
+                    .env-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        display: inline-block;
+                    }
+                    .env-dot-active { background-color: #39A900; }
+                    .env-dot-inactive { background-color: #94a3b8; }
+
+                    .env-spec-label {
+                        font-size: 0.82rem;
+                        color: #64748b;
+                    }
+                    .env-spec-value {
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: #0f172a;
+                    }
+                    .env-maintenance-text {
+                        font-size: 0.72rem;
+                        color: #64748b;
+                    }
+                    .env-action-btn-edit {
+                        color: #0d6efd;
+                        border-color: rgba(13, 110, 253, 0.2) !important;
+                        background: transparent;
+                        font-size: 0.78rem;
+                        font-weight: 600;
+                        padding: 0.35rem 0.75rem;
+                        border-radius: 8px;
+                    }
+                    .env-action-btn-edit:hover {
+                        background-color: #0d6efd;
+                        color: #ffffff;
+                    }
+                    .env-action-btn-delete {
+                        color: #dc3545;
+                        border-color: rgba(220, 53, 69, 0.2) !important;
+                        background: transparent;
+                        font-size: 0.78rem;
+                        padding: 0.35rem 0.55rem;
+                        border-radius: 8px;
+                    }
+                    .env-action-btn-delete:hover {
+                        background-color: #dc3545;
+                        color: #ffffff;
+                    }
+                </style>
+
+                <?php
+                $total_ambientes = count($ambientes);
+                $total_pcs = 0;
+                $total_capacidad = 0;
+                $total_activos = 0;
+                foreach ($ambientes as $amb) {
+                    $total_pcs += $amb->computadores;
+                    $total_capacidad += $amb->capacidad;
+                    if ($amb->disponibilidad == 1) {
+                        $total_activos++;
+                    }
+                }
+                $porcentaje_activos = $total_ambientes > 0 ? round(($total_activos / $total_ambientes) * 100) : 0;
+                ?>
+
+                <!-- Cabecera -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width: 48px; height: 48px; background-color: #e8f5e9; color: #39A900; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">Ambientes de Aprendizaje SENA</h4>
+                            <p class="text-muted small mb-0">Administra la capacidad instalada y el equipamiento de las salas de formación.</p>
+                        </div>
+                    </div>
+                    <?php if ($current_role === 'Coordinador'): ?>
+                        <button type="button" class="btn btn-success fw-semibold px-4 py-2 shadow-sm d-flex align-items-center gap-2" style="background-color: #39A900; border-color: #39A900; border-radius: 25px;" data-bs-toggle="modal" data-bs-target="#modalCrearAmbiente">
+                            <i class="fa-solid fa-circle-plus fs-5"></i> Crear Nuevo Ambiente
+                        </button>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Grid de Tarjetas de Ambientes -->
-                <div class="row g-4">
-                    <div class="col-12 mb-2 d-flex justify-content-end">
-                        <button type="button" class="btn-new-ficha" data-bs-toggle="modal" data-bs-target="#modalCrearAmbiente">
-                            <i class="fa-solid fa-circle-plus"></i> Crear Nuevo Ambiente
+                <!-- KPIs -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="env-kpi-card">
+                            <div class="env-kpi-icon-wrapper env-kpi-icon-green">
+                                <i class="fa-solid fa-cube"></i>
+                            </div>
+                            <div>
+                                <div class="env-kpi-value" id="kpi-total-ambientes"><?= $total_ambientes ?></div>
+                                <div class="env-kpi-title">Ambientes totales</div>
+                                <div class="env-kpi-desc"><span class="env-kpi-desc-trend">↗ 2 más</span> que el mes anterior</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="env-kpi-card">
+                            <div class="env-kpi-icon-wrapper env-kpi-icon-blue">
+                                <i class="fa-solid fa-desktop"></i>
+                            </div>
+                            <div>
+                                <div class="env-kpi-value" id="kpi-total-pcs"><?= $total_pcs ?></div>
+                                <div class="env-kpi-title">PCs disponibles</div>
+                                <div class="env-kpi-desc"><span class="text-primary font-weight-bold">85%</span> del total instalado</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="env-kpi-card">
+                            <div class="env-kpi-icon-wrapper env-kpi-icon-purple">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="env-kpi-value" id="kpi-total-capacidad"><?= $total_capacidad ?></div>
+                                <div class="env-kpi-title">Capacidad total</div>
+                                <div class="env-kpi-desc">Disponible para formación</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="env-kpi-card">
+                            <div class="env-kpi-icon-wrapper env-kpi-icon-orange">
+                                <i class="fa-solid fa-screwdriver-wrench"></i>
+                            </div>
+                            <div>
+                                <div class="env-kpi-value" id="kpi-total-activos"><?= $porcentaje_activos ?>%</div>
+                                <div class="env-kpi-title">Ambientes activos</div>
+                                <div class="env-kpi-desc text-success fw-semibold">Excelente disponibilidad</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="env-search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="env-search-input" class="form-control" placeholder="Buscar ambiente, código o equipo...">
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <select id="env-filter-estado" class="form-select env-filter-select">
+                            <option value="all">Estado: Todos</option>
+                            <option value="1">Estado: Activos</option>
+                            <option value="0">Estado: Inactivos</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <select id="env-filter-tipo" class="form-select env-filter-select">
+                            <option value="all">Tipo: Todos</option>
+                            <option value="convencional">Tipo: Convencionales</option>
+                            <option value="especializado">Tipo: Especializados</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <select id="env-filter-sede" class="form-select env-filter-select">
+                            <option value="all">Sede: Todas</option>
+                            <option value="sede-central">Sede Principal</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-sm-auto">
+                        <button type="button" class="btn env-filter-btn">
+                            <i class="fa-solid fa-filter"></i> Filtros
                         </button>
                     </div>
+                    <div class="col-12 col-sm-auto ms-sm-auto d-flex gap-2 justify-content-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" id="env-toggle-grid" class="btn env-toggle-btn active"><i class="fa-solid fa-grip"></i></button>
+                            <button type="button" id="env-toggle-list" class="btn env-toggle-btn"><i class="fa-solid fa-list"></i></button>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Grid de Tarjetas -->
+                <div class="row g-4" id="env-cards-container">
                     <?php if (empty($ambientes)): ?>
-                        <div class="col-12 text-center py-5 text-muted">
+                        <div class="col-12 text-center py-5 text-muted bg-white rounded-4 border">
                             <i class="fa-solid fa-building-circle-xmark fa-3x mb-3 text-secondary"></i>
                             <h5 class="fw-bold">No hay ambientes físicos registrados</h5>
                         </div>
                     <?php else: ?>
                         <?php foreach ($ambientes as $amb): ?>
-                            <div class="col-12 col-sm-6 col-xl-4">
-                                <div class="card bg-white shadow-sm border-0 rounded-4 overflow-hidden h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                                    <div class="ambiente-img-box bg-light d-flex align-items-center justify-content-center text-muted fw-medium small" style="position: relative; overflow: hidden; cursor: pointer;" onclick="verGaleria('<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(json_encode($fotos_ambientes[$amb->id_numero_ambiente] ?? []), ENT_QUOTES, 'UTF-8'); ?>')">
-                                        <?php 
-                                        $ambFotos = $fotos_ambientes[$amb->id_numero_ambiente] ?? []; 
-                                        if (!empty($ambFotos)): 
-                                        ?>
-                                            <img src="<?= $ambFotos[0]->url; ?>" class="w-100 h-100 object-fit-cover opacity-75" alt="<?= htmlspecialchars($amb->nombre); ?>" onerror="this.style.display='none';">
-                                        <?php else: ?>
-                                            <i class="fa-solid fa-building me-2"></i> <?= htmlspecialchars($amb->nombre); ?>
-                                        <?php endif; ?>
-                                        <span class="badge-amb-top-left">Amb. <?= $amb->id_numero_ambiente; ?></span>
-                                        <?php if ($amb->disponibilidad == 0): ?>
-                                            <span class="badge-amb-top-right bg-danger"><i class="fa-solid fa-lock me-1"></i> INACTIVO</span>
-                                        <?php else: ?>
-                                            <span class="badge-amb-top-right bg-success"><i class="fa-solid fa-check-circle me-1"></i> ACTIVO</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="card-body p-4 d-flex flex-column">
-                                        <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($amb->nombre); ?></h5>
-                                        <p class="text-secondary small mb-3"><?= htmlspecialchars($amb->tipo); ?> • <?= htmlspecialchars($amb->especialidad_ambiente); ?></p>
-                                        
-                                        <div class="d-flex justify-content-between align-items-center small text-secondary py-2 border-top border-bottom border-light-subtle my-2">
-                                            <span>PCs: <strong class="text-dark"><?= $amb->computadores; ?></strong></span>
-                                            <span>Capacidad: <strong class="text-dark"><?= $amb->capacidad; ?> pers</strong></span>
+                            <?php 
+                            $fotos_key = isset($fotos_ambientes) ? $fotos_ambientes : ($fotos ?? []);
+                            $ambFotos = $fotos_key[$amb->id_numero_ambiente] ?? []; 
+                            ?>
+                            <div class="col-12 col-lg-6 mb-2 env-card-wrapper" 
+                                 data-id="<?= $amb->id_numero_ambiente ?>"
+                                 data-nombre="<?= htmlspecialchars(strtolower($amb->nombre)) ?>"
+                                 data-tipo="<?= htmlspecialchars(strtolower($amb->tipo)) ?>"
+                                 data-especialidad="<?= htmlspecialchars(strtolower($amb->especialidad_ambiente)) ?>"
+                                 data-disponibilidad="<?= $amb->disponibilidad ?>"
+                                 data-computadores="<?= $amb->computadores ?>"
+                                 data-capacidad="<?= $amb->capacidad ?>"
+                                 data-equipos="aire:<?= $amb->aire ? 1 : 0 ?>;ventilador:<?= $amb->ventilador ? 1 : 0 ?>;tablero:<?= $amb->tablero ? 1 : 0 ?>;tv:<?= $amb->tv ? 1 : 0 ?>">
+                                <div class="card env-card overflow-hidden h-100">
+                                    <div class="row g-0 h-100">
+                                        <!-- Foto e Indicadores -->
+                                        <div class="col-12 col-sm-5 position-relative env-card-img-container" style="cursor: pointer;" onclick="verGaleria('<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(json_encode($ambFotos), ENT_QUOTES, 'UTF-8'); ?>')">
+                                            <?php if (!empty($ambFotos)): ?>
+                                                <img src="<?= $ambFotos[0]->url; ?>" class="env-card-img" alt="<?= htmlspecialchars($amb->nombre); ?>" onerror="this.src='https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=600&auto=format&fit=crop';">
+                                            <?php else: ?>
+                                                <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=600&auto=format&fit=crop" class="env-card-img" alt="Aula General">
+                                            <?php endif; ?>
+                                            
+                                            <!-- Estado -->
+                                            <span class="env-badge-status <?= $amb->disponibilidad == 1 ? 'env-badge-status-active' : 'env-badge-status-inactive' ?>">
+                                                <?= $amb->disponibilidad == 1 ? '✔ ACTIVO' : '✖ INACTIVO' ?>
+                                            </span>
+                                            
+                                            <!-- ID y Opciones -->
+                                            <span class="env-badge-id">Amb. <?= $amb->id_numero_ambiente; ?></span>
+                                            <div class="env-card-options" onclick="event.stopPropagation();">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical fs-5"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
+                                                        <li>
+                                                            <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/novedad&id=<?= $amb->id_numero_ambiente; ?>">
+                                                                <i class="fa-solid fa-triangle-exclamation text-warning"></i> Novedades
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/toggleDisponibilidad&id=<?= $amb->id_numero_ambiente; ?>">
+                                                                <i class="fa-solid fa-power-off text-muted"></i> Cambiar disponibilidad
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div class="d-flex flex-wrap gap-2 mt-3 mb-4">
-                                            <?php if ($amb->aire): ?><span class="badge-equip-blue">Aire</span><?php endif; ?>
-                                            <?php if ($amb->ventilador): ?><span class="badge-equip-green">Ventilador</span><?php endif; ?>
-                                            <?php if ($amb->tablero): ?><span class="badge-equip-purple">Tablero</span><?php endif; ?>
-                                            <?php if ($amb->tv): ?><span class="badge-equip-indigo">TV</span><?php endif; ?>
-                                        </div>
+                                        <!-- Detalles -->
+                                        <div class="col-12 col-sm-7 p-3 d-flex flex-column justify-content-between">
+                                            <div>
+                                                <h5 class="fw-bold text-dark mb-1 card-title-text"><?= htmlspecialchars($amb->nombre); ?></h5>
+                                                <div class="small text-secondary mb-2 d-flex align-items-center gap-2">
+                                                    <span><?= htmlspecialchars($amb->tipo); ?></span>
+                                                    <span class="env-dot <?= $amb->disponibilidad == 1 ? 'env-dot-active' : 'env-dot-inactive' ?>"></span>
+                                                    <?php if (!empty($amb->especialidad_ambiente)): ?>
+                                                        <span><?= htmlspecialchars($amb->especialidad_ambiente); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                
+                                                <hr class="my-2 opacity-10">
+                                                
+                                                <div class="d-flex justify-content-between align-items-center py-1">
+                                                    <span class="env-spec-label">PCs</span>
+                                                    <span class="env-spec-value"><?= $amb->computadores; ?></span>
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center py-1">
+                                                    <span class="env-spec-label">Capacidad</span>
+                                                    <span class="env-spec-value"><?= $amb->capacidad; ?> personas</span>
+                                                </div>
+                                                
+                                                <!-- Equipamiento -->
+                                                <div class="d-flex flex-wrap gap-1.5 mt-3">
+                                                    <?php if ($amb->aire): ?>
+                                                        <span class="env-equip-badge env-equip-aire">Aire</span>
+                                                    <?php endif; ?>
+                                                    <?php if ($amb->ventilador): ?>
+                                                        <span class="env-equip-badge env-equip-ventilador">Ventilador</span>
+                                                    <?php endif; ?>
+                                                    <?php if ($amb->tablero): ?>
+                                                        <span class="env-equip-badge env-equip-tablero">Tablero</span>
+                                                    <?php endif; ?>
+                                                    <?php if ($amb->tv): ?>
+                                                        <span class="env-equip-badge env-equip-tv">TV</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
 
-                                        <div class="d-flex justify-content-end gap-2 mt-auto">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editarAmbiente(<?= $amb->id_numero_ambiente; ?>, '<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(addslashes($amb->tipo)); ?>', <?= $amb->capacidad; ?>, <?= $amb->computadores; ?>, '<?= htmlspecialchars(addslashes($amb->especialidad_ambiente)); ?>', <?= $amb->aire; ?>, <?= $amb->ventilador; ?>, <?= $amb->tablero; ?>, <?= $amb->tv; ?>, <?= $amb->disponibilidad; ?>)">
-                                                <i class="fa-solid fa-pen"></i> Editar
-                                            </button>
-                                            <a href="<?= URLROOT; ?>/index.php?route=ambientes/delete&id=<?= $amb->id_numero_ambiente; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas borrar este ambiente?');">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </a>
+                                            <div class="d-flex align-items-center justify-content-between border-top pt-2.5 mt-3 border-light-subtle">
+                                                <div class="env-maintenance-text">
+                                                    <i class="fa-regular fa-calendar me-1"></i> Mantenimiento: <?= date('d/m/Y', strtotime($amb->fecha_creacion)) ?>
+                                                </div>
+                                                <?php if ($current_role === 'Coordinador'): ?>
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn env-action-btn-edit d-flex align-items-center gap-1" onclick="editarAmbiente(<?= $amb->id_numero_ambiente; ?>, '<?= htmlspecialchars(addslashes($amb->nombre)); ?>', '<?= htmlspecialchars(addslashes($amb->tipo)); ?>', <?= $amb->capacidad; ?>, <?= $amb->computadores; ?>, '<?= htmlspecialchars(addslashes($amb->especialidad_ambiente)); ?>', <?= $amb->aire; ?>, <?= $amb->ventilador; ?>, <?= $amb->tablero; ?>, <?= $amb->tv; ?>, <?= $amb->disponibilidad; ?>)">
+                                                            <i class="fa-solid fa-pen"></i> Editar
+                                                        </button>
+                                                        <a href="<?= URLROOT; ?>/index.php?route=ambientes/delete&id=<?= $amb->id_numero_ambiente; ?>" class="btn env-action-btn-delete d-flex align-items-center justify-content-center" onclick="return confirm('¿Seguro que deseas borrar este ambiente?');">
+                                                            <i class="fa-solid fa-trash"></i>
+                                                        </a>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1271,6 +1779,123 @@
                     <?php endif; ?>
                 </div>
 
+                <!-- Paginación / Footer Info -->
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4 pt-3 border-top border-light-subtle gap-3">
+                    <div class="text-secondary small" id="env-pagination-info">
+                        Mostrando 1 a <?= $total_ambientes ?> de <?= $total_ambientes ?> ambientes
+                    </div>
+                    <nav aria-label="Navegación de ambientes">
+                        <ul class="pagination pagination-sm mb-0 align-items-center gap-1" id="env-pagination-controls">
+                            <li class="page-item disabled"><span class="page-link rounded border-0 bg-transparent text-secondary"><i class="fa-solid fa-chevron-left"></i></span></li>
+                            <li class="page-item active"><span class="page-link rounded fw-bold text-white border-0" style="background-color: #39A900; min-width: 28px; text-align: center; cursor: pointer;">1</span></li>
+                            <li class="page-item disabled"><span class="page-link rounded border-0 bg-transparent text-secondary"><i class="fa-solid fa-chevron-right"></i></span></li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Script del motor de filtros de ambientes -->
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        const searchInput = document.getElementById("env-search-input");
+                        const filterEstado = document.getElementById("env-filter-estado");
+                        const filterTipo = document.getElementById("env-filter-tipo");
+                        const filterSede = document.getElementById("env-filter-sede");
+                        const cardsContainer = document.getElementById("env-cards-container");
+                        
+                        const kpiTotal = document.getElementById("kpi-total-ambientes");
+                        const kpiPcs = document.getElementById("kpi-total-pcs");
+                        const kpiCapacidad = document.getElementById("kpi-total-capacidad");
+                        const kpiActivos = document.getElementById("kpi-total-activos");
+                        const paginationInfo = document.getElementById("env-pagination-info");
+
+                        const wrappers = Array.from(document.querySelectorAll(".env-card-wrapper"));
+
+                        function applyFilters() {
+                            const query = searchInput.value.trim().toLowerCase();
+                            const estado = filterEstado.value;
+                            const tipo = filterTipo.value;
+
+                            let visibleCount = 0;
+                            let activeCount = 0;
+                            let totalPcs = 0;
+                            let totalCapacidad = 0;
+
+                            wrappers.forEach(wrapper => {
+                                const name = wrapper.dataset.nombre;
+                                const id = wrapper.dataset.id;
+                                const wrapperTipo = wrapper.dataset.tipo;
+                                const specialty = wrapper.dataset.especialidad;
+                                const isAvailable = wrapper.dataset.disponibilidad;
+                                const pcs = parseInt(wrapper.dataset.computadores) || 0;
+                                const cap = parseInt(wrapper.dataset.capacidad) || 0;
+                                const equipments = wrapper.dataset.equipos;
+
+                                const matchesSearch = !query || 
+                                                      name.includes(query) || 
+                                                      id.includes(query) || 
+                                                      specialty.includes(query) || 
+                                                      equipments.includes(query);
+
+                                const matchesEstado = (estado === "all") || (isAvailable === estado);
+                                const matchesTipo = (tipo === "all") || (wrapperTipo.includes(tipo));
+
+                                if (matchesSearch && matchesEstado && matchesTipo) {
+                                    wrapper.classList.remove("d-none");
+                                    visibleCount++;
+                                    if (isAvailable === "1") {
+                                        activeCount++;
+                                    }
+                                    totalPcs += pcs;
+                                    totalCapacidad += cap;
+                                } else {
+                                    wrapper.classList.add("d-none");
+                                }
+                            });
+
+                            if (kpiTotal) kpiTotal.textContent = visibleCount;
+                            if (kpiPcs) kpiPcs.textContent = totalPcs;
+                            if (kpiCapacidad) kpiCapacidad.textContent = totalCapacidad;
+                            if (kpiActivos) {
+                                const pct = visibleCount > 0 ? Math.round((activeCount / visibleCount) * 100) : 0;
+                                kpiActivos.textContent = pct + "%";
+                            }
+
+                            if (paginationInfo) {
+                                paginationInfo.textContent = `Mostrando 1 a ${visibleCount} de ${visibleCount} ambientes`;
+                            }
+                        }
+
+                        if (searchInput) searchInput.addEventListener("input", applyFilters);
+                        if (filterEstado) filterEstado.addEventListener("change", applyFilters);
+                        if (filterTipo) filterTipo.addEventListener("change", applyFilters);
+                        if (filterSede) filterSede.addEventListener("change", applyFilters);
+
+                        const btnGrid = document.getElementById("env-toggle-grid");
+                        const btnList = document.getElementById("env-toggle-list");
+
+                        if (btnGrid && btnList) {
+                            btnGrid.addEventListener("click", function() {
+                                btnGrid.classList.add("active");
+                                btnList.classList.remove("active");
+                                cardsContainer.classList.remove("env-list-view-active");
+                                wrappers.forEach(w => {
+                                    w.classList.remove("col-12");
+                                    w.classList.add("col-lg-6");
+                                });
+                            });
+
+                            btnList.addEventListener("click", function() {
+                                btnList.classList.add("active");
+                                btnGrid.classList.remove("active");
+                                cardsContainer.classList.add("env-list-view-active");
+                                wrappers.forEach(w => {
+                                    w.classList.remove("col-lg-6");
+                                    w.classList.add("col-12");
+                                });
+                            });
+                        }
+                    });
+                </script>
             </div>
 
             <!-- PESTAÑA 4: NOVEDADES REPORTADAS -->
@@ -3913,15 +4538,110 @@ const urlRoot = '<?= URLROOT; ?>';
 // Almacenar localmente toda la programación académica
 window.programacionDataGlobal = <?= json_encode($programacion) ?>;
 
+// Carga y población dinámica de los filtros select
+function cargarFiltrosDinamicos() {
+    const selectInst = document.getElementById('filtroInstructor');
+    const selectAmb = document.getElementById('filtroAmbiente');
+    const selectFicha = document.getElementById('filtroFicha');
+    
+    const selectedInst = selectInst ? selectInst.value : '';
+    const selectedAmb = selectAmb ? selectAmb.value : '';
+    const selectedFicha = selectFicha ? selectFicha.value : '';
+    
+    // 1. Instructores
+    const instructoresUnicos = [];
+    const instructorIds = new Set();
+    if (window.programacionDataGlobal) {
+        window.programacionDataGlobal.forEach(prog => {
+            const id = prog.id_usuario;
+            const nombre = prog.instructor_nombre + ' ' + prog.instructor_apellido;
+            if (id && !instructorIds.has(id)) {
+                instructorIds.add(id);
+                instructoresUnicos.push({ id: id, nombre: nombre });
+            }
+        });
+    }
+    instructoresUnicos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    
+    if (selectInst) {
+        selectInst.innerHTML = '<option value="">Instructores (Todos)</option>';
+        instructoresUnicos.forEach(inst => {
+            const option = document.createElement('option');
+            option.value = inst.id;
+            option.textContent = inst.nombre;
+            selectInst.appendChild(option);
+        });
+        selectInst.value = selectedInst;
+    }
+    
+    // 2. Ambientes
+    const ambientesUnicos = [];
+    const ambienteNombres = new Set();
+    if (window.programacionDataGlobal) {
+        window.programacionDataGlobal.forEach(prog => {
+            const nombre = prog.ambiente_nombre;
+            if (nombre && !ambienteNombres.has(nombre.toLowerCase())) {
+                ambienteNombres.add(nombre.toLowerCase());
+                ambientesUnicos.push(nombre);
+            }
+        });
+    }
+    ambientesUnicos.sort();
+    
+    if (selectAmb) {
+        selectAmb.innerHTML = '<option value="">Ambientes (Todos)</option>';
+        ambientesUnicos.forEach(amb => {
+            const option = document.createElement('option');
+            option.value = amb;
+            option.textContent = amb;
+            selectAmb.appendChild(option);
+        });
+        selectAmb.value = selectedAmb;
+    }
+    
+    // 3. Fichas
+    const fichasUnicas = [];
+    const fichaNumeros = new Set();
+    if (window.programacionDataGlobal) {
+        window.programacionDataGlobal.forEach(prog => {
+            const num = prog.numero_ficha;
+            if (num && !fichaNumeros.has(num.toString())) {
+                fichaNumeros.add(num.toString());
+                fichasUnicas.push(num);
+            }
+        });
+    }
+    fichasUnicas.sort((a, b) => a - b);
+    
+    if (selectFicha) {
+        selectFicha.innerHTML = '<option value="">Fichas (Todas)</option>';
+        fichasUnicas.forEach(f => {
+            const option = document.createElement('option');
+            option.value = f;
+            option.textContent = 'Ficha ' + f;
+            selectFicha.appendChild(option);
+        });
+        selectFicha.value = selectedFicha;
+    }
+}
+
 function inicializarCalendario() {
+    cargarFiltrosDinamicos();
+    
+    const filtroDiaSemana = document.getElementById('filtroDiaSemana');
     const filtroFicha = document.getElementById('filtroFicha');
+    const filtroInstructor = document.getElementById('filtroInstructor');
     const filtroAmbiente = document.getElementById('filtroAmbiente');
-    if (filtroFicha) {
-        filtroFicha.addEventListener('change', renderizarCalendario);
-    }
-    if (filtroAmbiente) {
-        filtroAmbiente.addEventListener('change', renderizarCalendario);
-    }
+    
+    const actualizarTodo = () => {
+        renderizarCalendario();
+        renderizarLista();
+    };
+
+    if (filtroDiaSemana) filtroDiaSemana.addEventListener('change', actualizarTodo);
+    if (filtroFicha) filtroFicha.addEventListener('change', actualizarTodo);
+    if (filtroInstructor) filtroInstructor.addEventListener('change', actualizarTodo);
+    if (filtroAmbiente) filtroAmbiente.addEventListener('change', actualizarTodo);
     
     // Configurar selectores y envío del formulario modal de creación
     setupAsignarHorarioModal();
@@ -3934,11 +4654,13 @@ function inicializarCalendario() {
 function navegarMes(offset) {
     calendarDate.setMonth(calendarDate.getMonth() + offset);
     renderizarCalendario();
+    renderizarLista();
 }
 
 function irMesActual() {
     calendarDate = new Date();
     renderizarCalendario();
+    renderizarLista();
 }
 
 function cambiarVista(vista) {
@@ -3970,17 +4692,19 @@ function cambiarVista(vista) {
         btnCal.style.backgroundColor = '';
         
         cardCal.classList.add('d-none');
-        navMes.classList.add('d-none');
+        navMes.classList.remove('d-none'); // Keep the unified navigation month + filters bar visible!
         cardList.classList.remove('d-none');
     }
 }
 
-// Calcular las sesiones activas por fecha (Lógica Atómica Día a Día)
+// Calcular las sesiones activas por fecha (Lógica Atómica Día a Día con Filtros Unificados)
 function obtenerSesionesPorFecha(dateStr) {
     const targetDate = new Date(dateStr + 'T00:00:00');
     const targetDateString = targetDate.toISOString().split('T')[0];
     
+    const filtroDia = document.getElementById('filtroDiaSemana') ? document.getElementById('filtroDiaSemana').value : '';
     const fichaFiltro = document.getElementById('filtroFicha') ? document.getElementById('filtroFicha').value : '';
+    const instructorFiltro = document.getElementById('filtroInstructor') ? document.getElementById('filtroInstructor').value : '';
     const ambienteFiltro = document.getElementById('filtroAmbiente') ? document.getElementById('filtroAmbiente').value : '';
     
     return window.programacionDataGlobal.filter(prog => {
@@ -3991,6 +4715,16 @@ function obtenerSesionesPorFecha(dateStr) {
         
         // Filtrar por Ambiente
         if (ambienteFiltro && prog.ambiente_nombre.toLowerCase() !== ambienteFiltro.toLowerCase()) {
+            return false;
+        }
+
+        // Filtrar por Instructor
+        if (instructorFiltro && prog.id_usuario.toString() !== instructorFiltro) {
+            return false;
+        }
+
+        // Filtrar por Día de la semana
+        if (filtroDia && prog.nombre_dia !== filtroDia) {
             return false;
         }
         
@@ -4262,7 +4996,8 @@ function eliminarProgramacionAjax(idProgramacion) {
                             timer: 2500
                         });
                         
-                        // Refrescar vistas
+                        // Refrescar vistas y filtros
+                        cargarFiltrosDinamicos();
                         renderizarCalendario();
                         renderizarLista();
                     } else {
@@ -4399,6 +5134,7 @@ function setupAsignarHorarioModal() {
                     timer: 2500
                 });
 
+                cargarFiltrosDinamicos();
                 renderizarCalendario();
                 renderizarLista();
                 formCrear.reset();
@@ -4492,13 +5228,55 @@ function renderizarLista() {
     const cardBody = document.querySelector('#cardListaCompleta .card-body');
     if (!cardBody) return;
 
-    const data = window.programacionDataGlobal;
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
 
-    if (!data || data.length === 0) {
+    const filtroDia = document.getElementById('filtroDiaSemana') ? document.getElementById('filtroDiaSemana').value : '';
+    const fichaFiltro = document.getElementById('filtroFicha') ? document.getElementById('filtroFicha').value : '';
+    const instructorFiltro = document.getElementById('filtroInstructor') ? document.getElementById('filtroInstructor').value : '';
+    const ambienteFiltro = document.getElementById('filtroAmbiente') ? document.getElementById('filtroAmbiente').value : '';
+
+    const filteredData = (window.programacionDataGlobal || []).filter(prog => {
+        // Filtrar por Mes/Año
+        const parts = prog.fecha_inicio.split('-');
+        if (parts.length === 3) {
+            const pYear = parseInt(parts[0], 10);
+            const pMonth = parseInt(parts[1], 10) - 1;
+            if (pYear !== year || pMonth !== month) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        // Filtrar por Ficha
+        if (fichaFiltro && prog.numero_ficha.toString() !== fichaFiltro) {
+            return false;
+        }
+        
+        // Filtrar por Ambiente
+        if (ambienteFiltro && prog.ambiente_nombre.toLowerCase() !== ambienteFiltro.toLowerCase()) {
+            return false;
+        }
+
+        // Filtrar por Instructor
+        if (instructorFiltro && prog.id_usuario.toString() !== instructorFiltro) {
+            return false;
+        }
+
+        // Filtrar por Día de la semana
+        if (filtroDia && prog.nombre_dia !== filtroDia) {
+            return false;
+        }
+
+        return true;
+    });
+
+    if (!filteredData || filteredData.length === 0) {
         cardBody.innerHTML = `
             <div class="text-center py-5 text-muted">
                 <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
-                <h5 class="fw-bold">No hay sesiones de formación programadas</h5>
+                <h5 class="fw-bold">No hay sesiones de formación programadas que coincidan con los filtros</h5>
             </div>
         `;
         return;
@@ -4521,7 +5299,7 @@ function renderizarLista() {
                 <tbody>
     `;
 
-    data.forEach(prog => {
+    filteredData.forEach(prog => {
         const pct = prog.total_sesiones > 0 ? Math.round((prog.sesiones_realizadas / prog.total_sesiones) * 100) : 75;
         const horaInicio = prog.hora_inicio.substring(0, 5);
         const horaFin = prog.hora_fin.substring(0, 5);
@@ -4580,6 +5358,7 @@ function iniciarMonitoreoProgramacion() {
                     
                     if (serializadoActual !== serializadoNuevo) {
                         window.programacionDataGlobal = res.data;
+                        cargarFiltrosDinamicos();
                         renderizarCalendario();
                         renderizarLista();
                     }
