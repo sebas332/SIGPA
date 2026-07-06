@@ -13,6 +13,7 @@ if (session_status() == PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/Database.php';
 require_once __DIR__ . '/../app/Controllers/BaseController.php';
+require_once __DIR__ . '/../app/Libraries/AuditLogger.php';
 
 // Obtener parámetro de ruta (por defecto auth/login si no está logueado, o dashboard/index si ya inició sesión)
 $defaultRoute = isset($_SESSION['user_id']) ? 'dashboard/index' : 'auth/login';

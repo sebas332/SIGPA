@@ -174,7 +174,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
             ],
             'REPORTES Y CONTROL' => [
                 ['reportes/index', 'fa-chart-pie', 'Reportes'],
-                ['#', 'fa-shield-halved', 'Auditoría']
+                ['auditoria/index', 'fa-shield-halved', 'Auditoría']
             ],
             'CONFIGURACIÓN' => [
                 ['dashboard/index#pills-usuarios', 'fa-users-gear', 'Usuarios'],

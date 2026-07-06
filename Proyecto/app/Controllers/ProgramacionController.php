@@ -91,7 +91,13 @@ class ProgramacionController extends BaseController {
 
             try {
                 if ($this->programacionModel->create($data)) {
+                    $db_inst = Database::getInstance();
+                    $new_prog_id = $db_inst->lastInsertId();
+                    
                     $_SESSION['flash_success'] = 'Programación académica registrada exitosamente.';
+                    
+                    // Auditoría de Programación
+                    AuditLogger::log('Asignación de Horario', 'programacion_academica', $new_prog_id, 'Ficha: ' . $data['numero_ficha'] . ', Instructor ID: ' . $data['id_usuario'] . ', Ambiente ID: ' . $data['id_numero_ambiente']);
                 } else {
                     $_SESSION['flash_error'] = 'Error al registrar la programación.';
                 }
@@ -112,6 +118,9 @@ class ProgramacionController extends BaseController {
         try {
             if ($this->programacionModel->delete($id)) {
                 $_SESSION['flash_success'] = 'Programación eliminada correctamente.';
+                
+                // Auditoría de Eliminación
+                AuditLogger::log('Eliminación de Horario', 'programacion_academica', $id, 'ID: ' . $id);
             } else {
                 $_SESSION['flash_error'] = 'Error al eliminar la programación.';
             }
@@ -137,6 +146,9 @@ class ProgramacionController extends BaseController {
 
         try {
             if ($this->programacionModel->delete($id)) {
+                // Auditoría de Eliminación vía AJAX
+                AuditLogger::log('Eliminación de Horario', 'programacion_academica', $id, 'Eliminado vía AJAX. ID: ' . $id);
+                
                 echo json_encode(['success' => true, 'message' => 'Sesión eliminada correctamente.']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Error al eliminar en la base de datos.']);

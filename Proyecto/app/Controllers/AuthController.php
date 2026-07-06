@@ -62,6 +62,9 @@ class AuthController extends BaseController {
                     $_SESSION['current_role'] = !empty($roles) ? $roles[0] : 'Aprendiz';
                     $_SESSION['flash_success'] = '¡Bienvenido, ' . $_SESSION['user_name'] . '! Has iniciado sesión como ' . $_SESSION['current_role'] . '.';
 
+                    // Auditoría de Inicio de Sesión
+                    AuditLogger::log('Inicio de Sesión', 'usuarios', $user->id_usuario, 'Inició sesión con rol: ' . $_SESSION['current_role']);
+
                     $this->redirect('dashboard/index');
                 } else {
                     $data['error'] = 'Credenciales incorrectas. Por favor verifica.';
@@ -84,6 +87,9 @@ class AuthController extends BaseController {
         if (isset($_SESSION['user_roles']) && in_array($newRole, $_SESSION['user_roles'])) {
             $_SESSION['current_role'] = $newRole;
             $_SESSION['flash_success'] = 'Vista cambiada exitosamente al rol de ' . $newRole . '.';
+            
+            // Auditoría de Cambio de Rol
+            AuditLogger::log('Cambio de Rol', 'usuarios', $_SESSION['user_id'], 'Cambió de rol activo a: ' . $newRole);
         }
         $this->redirect('dashboard/index');
     }
@@ -98,6 +104,11 @@ class AuthController extends BaseController {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        // Auditoría de Cierre de Sesión (antes de limpiar $_SESSION)
+        if (isset($_SESSION['user_id'])) {
+            AuditLogger::log('Cierre de Sesión', 'usuarios', $_SESSION['user_id'], 'Cerró sesión del sistema');
+        }
+
         // Limpiar todas las variables de sesión
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {

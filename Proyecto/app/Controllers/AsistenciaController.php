@@ -71,6 +71,10 @@ class AsistenciaController extends BaseController {
 
             if ($exito) {
                 $_SESSION['flash_success'] = 'Asistencia registrada exitosamente para la fecha ' . $fecha . '.';
+                
+                // Auditoría de Asistencia
+                AuditLogger::log('Registro de Asistencia', 'asistencia', $id_programacion, 'Guardó planilla de asistencia para la fecha: ' . $fecha . ', Programación ID: ' . $id_programacion);
+                
                 $this->redirect('asistencias/seleccionar');
             } else {
                 $error = 'Ocurrieron errores al registrar: ' . implode(', ', array_unique($errores));

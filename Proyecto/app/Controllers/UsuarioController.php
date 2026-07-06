@@ -88,6 +88,9 @@ class UsuarioController extends BaseController {
                     $this->usuarioRolModel->create($lastId, $id_rol);
                 }
                 $_SESSION['flash_success'] = 'Usuario registrado y rol asignado correctamente.';
+                
+                // Auditoría de Registro de Usuario
+                AuditLogger::log('Creación de Usuario', 'usuarios', $lastId, 'Nombre: ' . $nombre . ' ' . $apellido . ', Rol ID: ' . $id_rol);
             } else {
                 $_SESSION['flash_error'] = 'Error al registrar el usuario.';
             }
@@ -120,6 +123,9 @@ class UsuarioController extends BaseController {
             } else {
                 if ($this->usuarioRolModel->create($id_usuario, $id_rol)) {
                     $_SESSION['flash_success'] = 'Rol asignado correctamente al usuario.';
+                    
+                    // Auditoría de Asignación de Rol
+                    AuditLogger::log('Asignación de Rol', 'usuario_rol', $id_usuario, 'Asignó Rol ID: ' . $id_rol);
                 } else {
                     $_SESSION['flash_error'] = 'Error al asignar el rol.';
                 }
@@ -179,6 +185,9 @@ class UsuarioController extends BaseController {
                     $this->usuarioRolModel->create($id, $id_rol);
                 }
                 $_SESSION['flash_success'] = 'Usuario actualizado correctamente.';
+                
+                // Auditoría de Actualización de Usuario
+                AuditLogger::log('Actualización de Usuario', 'usuarios', $id, 'Nombre: ' . $nombre . ' ' . $apellido . ', Rol ID: ' . $id_rol);
             } else {
                 $_SESSION['flash_error'] = 'Error al actualizar el usuario.';
             }
@@ -197,6 +206,9 @@ class UsuarioController extends BaseController {
             $this->usuarioRolModel->deleteByUsuario($id);
             if ($this->usuarioModel->delete($id)) {
                 $_SESSION['flash_success'] = 'Usuario eliminado correctamente.';
+                
+                // Auditoría de Eliminación de Usuario
+                AuditLogger::log('Eliminación de Usuario', 'usuarios', $id, 'Eliminó usuario ID: ' . $id);
             } else {
                 $_SESSION['flash_error'] = 'Error al eliminar el usuario.';
             }

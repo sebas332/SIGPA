@@ -58,7 +58,14 @@ class AmbienteController extends BaseController {
 
             if (!empty($data['descripcion'])) {
                 if ($this->novedadModel->create($data)) {
+                    $db_inst = Database::getInstance();
+                    $new_nov_id = $db_inst->lastInsertId();
+                    
                     $_SESSION['flash_success'] = 'Novedad reportada exitosamente.';
+                    
+                    // Auditoría de Novedad
+                    AuditLogger::log('Reporte de Novedad', 'novedad_ambiente', $new_nov_id, 'Ambiente ID: ' . $id_numero_ambiente . ', Detalle: ' . $data['descripcion']);
+                    
                     $this->redirect('ambientes/novedad&id=' . $id_numero_ambiente);
                 } else {
                     $error = 'Error al reportar la novedad.';
@@ -131,6 +138,9 @@ class AmbienteController extends BaseController {
                 $lastId = $db->lastInsertId();
                 $this->procesarFotos($lastId);
                 $_SESSION['flash_success'] = 'Ambiente registrado exitosamente.';
+                
+                // Auditoría de Creación de Ambiente
+                AuditLogger::log('Creación de Ambiente', 'ambientes', $lastId, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
             } else {
                 $_SESSION['flash_error'] = 'Error al registrar el ambiente.';
             }
@@ -153,6 +163,9 @@ class AmbienteController extends BaseController {
             $data['disponibilidad'] = $nuevoEstado;
             if ($this->ambienteModel->update($id, $data)) {
                 $_SESSION['flash_success'] = 'Disponibilidad actualizada correctamente.';
+                
+                // Auditoría de Cambio de Disponibilidad
+                AuditLogger::log('Disponibilidad de Ambiente', 'ambientes', $id, 'Cambió disponibilidad a: ' . ($nuevoEstado ? 'Disponible' : 'No Disponible'));
             } else {
                 $_SESSION['flash_error'] = 'Error al actualizar disponibilidad.';
             }
@@ -196,6 +209,9 @@ class AmbienteController extends BaseController {
                 }
                 $this->procesarFotos($id);
                 $_SESSION['flash_success'] = 'Ambiente actualizado exitosamente.';
+                
+                // Auditoría de Actualización de Ambiente
+                AuditLogger::log('Actualización de Ambiente', 'ambientes', $id, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
             } else {
                 $_SESSION['flash_error'] = 'Error al actualizar el ambiente.';
             }
@@ -226,6 +242,9 @@ class AmbienteController extends BaseController {
             // Eliminar fotos/novedades en cascada manual si es necesario, o depender de la BD
             if ($this->ambienteModel->delete($id)) {
                 $_SESSION['flash_success'] = 'Ambiente eliminado correctamente.';
+                
+                // Auditoría de Eliminación de Ambiente
+                AuditLogger::log('Eliminación de Ambiente', 'ambientes', $id, 'Eliminó ambiente ID: ' . $id);
             } else {
                 $_SESSION['flash_error'] = 'Error al eliminar el ambiente. Puede que tenga programaciones activas.';
             }

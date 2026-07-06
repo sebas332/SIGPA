@@ -1,0 +1,93 @@
+[
+    {
+        "id": "audit_6a4b14b5f38419.00565093",
+        "timestamp": "2026-07-06 04:36:37",
+        "usuario_id": 5,
+        "usuario_nombre": "Ana Restrepo",
+        "usuario_login": "1000000005",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "CREACIóN DE FICHA",
+        "tabla": "fichas",
+        "registro_id": "3063366",
+        "detalles": "Programa ID: 1, Cupos: 35"
+    },
+    {
+        "id": "audit_6a4b1444a06120.50053655",
+        "timestamp": "2026-07-06 04:34:44",
+        "usuario_id": 5,
+        "usuario_nombre": "Ana Restrepo",
+        "usuario_login": "1000000005",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "CREACIóN DE AMBIENTE",
+        "tabla": "ambientes",
+        "registro_id": "0",
+        "detalles": "Nombre: Ambiente 19, Tipo: Convencional"
+    },
+    {
+        "id": "audit_6a4b14052fd410.53633710",
+        "timestamp": "2026-07-06 04:33:41",
+        "usuario_id": 5,
+        "usuario_nombre": "Ana Restrepo",
+        "usuario_login": "1000000005",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "CREACIóN DE USUARIO",
+        "tabla": "usuarios",
+        "registro_id": "11",
+        "detalles": "Nombre: Hasler  Placio, Rol ID: 1"
+    },
+    {
+        "id": "audit_6a4b11ad1bc9b2.15320790",
+        "timestamp": "2026-07-06 04:23:41",
+        "usuario_id": 999,
+        "usuario_nombre": "Coordinador de Pruebas",
+        "usuario_login": "99999999",
+        "rol": "Coordinador",
+        "ip": "127.0.0.1",
+        "accion": "REPORTE DE NOVEDAD",
+        "tabla": "novedad_ambiente",
+        "registro_id": 42,
+        "detalles": "Se reportó avería en aire acondicionado"
+    },
+    {
+        "id": "audit_6a4b11ad1902c4.51746892",
+        "timestamp": "2026-07-06 04:23:41",
+        "usuario_id": 999,
+        "usuario_nombre": "Coordinador de Pruebas",
+        "usuario_login": "99999999",
+        "rol": "Coordinador",
+        "ip": "127.0.0.1",
+        "accion": "ACTUALIZACIóN DE AMBIENTE",
+        "tabla": "ambientes",
+        "registro_id": 1,
+        "detalles": "Se actualizó capacidad a 40 y aire a habilitado"
+    },
+    {
+        "id": "audit_6a4b11ad155d86.11999775",
+        "timestamp": "2026-07-06 04:23:41",
+        "usuario_id": 999,
+        "usuario_nombre": "Coordinador de Pruebas",
+        "usuario_login": "99999999",
+        "rol": "Coordinador",
+        "ip": "127.0.0.1",
+        "accion": "CREACIóN DE FICHA",
+        "tabla": "fichas",
+        "registro_id": 827364,
+        "detalles": "Ficha creada exitosamente: Programa Software"
+    },
+    {
+        "id": "audit_6a4b11ad14feb1.09688435",
+        "timestamp": "2026-07-06 04:23:41",
+        "usuario_id": 999,
+        "usuario_nombre": "Coordinador de Pruebas",
+        "usuario_login": "99999999",
+        "rol": "Coordinador",
+        "ip": "127.0.0.1",
+        "accion": "INICIO DE SESIóN",
+        "tabla": "usuarios",
+        "registro_id": 999,
+        "detalles": "Inicio de sesión simulado para pruebas de auditoría"
+    }
+]

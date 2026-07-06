@@ -233,6 +233,9 @@ class FichaController extends BaseController {
             ];
 
             if ($this->fichaModel->create($data)) {
+                // Auditoría de Creación de Ficha
+                AuditLogger::log('Creación de Ficha', 'fichas', $data['numero_ficha'], 'Programa ID: ' . $id_programa . ', Cupos: ' . $cantidad_estudiantes);
+                
                 $nuevaFicha = $this->fichaModel->find($data['numero_ficha']);
                 if ($is_ajax) {
                     header('Content-Type: application/json');
@@ -279,6 +282,8 @@ class FichaController extends BaseController {
             }
 
             if ($this->fichaAprendizModel->create($id_usuario_aprendiz, $numero_ficha)) {
+                // Auditoría de Matrícula de Aprendiz
+                AuditLogger::log('Matrícula de Aprendiz', 'ficha_aprendiz', $numero_ficha, 'Aprendiz ID: ' . $id_usuario_aprendiz);
                 $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
             } else {
                 $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en esta ficha o supera el cupo.';
@@ -296,6 +301,8 @@ class FichaController extends BaseController {
         $numero_ficha = $_GET['ficha'] ?? 0;
 
         if ($this->fichaAprendizModel->delete($id_ficha_aprendiz)) {
+            // Auditoría de Desvinculación de Aprendiz
+            AuditLogger::log('Desvinculación de Aprendiz', 'ficha_aprendiz', $numero_ficha, 'ID Relación Ficha Aprendiz: ' . $id_ficha_aprendiz);
             $_SESSION['flash_success'] = 'Aprendiz desvinculado de la ficha exitosamente.';
         } else {
             $_SESSION['flash_error'] = 'Error al desvincular al aprendiz.';
@@ -383,6 +390,9 @@ class FichaController extends BaseController {
             ];
 
             if ($this->fichaModel->update($numero_ficha_antiguo, $data)) {
+                // Auditoría de Actualización de Ficha
+                AuditLogger::log('Actualización de Ficha', 'fichas', $numero_ficha_antiguo, 'Cupos: ' . $cantidad_estudiantes . ', Programa: ' . $id_programa);
+                
                 $fichaActualizada = $this->fichaModel->find($numero_ficha_antiguo);
                 if ($is_ajax) {
                     header('Content-Type: application/json');
@@ -447,6 +457,8 @@ class FichaController extends BaseController {
             }
 
             if ($this->fichaModel->delete($id)) {
+                // Auditoría de Eliminación de Ficha
+                AuditLogger::log('Eliminación de Ficha', 'fichas', $id, 'Ficha número: ' . $id);
                 $_SESSION['flash_success'] = 'Ficha eliminada correctamente.';
             } else {
                 $_SESSION['flash_error'] = 'Error al eliminar la ficha en la base de datos.';

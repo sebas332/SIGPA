@@ -55,6 +55,9 @@ class ProgramaController extends BaseController {
             if ($this->programaModel->create($data)) {
                 $new_id_programa = $this->programaModel->getLastInsertId();
                 $_SESSION['flash_success'] = 'Programa de formación creado exitosamente.';
+                
+                // Auditoría de Creación de Programa
+                AuditLogger::log('Creación de Programa', 'programa', $new_id_programa, 'Nombre: ' . $data['nombre'] . ', Código: ' . $data['codigo']);
 
                 // Registrar competencia inicial si se rellenaron los campos
                 $comp_nombre = $_POST['comp_nombre'] ?? '';
@@ -105,6 +108,9 @@ class ProgramaController extends BaseController {
 
             if ($this->programaModel->update($id, $data)) {
                 $_SESSION['flash_success'] = 'Programa actualizado exitosamente.';
+                
+                // Auditoría de Actualización de Programa
+                AuditLogger::log('Actualización de Programa', 'programa', $id, 'Nombre: ' . $data['nombre'] . ', Código: ' . $data['codigo']);
             } else {
                 $_SESSION['flash_error'] = 'Error al actualizar el programa.';
             }
@@ -142,6 +148,9 @@ class ProgramaController extends BaseController {
                 if ($this->programaModel->delete($id)) {
                     $db->commit();
                     $_SESSION['flash_success'] = 'Programa eliminado correctamente junto con sus competencias y resultados.';
+                    
+                    // Auditoría de Eliminación de Programa
+                    AuditLogger::log('Eliminación de Programa', 'programa', $id, 'Eliminó programa ID: ' . $id);
                 } else {
                     $db->rollBack();
                     $_SESSION['flash_error'] = 'Error al eliminar el programa.';
@@ -173,7 +182,13 @@ class ProgramaController extends BaseController {
 
             try {
                 if ($this->competenciaModel->create($data)) {
+                    $db_inst = Database::getInstance();
+                    $new_comp_id = $db_inst->lastInsertId();
+                    
                     $_SESSION['flash_success'] = 'Competencia registrada exitosamente.';
+                    
+                    // Auditoría de Competencia
+                    AuditLogger::log('Creación de Competencia', 'competencias', $new_comp_id, 'Nombre: ' . $data['nombre'] . ', Código: ' . $data['codigo'] . ', Programa ID: ' . $data['id_programa']);
                 } else {
                     $_SESSION['flash_error'] = 'Error al registrar la competencia.';
                 }
@@ -200,7 +215,13 @@ class ProgramaController extends BaseController {
 
             try {
                 if ($this->resultadoModel->create($data)) {
+                    $db_inst = Database::getInstance();
+                    $new_res_id = $db_inst->lastInsertId();
+                    
                     $_SESSION['flash_success'] = 'Resultado de aprendizaje registrado exitosamente.';
+                    
+                    // Auditoría de Resultado
+                    AuditLogger::log('Creación de Resultado', 'resultado_aprendizaje', $new_res_id, 'Descripción: ' . $data['descripcion'] . ', Código: ' . $data['codigo'] . ', Competencia ID: ' . $data['id_competencia']);
                 } else {
                     $_SESSION['flash_error'] = 'Error al registrar el resultado.';
                 }
@@ -305,6 +326,10 @@ class ProgramaController extends BaseController {
                 $db->commit();
 
                 $_SESSION['flash_success'] = 'Programa de Formación, Competencias y Resultados registrados exitosamente en una sola transacción.';
+                
+                // Auditoría de Registro de Currículo Completo
+                AuditLogger::log('Registro de Currículo Completo', 'programa', $id_programa, 'Nombre: ' . $progData['nombre'] . ', Código: ' . $progData['codigo']);
+                
                 $this->redirect('dashboard/index#pills-programas');
 
             } catch (Exception $e) {
@@ -467,6 +492,9 @@ class ProgramaController extends BaseController {
 
                 $db->commit();
                 $_SESSION['flash_success'] = 'Programa formativo actualizado correctamente.';
+                
+                // Auditoría de Actualización de Currículo Completo
+                AuditLogger::log('Actualización de Currículo Completo', 'programa', $id_programa, 'Nombre: ' . $progData['nombre'] . ', Código: ' . $progData['codigo']);
                 
             } catch (Exception $e) {
                 $db->rollBack();
