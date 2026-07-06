@@ -3972,11 +3972,10 @@ function cambiarVista(vista) {
     }
 }
 
-// Calcular las sesiones activas por fecha
+// Calcular las sesiones activas por fecha (Lógica Atómica Día a Día)
 function obtenerSesionesPorFecha(dateStr) {
     const targetDate = new Date(dateStr + 'T00:00:00');
-    const dayOfWeek = targetDate.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    const localDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const targetDateString = targetDate.toISOString().split('T')[0];
     
     const fichaFiltro = document.getElementById('filtroFicha') ? document.getElementById('filtroFicha').value : '';
     const ambienteFiltro = document.getElementById('filtroAmbiente') ? document.getElementById('filtroAmbiente').value : '';
@@ -3992,18 +3991,8 @@ function obtenerSesionesPorFecha(dateStr) {
             return false;
         }
         
-        // Coincidencia de día de la semana
-        if (parseInt(prog.id_dias) !== localDayOfWeek) return false;
-        
-        // Coincidencia de número de sesiones (semanas)
-        const start = new Date(prog.fecha_inicio + 'T00:00:00');
-        if (targetDate < start) return false;
-        
-        const diffTime = targetDate.getTime() - start.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-        const weeksElapsed = Math.floor(diffDays / 7);
-        
-        return weeksElapsed < parseInt(prog.total_sesiones);
+        // Coincidencia estricta de fecha (1 fila = 1 sesión)
+        return prog.fecha_inicio === targetDateString;
     });
 }
 
@@ -4199,6 +4188,13 @@ function abrirDetalleDia(fecha, event) {
                                     <div class="col-sm-6 text-dark small"><i class="fa-solid fa-user-tie text-secondary me-2"></i><strong>Instructor:</strong> ${s.instructor_nombre} ${s.instructor_apellido}</div>
                                     <div class="col-sm-6 text-dark small"><i class="fa-solid fa-building text-secondary me-2"></i><strong>Ambiente:</strong> ${s.ambiente_nombre}</div>
                                 </div>
+                                ${currentRole === 'Coordinador' ? `
+                                <div class="mt-2 text-end">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarProgramacionAjax(${s.id_programacion})">
+                                        <i class="fa-solid fa-trash-can me-1"></i> Eliminar esta sesión
+                                    </button>
+                                </div>
+                                ` : ''}
                             </li>
                         `;
                     });
@@ -4227,6 +4223,55 @@ function abrirDetalleDia(fecha, event) {
             console.error(err);
             contenido.innerHTML = `<div class="alert alert-danger">Error al cargar los datos del servidor.</div>`;
         });
+}
+
+function eliminarProgramacionAjax(idProgramacion) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡Esta sesión se eliminará permanentemente!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`<?= URLROOT; ?>/index.php?route=programacion/delete_ajax&id=${idProgramacion}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        // Remover del arreglo global
+                        window.programacionDataGlobal = window.programacionDataGlobal.filter(p => parseInt(p.id_programacion) !== parseInt(idProgramacion));
+                        
+                        // Cerrar modal
+                        const modalEl = document.getElementById('modalDetalleDia');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Eliminado',
+                            text: 'La sesión ha sido eliminada correctamente.',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2500
+                        });
+                        
+                        // Refrescar vistas
+                        renderizarCalendario();
+                        renderizarLista();
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire('Error', 'Hubo un problema de conexión.', 'error');
+                });
+        }
+    });
 }
 
 function setupAsignarHorarioModal() {

@@ -77,6 +77,9 @@ class ProgramacionController extends BaseController {
                 'id_resultado_aprendizaje' => $_POST['id_resultado_aprendizaje'] ?? 0,
                 'fecha_inicio' => $_POST['fecha_inicio'] ?? date('Y-m-d')
             ];
+            
+            // Forzar el id_dias basado en la fecha_inicio para que sea atómico (1=Lunes..7=Domingo)
+            $data['id_dias'] = date('N', strtotime($data['fecha_inicio']));
 
             // Validar conflictos
             $conflictMessage = $this->programacionModel->getConflictMessage($data);
@@ -115,7 +118,33 @@ class ProgramacionController extends BaseController {
         } catch (Exception $e) {
             $_SESSION['flash_error'] = 'No se puede eliminar la programación porque tiene registros de asistencia asociados.';
         }
-        $this->redirect('programacion/index');
+        $this->redirect('dashboard/index#pills-programacion');
+    }
+
+    /**
+     * Eliminar programación vía AJAX
+     */
+    public function delete_ajax() {
+        header('Content-Type: application/json');
+        try {
+            $this->requireRol('Coordinador');
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'No autorizado.']);
+            exit;
+        }
+
+        $id = $_GET['id'] ?? 0;
+
+        try {
+            if ($this->programacionModel->delete($id)) {
+                echo json_encode(['success' => true, 'message' => 'Sesión eliminada correctamente.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al eliminar en la base de datos.']);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'No se puede eliminar la sesión porque tiene registros asociados (ej. asistencia).']);
+        }
+        exit;
     }
 
     /**
@@ -185,6 +214,9 @@ class ProgramacionController extends BaseController {
             'id_resultado_aprendizaje' => $input['id_resultado_aprendizaje'] ?? 0,
             'fecha_inicio' => $input['fecha_inicio'] ?? date('Y-m-d')
         ];
+
+        // Forzar el id_dias basado en la fecha_inicio para que sea atómico (1=Lunes..7=Domingo)
+        $data['id_dias'] = date('N', strtotime($data['fecha_inicio']));
 
         // Validar conflictos
         $conflictMessage = $this->programacionModel->getConflictMessage($data);

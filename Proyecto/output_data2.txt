@@ -1,0 +1,18 @@
+stdClass Object
+(
+    [Table] => programacion_academica
+    [Create Table] => CREATE TABLE `programacion_academica` (
+  `id_programacion` int(11) NOT NULL AUTO_INCREMENT,
+  `numero_ficha` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `id_numero_ambiente` int(11) NOT NULL,
+  `id_dias` int(11) NOT NULL,
+  `hora_inicio` time DEFAULT NULL,
+  `hora_fin` time DEFAULT NULL,
+  `id_resultado_aprendizaje` int(11) NOT NULL,
+  `total_sesiones` int(11) DEFAULT NULL,
+  `sesiones_realizadas` int(11) DEFAULT NULL,
+  `fecha_inicio` date DEFAULT NULL,
+  PRIMARY KEY (`id_programacion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+)

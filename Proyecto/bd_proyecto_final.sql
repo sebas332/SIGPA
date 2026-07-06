@@ -630,7 +630,9 @@ CREATE TABLE `usuarios` (
   `correo` varchar(150) DEFAULT NULL,
   `titulacion` varchar(100) DEFAULT NULL,
   `usuario` varchar(100) DEFAULT NULL,
-  `contraseña` varchar(100) DEFAULT NULL
+  `contraseña` varchar(100) DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_expira` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
