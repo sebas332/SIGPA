@@ -700,7 +700,7 @@
                         </div>
                         
                         <div class="col-12 col-md-3">
-                            <div class="action-card" onclick="document.getElementById('pills-programas-tab').click(); window.location.hash = '#pills-programas';">
+                            <div class="action-card" onclick="location.href = '<?= URLROOT; ?>/index.php?route=reportes/index';">
                                 <div class="action-icon purple">
                                     <i class="fa-solid fa-chart-bar"></i>
                                 </div>

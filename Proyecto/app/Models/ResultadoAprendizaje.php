@@ -88,4 +88,18 @@ class ResultadoAprendizaje {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Obtener resultados de aprendizaje de un programa específico mediante JOIN con competencias
+     * @param int $id_programa
+     * @return array
+     */
+    public function getByPrograma($id_programa) {
+        $this->db->query("SELECT ra.* FROM resultado_aprendizaje ra 
+                          INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
+                          WHERE c.id_programa = :id_programa 
+                          ORDER BY ra.codigo");
+        $this->db->bind(':id_programa', $id_programa);
+        return $this->db->resultSet();
+    }
 }

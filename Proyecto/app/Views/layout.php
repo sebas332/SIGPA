@@ -173,7 +173,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 ['dashboard/index#pills-novedades', 'fa-triangle-exclamation', 'Novedades de Sede']
             ],
             'REPORTES Y CONTROL' => [
-                ['#', 'fa-chart-pie', 'Reportes'],
+                ['reportes/index', 'fa-chart-pie', 'Reportes'],
                 ['#', 'fa-shield-halved', 'Auditoría']
             ],
             'CONFIGURACIÓN' => [

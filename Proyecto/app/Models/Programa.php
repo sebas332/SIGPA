@@ -80,9 +80,39 @@ class Programa {
      * @return bool
      */
     public function delete($id) {
-        $this->db->query("DELETE FROM programa WHERE id_programa = :id");
-        $this->db->bind(':id', $id);
-        return $this->db->execute();
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Obtener competencias asociadas
+            $this->db->query("SELECT id_competencia FROM competencias WHERE id_programa = :id");
+            $this->db->bind(':id', $id);
+            $competencias = $this->db->resultSet();
+
+            // 2. Eliminar resultados de aprendizaje de las competencias del programa
+            foreach ($competencias as $comp) {
+                $this->db->query("DELETE FROM resultado_aprendizaje WHERE id_competencia = :id_comp");
+                $this->db->bind(':id_comp', $comp->id_competencia);
+                $this->db->execute();
+            }
+
+            // 3. Eliminar competencias del programa
+            $this->db->query("DELETE FROM competencias WHERE id_programa = :id");
+            $this->db->bind(':id', $id);
+            $this->db->execute();
+
+            // 4. Eliminar el programa de formación
+            $this->db->query("DELETE FROM programa WHERE id_programa = :id");
+            $this->db->bind(':id', $id);
+            $result = $this->db->execute();
+
+            $this->db->commit();
+            return $result;
+        } catch (PDOException $e) {
+            if ($this->db->getConnection()->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 
     /**
