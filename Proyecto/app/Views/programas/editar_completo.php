@@ -29,22 +29,22 @@
 
                     <div class="mb-3">
                         <label for="nombre" class="form-label fw-medium text-secondary">Nombre del Programa</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej. Análisis y Desarrollo de Software" value="<?= htmlspecialchars($programa->nombre); ?>" required>
+                        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej. Análisis y Desarrollo de Software" value="<?= htmlspecialchars($programa->nombre); ?>" required oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(this.value.length > 35) this.value = this.value.slice(0, 35);">
                     </div>
 
                     <div class="mb-3">
                         <label for="codigo" class="form-label fw-medium text-secondary">Código del Programa</label>
-                        <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ej. 228118" value="<?= htmlspecialchars($programa->codigo); ?>" required>
+                        <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ej. 228118" value="<?= htmlspecialchars($programa->codigo); ?>" required oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 8) this.value = this.value.slice(0, 8);">
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label for="version" class="form-label fw-medium text-secondary">Versión</label>
-                            <input type="text" class="form-control" id="version" name="version" placeholder="Ej. V1" value="<?= htmlspecialchars($programa->version); ?>" required>
+                            <input type="text" class="form-control" id="version" name="version" placeholder="Ej. V1" value="<?= htmlspecialchars($programa->version); ?>" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, ''); if(this.value.length > 2) this.value = this.value.slice(0, 2);">
                         </div>
                         <div class="col-6">
                             <label for="vigencia" class="form-label fw-medium text-secondary">Vigencia</label>
-                            <input type="text" class="form-control" id="vigencia" name="vigencia" placeholder="Ej. 2026" value="<?= htmlspecialchars($programa->vigencia); ?>" required>
+                            <input type="text" class="form-control" id="vigencia" name="vigencia" placeholder="Ej. 2026" value="<?= htmlspecialchars($programa->vigencia); ?>" required oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length > 4) this.value = this.value.slice(0, 4);">
                         </div>
                     </div>
 
@@ -62,11 +62,11 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <label for="duracion_lectiva" class="form-label fw-medium text-secondary">Duración Lectiva (hrs)</label>
-                            <input type="number" class="form-control" id="duracion_lectiva" name="duracion_lectiva" placeholder="Ej. 3120" value="<?= $programa->duracion_lectiva; ?>" required>
+                            <input type="number" class="form-control" id="duracion_lectiva" name="duracion_lectiva" placeholder="Ej. 3120" value="<?= $programa->duracion_lectiva; ?>" required oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);" min="0">
                         </div>
                         <div class="col-6">
                             <label for="duracion_practica" class="form-label fw-medium text-secondary">Duración Práctica (hrs)</label>
-                            <input type="number" class="form-control" id="duracion_practica" name="duracion_practica" placeholder="Ej. 864" value="<?= $programa->duracion_practica; ?>" required>
+                            <input type="number" class="form-control" id="duracion_practica" name="duracion_practica" placeholder="Ej. 864" value="<?= $programa->duracion_practica; ?>" required oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);" min="0">
                         </div>
                     </div>
                 </div>
@@ -327,6 +327,35 @@ function inicializarEditarCompleto() {
         });
     } else {
         agregarCompetencia();
+    }
+
+    // Validación al enviar el formulario
+    const form = document.getElementById('formEditarCompleto');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const compBlocks = document.querySelectorAll('.comp-block');
+            for (let i = 0; i < compBlocks.length; i++) {
+                const block = compBlocks[i];
+                const compName = block.querySelector('.comp-nombre').value || 'Sin nombre';
+                const compNum = block.querySelector('.comp-number').innerText;
+                const resultadosTotales = parseInt(block.querySelector('.comp-resultados-totales').value) || 0;
+                const resBlocks = block.querySelectorAll('.res-block');
+                
+                if (resBlocks.length !== resultadosTotales) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Resultados Incompletos',
+                        html: `<b>Competencia #${compNum} (${compName})</b><br><br>Has indicado que tiene <b>${resultadosTotales}</b> resultados totales (RA), pero has agregado <b>${resBlocks.length}</b> al formulario.<br><br>Por favor, asegúrate de crear exactamente <b>${resultadosTotales}</b> resultado(s) de aprendizaje antes de guardar.`,
+                        confirmButtonColor: '#00A356',
+                        confirmButtonText: 'Entendido'
+                    }).then(() => {
+                        block.scrollIntoView({behavior: "smooth", block: "center"});
+                    });
+                    return false;
+                }
+            }
+        });
     }
 }
 

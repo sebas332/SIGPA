@@ -1,0 +1,6 @@
+<?php
+require 'config/config.php';
+require 'config/Database.php';
+$db = Database::getInstance();
+$db->query("SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = 'bd_proyecto_final'");
+print_r($db->resultSet());

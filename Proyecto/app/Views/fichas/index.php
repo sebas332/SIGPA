@@ -919,11 +919,11 @@ foreach ($db->resultSet() as $r) {
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="numero_ficha" class="form-label fw-semibold text-secondary">Número de Ficha</label>
-                            <input type="number" class="form-control form-control-lg rounded-3" id="numero_ficha" name="numero_ficha" placeholder="Ej. 2670003" required>
+                            <input type="number" class="form-control form-control-lg rounded-3" id="numero_ficha" name="numero_ficha" placeholder="Ej. 2670003" required oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10);" min="0">
                         </div>
                         <div class="col-md-6">
                             <label for="cantidad_estudiantes" class="form-label fw-semibold text-secondary">Cupos Autorizados</label>
-                            <input type="number" class="form-control form-control-lg rounded-3" id="cantidad_estudiantes" name="cantidad_estudiantes" placeholder="Ej. 30" required>
+                            <input type="number" class="form-control form-control-lg rounded-3" id="cantidad_estudiantes" name="cantidad_estudiantes" placeholder="Ej. 30" required oninput="if(this.value.length > 2) this.value = this.value.slice(0, 2);" min="0">
                         </div>
                         <div class="col-md-12">
                             <label for="id_programa" class="form-label fw-semibold text-secondary">Programa de Formación</label>
@@ -995,7 +995,7 @@ foreach ($db->resultSet() as $r) {
                         </div>
                         <div class="col-md-6">
                             <label for="edit_cantidad_estudiantes" class="form-label fw-semibold text-secondary">Cupos Autorizados</label>
-                            <input type="number" class="form-control form-control-lg rounded-3" id="edit_cantidad_estudiantes" name="cantidad_estudiantes" required>
+                            <input type="number" class="form-control form-control-lg rounded-3" id="edit_cantidad_estudiantes" name="cantidad_estudiantes" required oninput="if(this.value.length > 2) this.value = this.value.slice(0, 2);" min="0">
                         </div>
                         <div class="col-md-12">
                             <label for="edit_id_programa" class="form-label fw-semibold text-secondary">Programa de Formación</label>

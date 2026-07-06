@@ -125,40 +125,18 @@ class ProgramaController extends BaseController {
         $this->requireRol('Coordinador');
         $id = $_GET['id'] ?? 0;
         if ($id > 0) {
-            $db = Database::getInstance();
             try {
-                $db->beginTransaction();
-                
-                // 1. Obtener todas las competencias del programa
-                $competencias = $this->competenciaModel->getByPrograma($id);
-                
-                // 2. Para cada competencia, eliminar sus resultados de aprendizaje
-                foreach ($competencias as $comp) {
-                    $db->query("DELETE FROM resultado_aprendizaje WHERE id_competencia = :id_comp");
-                    $db->bind(':id_comp', $comp->id_competencia);
-                    $db->execute();
-                }
-                
-                // 3. Eliminar todas las competencias del programa
-                $db->query("DELETE FROM competencias WHERE id_programa = :id_prog");
-                $db->bind(':id_prog', $id);
-                $db->execute();
-                
-                // 4. Eliminar el programa
+                // El modelo ya maneja la transacción y la eliminación en cascada (competencias y resultados)
                 if ($this->programaModel->delete($id)) {
-                    $db->commit();
                     $_SESSION['flash_success'] = 'Programa eliminado correctamente junto con sus competencias y resultados.';
                     
                     // Auditoría de Eliminación de Programa
                     AuditLogger::log('Eliminación de Programa', 'programa', $id, 'Eliminó programa ID: ' . $id);
                 } else {
-                    $db->rollBack();
                     $_SESSION['flash_error'] = 'Error al eliminar el programa.';
                 }
             } catch (PDOException $e) {
-                if ($db->getConnection()->inTransaction()) {
-                    $db->rollBack();
-                }
+                // Si ocurre una excepción aquí, usualmente es por llaves foráneas (ej. fichas o clases activas)
                 $_SESSION['flash_error'] = 'No se puede eliminar el programa porque tiene fichas asignadas o clases programadas asociadas.';
             }
         }
