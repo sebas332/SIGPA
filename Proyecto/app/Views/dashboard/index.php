@@ -3083,8 +3083,48 @@
                     <p class="text-muted small mb-0">Horario de formación y cumplimiento de competencias asignadas por el coordinador.</p>
                 </div>
 
+                <!-- SELECTOR DE VISTA PARA INSTRUCTOR -->
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
+                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
+                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioInst" style="background-color: #39A900;" onclick="cambiarVistaInst('calendario')">
+                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaInst" onclick="cambiarVistaInst('lista')">
+                            <i class="fa-solid fa-list me-1"></i> Mis Sesiones
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cabecera Mes/Año -->
+                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesInst">
+                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
+                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioInst" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="calendar-days-grid mb-2">
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                    </div>
+                    <div class="calendar-days-grid" id="gridDiasCalendario">
+                        <!-- Generado dinámicamente con JS -->
+                    </div>
+                </div>
+
                 <!-- Grid de Tarjetas de Sesiones -->
-                <div class="row g-4">
+                <div class="row g-4 d-none" id="cardListaCompletaInst">
                     <?php if (empty($programacion)): ?>
                         <div class="col-12 text-center py-5 text-muted">
                             <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
@@ -3487,7 +3527,47 @@
                     <p class="text-muted small mb-0">Muestra las sesiones programadas para tu ficha formativa actual.</p>
                 </div>
 
-                <div class="row g-4">
+                <!-- SELECTOR DE VISTA PARA APRENDIZ -->
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
+                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
+                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioApr" style="background-color: #39A900;" onclick="cambiarVistaApr('calendario')">
+                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaApr" onclick="cambiarVistaApr('lista')">
+                            <i class="fa-solid fa-list me-1"></i> Mis Clases
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cabecera Mes/Año -->
+                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesApr">
+                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
+                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioApr" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <div class="calendar-days-grid mb-2">
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                    </div>
+                    <div class="calendar-days-grid" id="gridDiasCalendario">
+                        <!-- Generado dinámicamente con JS -->
+                    </div>
+                </div>
+
+                <div class="row g-4 d-none" id="cardListaCompletaApr">
                     <?php if (empty($programacion)): ?>
                         <div class="col-12 text-center py-5 text-muted">
                             <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
@@ -6475,5 +6555,72 @@ function iniciarMonitoreoProgramacion() {
             })
             .catch(err => console.error("Error al sincronizar la programación:", err));
     }, 5000); // Sincronizar cada 5 segundos
+}
+function cambiarVistaInst(vista) {
+    const btnCal = document.getElementById('btnVistaCalendarioInst');
+    const btnList = document.getElementById('btnVistaListaInst');
+    const cardCal = document.getElementById('cardCalendarioInst');
+    const navMes = document.getElementById('seccionNavegacionMesInst');
+    const cardList = document.getElementById('cardListaCompletaInst');
+    
+    if (vista === 'calendario') {
+        btnCal.classList.add('btn-success', 'active');
+        btnCal.classList.remove('btn-light', 'text-secondary');
+        btnCal.style.backgroundColor = '#39A900';
+        
+        btnList.classList.add('btn-light', 'text-secondary');
+        btnList.classList.remove('btn-success', 'active');
+        btnList.style.backgroundColor = '';
+        
+        cardCal.classList.remove('d-none');
+        navMes.classList.remove('d-none');
+        cardList.classList.add('d-none');
+    } else {
+        btnList.classList.add('btn-success', 'active');
+        btnList.classList.remove('btn-light', 'text-secondary');
+        btnList.style.backgroundColor = '#39A900';
+        
+        btnCal.classList.add('btn-light', 'text-secondary');
+        btnCal.classList.remove('btn-success', 'active');
+        btnCal.style.backgroundColor = '';
+        
+        cardCal.classList.add('d-none');
+        navMes.classList.add('d-none');
+        cardList.classList.remove('d-none');
+    }
+}
+
+function cambiarVistaApr(vista) {
+    const btnCal = document.getElementById('btnVistaCalendarioApr');
+    const btnList = document.getElementById('btnVistaListaApr');
+    const cardCal = document.getElementById('cardCalendarioApr');
+    const navMes = document.getElementById('seccionNavegacionMesApr');
+    const cardList = document.getElementById('cardListaCompletaApr');
+    
+    if (vista === 'calendario') {
+        btnCal.classList.add('btn-success', 'active');
+        btnCal.classList.remove('btn-light', 'text-secondary');
+        btnCal.style.backgroundColor = '#39A900';
+        
+        btnList.classList.add('btn-light', 'text-secondary');
+        btnList.classList.remove('btn-success', 'active');
+        btnList.style.backgroundColor = '';
+        
+        cardCal.classList.remove('d-none');
+        navMes.classList.remove('d-none');
+        cardList.classList.add('d-none');
+    } else {
+        btnList.classList.add('btn-success', 'active');
+        btnList.classList.remove('btn-light', 'text-secondary');
+        btnList.style.backgroundColor = '#39A900';
+        
+        btnCal.classList.add('btn-light', 'text-secondary');
+        btnCal.classList.remove('btn-success', 'active');
+        btnCal.style.backgroundColor = '';
+        
+        cardCal.classList.add('d-none');
+        navMes.classList.add('d-none');
+        cardList.classList.remove('d-none');
+    }
 }
 </script>
