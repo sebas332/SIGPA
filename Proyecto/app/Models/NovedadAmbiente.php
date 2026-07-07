@@ -74,4 +74,13 @@ class NovedadAmbiente {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Obtener todas las novedades de programación (ambientes liberados)
+     * @return array
+     */
+    public function getExcepcionesProgramacion() {
+        $this->db->query("SELECT * FROM novedad_ambiente WHERE descripcion LIKE '[LIBERADO_PROG:%'");
+        return $this->db->resultSet();
+    }
 }

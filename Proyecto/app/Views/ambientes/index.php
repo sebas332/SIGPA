@@ -1046,6 +1046,7 @@
         var selectedAmbiente = null;
         var calendarDateAmbiente = new Date(2026, 6, 1);
         var programacionAmbienteData = [];
+        var excepcionesAmbienteData = [];
         const urlRoot = "<?= URLROOT; ?>";
 
         function verDisponibilidad(id, nombre, tipo, capacidad, computadores, especialidad, aire, ventilador, tablero, tv, disponibilidad, fecha_creacion, url_foto) {
@@ -1163,20 +1164,23 @@
                 </div>
             `;
             
-            fetch(`\${urlRoot}/index.php?route=ambientes/get_programacion&id=\${id}`)
+            fetch(`${urlRoot}/index.php?route=ambientes/get_programacion&id=${id}&_t=${Date.now()}`)
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
                         programacionAmbienteData = res.data;
+                        excepcionesAmbienteData = res.excepciones || [];
                     } else {
                         console.error("Error al cargar la programación del ambiente:", res.message);
                         programacionAmbienteData = [];
+                        excepcionesAmbienteData = [];
                     }
                     renderizarCalendarioAmbiente();
                 })
                 .catch(err => {
                     console.error("Error en fetch de programación:", err);
                     programacionAmbienteData = [];
+                    excepcionesAmbienteData = [];
                     renderizarCalendarioAmbiente();
                 });
         }
@@ -1233,7 +1237,19 @@
             const dateStr = `\${yyyy}-\${mm}-\${dd}`;
             const dayOfWeek = date.getDay();
             
-            const sesiones = programacionAmbienteData.filter(s => s.fecha_inicio === dateStr);
+            const sesiones = programacionAmbienteData.filter(s => {
+                if (s.fecha_inicio !== dateStr) return false;
+                
+                let isLiberado = false;
+                if (excepcionesAmbienteData && excepcionesAmbienteData.length > 0) {
+                    let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                    isLiberado = excepcionesAmbienteData.some(e => 
+                        e.fecha_reporte === dateStr && 
+                        e.descripcion.includes(descMatcher)
+                    );
+                }
+                return !isLiberado;
+            });
             
             const celda = document.createElement('div');
             celda.className = 'env-calendar-cell';
@@ -1347,7 +1363,19 @@
             
             const hoyStr = new Date().toISOString().split('T')[0];
             const proximas = programacionAmbienteData
-                .filter(s => s.fecha_inicio >= hoyStr)
+                .filter(s => {
+                    if (s.fecha_inicio < hoyStr) return false;
+                    
+                    let isLiberado = false;
+                    if (excepcionesAmbienteData && excepcionesAmbienteData.length > 0) {
+                        let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                        isLiberado = excepcionesAmbienteData.some(e => 
+                            e.fecha_reporte === s.fecha_inicio && 
+                            e.descripcion.includes(descMatcher)
+                        );
+                    }
+                    return !isLiberado;
+                })
                 .sort((a, b) => {
                     if (a.fecha_inicio !== b.fecha_inicio) {
                         return a.fecha_inicio.localeCompare(b.fecha_inicio);

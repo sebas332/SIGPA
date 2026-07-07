@@ -1,0 +1,1 @@
+<?php require 'app/config/config.php'; require 'app/libraries/Database.php'; require 'app/libraries/BaseController.php'; require 'app/Models/ProgramacionAcademica.php'; $model = new ProgramacionAcademica(); print_r($model->getByAmbiente(1)); ?>

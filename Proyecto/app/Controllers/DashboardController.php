@@ -134,6 +134,8 @@ class DashboardController extends BaseController {
             $data['competencias'] = $this->competenciaModel->all();
         }
 
+        $data['excepciones'] = $this->novedadModel->getExcepcionesProgramacion();
+
         $this->render('dashboard/index', $data);
     }
 }

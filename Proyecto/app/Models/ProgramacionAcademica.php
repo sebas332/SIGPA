@@ -108,11 +108,29 @@ class ProgramacionAcademica {
      * Valida conflictos en una fecha específica
      */
     public function getConflictMessage($data) {
+        // Obtener la programación existente para la fecha
         $this->db->query("SELECT * FROM programacion_academica WHERE fecha_inicio = :fecha");
         $this->db->bind(':fecha', $data['fecha_inicio']);
         $existing = $this->db->resultSet();
 
+        // Buscar si hay liberaciones (excepciones) en la tabla novedad_ambiente para esta fecha
+        $this->db->query("SELECT descripcion FROM novedad_ambiente WHERE fecha_reporte = :fecha AND descripcion LIKE '[LIBERADO_PROG:%'");
+        $this->db->bind(':fecha', $data['fecha_inicio']);
+        $novedades = $this->db->resultSet();
+        
+        $liberadosIds = [];
+        foreach ($novedades as $nov) {
+            if (preg_match('/\[LIBERADO_PROG:(\d+)\]/', $nov->descripcion, $matches)) {
+                $liberadosIds[] = (int)$matches[1];
+            }
+        }
+
         foreach ($existing as $e) {
+            // Si esta programación específica está liberada, la ignoramos para cruces de horarios
+            if (in_array((int)$e->id_programacion, $liberadosIds)) {
+                continue;
+            }
+
             // Verificar solapamiento de horas
             if (($data['hora_inicio'] < $e->hora_fin) && ($data['hora_fin'] > $e->hora_inicio)) {
                 if ((int)$e->id_usuario === (int)$data['id_usuario']) return "Instructor ocupado en esta fecha.";

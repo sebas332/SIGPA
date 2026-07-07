@@ -2336,6 +2336,7 @@
                     var selectedAmbiente = null;
                     var calendarDateAmbiente = new Date(2026, 6, 1);
                     var programacionAmbienteData = [];
+                    var excepcionesAmbienteData = [];
 
                     function verDisponibilidad(id, nombre, tipo, capacidad, computadores, especialidad, aire, ventilador, tablero, tv, disponibilidad, fecha_creacion, url_foto) {
                         selectedAmbiente = {
@@ -2464,20 +2465,23 @@
                             </div>
                         `;
                         
-                        fetch(`${urlRoot}/index.php?route=ambientes/get_programacion&id=${id}`)
+                        fetch(`${urlRoot}/index.php?route=ambientes/get_programacion&id=${id}&_t=${Date.now()}`)
                             .then(res => res.json())
                             .then(res => {
                                 if (res.success) {
                                     programacionAmbienteData = res.data;
+                                    excepcionesAmbienteData = res.excepciones || [];
                                 } else {
                                     console.error("Error al cargar la programación del ambiente:", res.message);
                                     programacionAmbienteData = [];
+                                    excepcionesAmbienteData = [];
                                 }
                                 renderizarCalendarioAmbiente();
                             })
                             .catch(err => {
                                 console.error("Error en fetch de programación:", err);
                                 programacionAmbienteData = [];
+                                excepcionesAmbienteData = [];
                                 renderizarCalendarioAmbiente();
                             });
                     }
@@ -2534,7 +2538,19 @@
                         const dateStr = `${yyyy}-${mm}-${dd}`;
                         const dayOfWeek = date.getDay();
                         
-                        const sesiones = programacionAmbienteData.filter(s => s.fecha_inicio === dateStr);
+                        const sesiones = programacionAmbienteData.filter(s => {
+                            if (s.fecha_inicio !== dateStr) return false;
+                            
+                            let isLiberado = false;
+                            if (excepcionesAmbienteData && excepcionesAmbienteData.length > 0) {
+                                let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                                isLiberado = excepcionesAmbienteData.some(e => 
+                                    e.fecha_reporte === dateStr && 
+                                    e.descripcion.includes(descMatcher)
+                                );
+                            }
+                            return !isLiberado;
+                        });
                         
                         const celda = document.createElement('div');
                         celda.className = 'env-calendar-cell';
@@ -2626,6 +2642,16 @@
                         }
                         
                         programacionAmbienteData.forEach(s => {
+                            let isLiberado = false;
+                            if (excepcionesAmbienteData && excepcionesAmbienteData.length > 0) {
+                                let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                                isLiberado = excepcionesAmbienteData.some(e => 
+                                    e.fecha_reporte === s.fecha_inicio && 
+                                    e.descripcion.includes(descMatcher)
+                                );
+                            }
+                            if (isLiberado) return;
+
                             const parts = s.fecha_inicio.split('-');
                             if (parts.length === 3) {
                                 const sYear = parseInt(parts[0], 10);
@@ -2648,7 +2674,18 @@
                         
                         const hoyStr = new Date().toISOString().split('T')[0];
                         const proximas = programacionAmbienteData
-                            .filter(s => s.fecha_inicio >= hoyStr)
+                            .filter(s => {
+                                if (s.fecha_inicio < hoyStr) return false;
+                                let isLiberado = false;
+                                if (excepcionesAmbienteData && excepcionesAmbienteData.length > 0) {
+                                    let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                                    isLiberado = excepcionesAmbienteData.some(e => 
+                                        e.fecha_reporte === s.fecha_inicio && 
+                                        e.descripcion.includes(descMatcher)
+                                    );
+                                }
+                                return !isLiberado;
+                            })
                             .sort((a, b) => {
                                 if (a.fecha_inicio !== b.fecha_inicio) {
                                     return a.fecha_inicio.localeCompare(b.fecha_inicio);
@@ -4609,7 +4646,7 @@
 </div>
 
 <!-- MODAL VISTA DETALLE DIARIO -->
-<div class="modal fade" id="modalDetalleDia" tabindex="-1" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
+<div class="modal fade" id="modalDetalleDia" aria-labelledby="modalDetalleDiaLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header bg-dark text-white p-4 border-0">
@@ -5612,6 +5649,20 @@ function obtenerSesionesPorFecha(dateStr) {
             return false;
         }
         
+        // Verificar si la sesión está liberada por novedad
+        let isLiberado = false;
+        if (window.excepcionesGlobal && window.excepcionesGlobal.length > 0) {
+            let descMatcher = '[LIBERADO_PROG:' + prog.id_programacion + ']';
+            isLiberado = window.excepcionesGlobal.some(e => 
+                e.fecha_reporte === targetDateString && 
+                e.descripcion.includes(descMatcher)
+            );
+        }
+        
+        if (isLiberado) {
+            return false;
+        }
+
         // Coincidencia estricta de fecha (1 fila = 1 sesión)
         return prog.fecha_inicio === targetDateString;
     });
@@ -5750,8 +5801,8 @@ function mostrarDetalleInstructor(nombre, infoEscapada, event) {
 }
 
 function abrirDetalleDia(fecha, event) {
-    if (event.target.closest('.calendar-session-instructor') || event.target.closest('.calendar-session-card')) {
-        return;
+    if (event && event.target.closest('.calendar-session-instructor')) {
+        return; // El clic en instructor ya maneja su propio modal
     }
     
     const modalEl = document.getElementById('modalDetalleDia');
@@ -5769,7 +5820,7 @@ function abrirDetalleDia(fecha, event) {
         </div>
     `;
     
-    fetch(`<?= URLROOT; ?>/index.php?route=programacion/detalle_dia&fecha=${fecha}`)
+    fetch(`<?= URLROOT; ?>/index.php?route=programacion/detalle_dia&fecha=${fecha}&_t=${Date.now()}`)
         .then(res => res.json())
         .then(res => {
             if (!res.success) {
@@ -5786,18 +5837,32 @@ function abrirDetalleDia(fecha, event) {
             
             for (const [jornada, sesiones] of Object.entries(res.jornadas)) {
                 if (sesiones.length > 0) {
-                    tieneSesiones = true;
-                    html += `
-                        <div class="card border-0 shadow-sm rounded-3 mb-3">
-                            <div class="card-header bg-secondary text-white fw-bold py-2">
-                                <i class="fa-solid fa-clock me-2"></i>Jornada ${jornada}
+                    let sesionesActivas = 0;
+                    
+                    let jornadaHtml = `
+                        <div class="card mb-4 border-0 shadow-sm">
+                            <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
+                                <h6 class="mb-0 fw-bold text-primary"><i class="fa-solid fa-sun me-2"></i>Jornada ${jornada}</h6>
                             </div>
                             <div class="card-body p-0">
-                                <ul class="list-group list-group-flush rounded-bottom-3">
+                                <ul class="list-group list-group-flush">
                     `;
-                    
+
                     sesiones.forEach(s => {
-                        html += `
+                        // Verificar si la sesión está liberada
+                        let isLiberado = false;
+                        if (window.excepcionesGlobal && window.excepcionesGlobal.length > 0) {
+                            let descMatcher = '[LIBERADO_PROG:' + s.id_programacion + ']';
+                            isLiberado = window.excepcionesGlobal.some(e => 
+                                e.fecha_reporte === fecha && 
+                                e.descripcion.includes(descMatcher)
+                            );
+                        }
+                        
+                        if (isLiberado) return; // Omitir sesiones liberadas
+
+                        sesionesActivas++;
+                        jornadaHtml += `
                             <li class="list-group-item p-3 border-bottom">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <span class="badge bg-success-subtle text-success-emphasis rounded-pill fw-bold">Ficha #${s.numero_ficha}</span>
@@ -5810,9 +5875,12 @@ function abrirDetalleDia(fecha, event) {
                                     <div class="col-sm-6 text-dark small"><i class="fa-solid fa-building text-secondary me-2"></i><strong>Ambiente:</strong> ${s.ambiente_nombre}</div>
                                 </div>
                                 ${currentRole === 'Coordinador' ? `
-                                <div class="mt-2 text-end">
+                                <div class="mt-3 text-end d-flex justify-content-end gap-2">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="liberarAmbiente(${s.id_programacion}, '${fecha}', ${s.id_numero_ambiente}, event)">
+                                        <i class="fa-solid fa-unlock-keyhole me-1"></i> Liberar Clase / Novedad
+                                    </button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarProgramacionAjax(${s.id_programacion})">
-                                        <i class="fa-solid fa-trash-can me-1"></i> Eliminar esta sesión
+                                        <i class="fa-solid fa-trash-can me-1"></i> Eliminar
                                     </button>
                                 </div>
                                 ` : ''}
@@ -5820,11 +5888,16 @@ function abrirDetalleDia(fecha, event) {
                         `;
                     });
                     
-                    html += `
+                    jornadaHtml += `
                                 </ul>
                             </div>
                         </div>
                     `;
+                    
+                    if (sesionesActivas > 0) {
+                        html += jornadaHtml;
+                        tieneSesiones = true;
+                    }
                 }
             }
             
@@ -5844,6 +5917,75 @@ function abrirDetalleDia(fecha, event) {
             console.error(err);
             contenido.innerHTML = `<div class="alert alert-danger">Error al cargar los datos del servidor.</div>`;
         });
+}
+
+function liberarAmbiente(idProgramacion, fecha, idAmbiente, event) {
+    if (event) event.stopPropagation();
+
+    Swal.fire({
+        title: 'Liberar Clase / Registrar Novedad',
+        target: document.getElementById('modalDetalleDia'),
+        html: `<p>Esta clase desaparecerá del calendario solo para el día <b>${fecha}</b>.</p>
+               <input type="text" id="motivo_liberacion" class="form-control" placeholder="Ej. Instructor enfermo, falla técnica...">`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff9800',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, Liberar',
+        cancelButtonText: 'Cancelar',
+        focusConfirm: false,
+        preConfirm: () => {
+            const motivo = document.getElementById('motivo_liberacion').value;
+            if (!motivo) {
+                Swal.showValidationMessage('Debes ingresar un motivo');
+            }
+            return motivo;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('id_programacion', idProgramacion);
+            formData.append('fecha', fecha);
+            formData.append('motivo', result.value);
+            formData.append('id_ambiente', idAmbiente);
+
+            fetch(`${urlRoot}/index.php?route=programacion/liberar_ajax`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    Swal.fire('¡Liberado!', res.message, 'success');
+                    
+                    // Cerrar modal actual
+                    const modalEl = document.getElementById('modalDetalleDia');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    // Forzar actualización
+                    fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax`)
+                    .then(r => r.json())
+                    .then(r => {
+                        window.programacionDataGlobal = r.data;
+                        window.excepcionesGlobal = r.excepciones || [];
+                        cargarFiltrosDinamicos();
+                        renderizarCalendario();
+                        renderizarLista();
+                        if (typeof selectedAmbiente !== 'undefined' && selectedAmbiente !== null) {
+                            cargarProgramacionAmbiente(selectedAmbiente.id);
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                Swal.fire('Error', 'No se pudo contactar al servidor', 'error');
+            });
+        }
+    });
 }
 
 function eliminarProgramacionAjax(idProgramacion) {
@@ -5884,6 +6026,9 @@ function eliminarProgramacionAjax(idProgramacion) {
                         cargarFiltrosDinamicos();
                         renderizarCalendario();
                         renderizarLista();
+                        if (typeof selectedAmbiente !== 'undefined' && selectedAmbiente !== null) {
+                            cargarProgramacionAmbiente(selectedAmbiente.id);
+                        }
                     } else {
                         Swal.fire('Error', res.message, 'error');
                     }
@@ -6021,6 +6166,9 @@ function setupAsignarHorarioModal() {
                 cargarFiltrosDinamicos();
                 renderizarCalendario();
                 renderizarLista();
+                if (typeof selectedAmbiente !== 'undefined' && selectedAmbiente !== null) {
+                    cargarProgramacionAmbiente(selectedAmbiente.id);
+                }
                 formCrear.reset();
                 selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
                 selectCompetencia.disabled = true;
@@ -6285,8 +6433,12 @@ function iniciarMonitoreoProgramacion() {
                     const serializadoActual = JSON.stringify(window.programacionDataGlobal);
                     const serializadoNuevo = JSON.stringify(res.data);
                     
-                    if (serializadoActual !== serializadoNuevo) {
+                    const excepcionesActual = JSON.stringify(window.excepcionesGlobal);
+                    const excepcionesNuevo = JSON.stringify(res.excepciones);
+
+                    if (serializadoActual !== serializadoNuevo || excepcionesActual !== excepcionesNuevo) {
                         window.programacionDataGlobal = res.data;
+                        window.excepcionesGlobal = res.excepciones || [];
                         cargarFiltrosDinamicos();
                         renderizarCalendario();
                         renderizarLista();

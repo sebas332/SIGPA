@@ -370,9 +370,14 @@ class AmbienteController extends BaseController {
         if ($id > 0) {
             $programacionModel = $this->model('ProgramacionAcademica');
             $data = $programacionModel->getByAmbiente($id);
+
+            $novedadModel = $this->model('NovedadAmbiente');
+            $excepciones = $novedadModel->getExcepcionesProgramacion();
+
             echo json_encode([
                 'success' => true,
-                'data' => $data
+                'data' => $data,
+                'excepciones' => $excepciones
             ]);
         } else {
             echo json_encode([

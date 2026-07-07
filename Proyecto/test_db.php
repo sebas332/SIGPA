@@ -1,1 +1,1 @@
-<?php require "config/Database.php"; $db = Database::getInstance(); $db->query("SHOW COLUMNS FROM usuarios"); print_r($db->resultSet()); 
+<?php require 'app/config/config.php'; require 'app/libraries/Database.php'; require 'app/Models/ProgramacionAcademica.php'; $db = Database::getInstance(); $db->query('SELECT id_programacion, fecha_inicio, id_numero_ambiente FROM programacion_academica'); print_r($db->resultSet()); ?>

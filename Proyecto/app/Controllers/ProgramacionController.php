@@ -280,9 +280,13 @@ class ProgramacionController extends BaseController {
             $programacion = $this->programacionModel->getByAprendiz($user_id);
         }
 
+        $novedadModel = $this->model('NovedadAmbiente');
+        $excepciones = $novedadModel->getExcepcionesProgramacion();
+
         echo json_encode([
             'success' => true,
-            'data' => $programacion
+            'data' => $programacion,
+            'excepciones' => $excepciones
         ]);
         exit;
     }
@@ -322,6 +326,54 @@ class ProgramacionController extends BaseController {
             'fecha' => $fecha,
             'jornadas' => $jornadas
         ]);
+        exit;
+    }
+
+    /**
+     * Liberar ambiente para una fecha específica (Novedad)
+     */
+    public function liberar_ajax() {
+        header('Content-Type: application/json');
+        try {
+            $this->requireRol('Coordinador');
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'No autorizado.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        
+        $id_programacion = $input['id_programacion'] ?? 0;
+        $fecha = $input['fecha'] ?? '';
+        $motivo = $input['motivo'] ?? '';
+        $id_ambiente = $input['id_ambiente'] ?? 0;
+
+        if (!$id_programacion || !$fecha || !$motivo || !$id_ambiente) {
+            echo json_encode(['success' => false, 'message' => 'Faltan datos obligatorios.']);
+            exit;
+        }
+
+        $descripcion = "[LIBERADO_PROG:{$id_programacion}] Motivo: {$motivo}";
+        
+        $dataNovedad = [
+            'id_numero_ambiente' => $id_ambiente,
+            'id_usuario' => $_SESSION['user_id'],
+            'descripcion' => $descripcion,
+            'fecha_reporte' => $fecha
+        ];
+
+        $novedadModel = $this->model('NovedadAmbiente');
+        
+        try {
+            if ($novedadModel->create($dataNovedad)) {
+                AuditLogger::log('Ambiente Liberado', 'novedad_ambiente', null, "ProgID: {$id_programacion}, Fecha: {$fecha}");
+                echo json_encode(['success' => true, 'message' => 'Ambiente liberado correctamente para esta fecha.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al guardar la novedad.']);
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
         exit;
     }
 }
