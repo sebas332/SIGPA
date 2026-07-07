@@ -565,6 +565,21 @@
     border-color: #047857 !important;
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
 }
+.indicator-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.dot-green {
+    background-color: #22c55e;
+}
+.dot-yellow {
+    background-color: #eab308;
+}
+.dot-red {
+    background-color: #ef4444;
+}
 </style>
 
 <div class="container-fluid px-0">
@@ -2205,7 +2220,7 @@
 
                         <!-- Columna Derecha: Calendario y Disponibilidad -->
                         <div class="col-12 col-md-8 col-lg-9">
-                            <div class="env-calendar-container">
+                            <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
                                 <!-- Cabecera del Calendario -->
                                 <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                                     <div>
@@ -2214,14 +2229,6 @@
                                     </div>
                                     <div class="env-cal-header-controls">
                                         <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(0)">Hoy</button>
-                                        <div class="btn-group">
-                                            <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(-1)">
-                                                <i class="fa-solid fa-chevron-left"></i>
-                                            </button>
-                                            <button type="button" class="env-cal-btn" onclick="navegarMesAmbiente(1)">
-                                                <i class="fa-solid fa-chevron-right"></i>
-                                            </button>
-                                        </div>
                                         <button type="button" class="env-cal-btn"><i class="fa-regular fa-calendar"></i></button>
                                         <select class="form-select form-select-sm border-secondary-subtle" style="width: auto; border-radius: 8px;">
                                             <option>Mes</option>
@@ -2282,50 +2289,30 @@
                                 </div>
 
                                 <!-- Nombre del Mes actual -->
-                                <h3 id="env-calendar-month-name" class="fw-bold text-dark mb-4">Julio 2026</h3>
+                                <div class="d-flex align-items-center gap-2 flex-nowrap mb-4">
+                                    <button type="button" class="btn btn-nav-mes" onclick="navegarMesAmbiente(-1)">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <span class="badge-mes-actual d-flex align-items-center justify-content-center" id="env-calendar-month-name" style="min-width: 150px; font-weight: 700; height: 38px;">Julio 2026</span>
+                                    <button type="button" class="btn btn-nav-mes" onclick="navegarMesAmbiente(1)">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
 
                                 <!-- Grid de Días -->
-                                <div class="env-calendar-container-inner mb-4">
-                                    <div class="env-calendar-days-grid mb-2">
-                                        <div class="env-calendar-day-name">Lun</div>
-                                        <div class="env-calendar-day-name">Mar</div>
-                                        <div class="env-calendar-day-name">Mié</div>
-                                        <div class="env-calendar-day-name">Jue</div>
-                                        <div class="env-calendar-day-name">Vie</div>
-                                        <div class="env-calendar-day-name">Sáb</div>
-                                        <div class="env-calendar-day-name">Dom</div>
-                                    </div>
-                                    <div class="env-calendar-days-grid" id="gridDiasCalendarioAmbiente">
-                                        <!-- Generado dinámicamente con JS -->
-                                    </div>
+                                <div class="calendar-days-grid mb-2">
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                                            <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
                                 </div>
-
-                                <!-- Leyenda y Acción de Reservar -->
-                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top">
-                                    <div class="d-flex flex-wrap gap-3 align-items-center">
-                                        <div class="d-flex align-items-center gap-2 small text-secondary">
-                                            <span class="env-legend-dot" style="background-color: #39A900;"></span> Libre
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 small text-secondary">
-                                            <span class="env-legend-dot" style="background-color: #0288d1;"></span> Reservado
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 small text-secondary">
-                                            <span class="env-legend-dot" style="background-color: #ea580c;"></span> Clase Programada
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 small text-secondary">
-                                            <span class="env-legend-dot" style="background-color: #7c3aed;"></span> Mantenimiento
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 small text-secondary">
-                                            <span class="env-legend-dot" style="background-color: #ef4444;"></span> No disponible
-                                        </div>
-                                    </div>
-                                    <?php if ($current_role === 'Coordinador'): ?>
-                                        <button type="button" class="btn btn-success px-4 py-2 d-flex align-items-center gap-2 shadow-sm fw-semibold" style="background-color: #39A900; border-color: #39A900; border-radius: 25px;" onclick="reservarAmbienteActual()">
-                                            <i class="fa-regular fa-calendar-plus fs-5"></i> Reservar Ambiente
-                                        </button>
-                                    <?php endif; ?>
+                                <div class="calendar-days-grid" id="gridDiasCalendarioAmbiente">
+                                    <!-- Generado dinámicamente con JS -->
                                 </div>
-                            </div>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -2553,48 +2540,56 @@
                         });
                         
                         const celda = document.createElement('div');
-                        celda.className = 'env-calendar-cell';
-                        if (esOtroMes) celda.className += ' other-month';
-                        if (esHoy) celda.className += ' today';
-                        if (dayOfWeek === 0) celda.className += ' sunday';
+                        celda.className = 'calendar-cell';
+                        celda.style.cursor = 'pointer';
+                        if (esOtroMes) celda.classList.add('other-month');
+                        if (esHoy) celda.classList.add('today');
                         
                         let html = `
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="env-calendar-day-num">${diaNum}</span>
+                            <div class="calendar-cell-header">
+                                <span class="calendar-day-num">${diaNum}</span>
                         `;
                         
                         if (selectedAmbiente.disponibilidad === 0) {
-                            html += `<span class="env-cell-dot env-cell-dot-inactive" title="No disponible"></span>`;
+                            html += `<span class="indicator-dot dot-red" title="No disponible"></span>`;
                         } else if (sesiones.length > 0) {
-                            const dotType = (parseInt(sesiones[0].id_programacion) % 2 === 0) ? 'env-cell-dot-reserved' : 'env-cell-dot-class';
-                            html += `<span class="env-cell-dot ${dotType}"></span>`;
+                            html += `<span class="indicator-dot dot-yellow" title="Ocupado"></span>`;
                         } else {
-                            html += `<span class="env-cell-dot env-cell-dot-free" title="Libre"></span>`;
+                            html += `<span class="indicator-dot dot-green" title="Disponible"></span>`;
                         }
                         
                         html += `
                             </div>
-                            <div class="env-calendar-session-list">
+                            <div class="calendar-session-list">
                         `;
                         
                         if (selectedAmbiente.disponibilidad === 0) {
                             html += `
-                                <div class="env-cal-session-card env-cal-session-card-red">
-                                    <i class="fa-solid fa-ban me-1"></i> No disponible
+                                <div class="calendar-session-card" style="border-left: 3px solid #dc3545; background-color: #fef2f2;">
+                                    <div class="d-flex align-items-center gap-1 text-danger fw-bold">
+                                        <i class="fa-solid fa-ban"></i> No disponible
+                                    </div>
                                 </div>
                             `;
                         } else {
                             sesiones.forEach(s => {
+                                const instNombre = s.instructor_nombre + ' ' + s.instructor_apellido;
+                                const instNombreCorto = s.instructor_nombre + ' ' + s.instructor_apellido.charAt(0) + '.';
+                                const infoEscapada = encodeURIComponent(JSON.stringify(s));
+                                
                                 const isBlue = (parseInt(s.id_programacion) % 2 === 0);
-                                const cardClass = isBlue ? 'env-cal-session-card-blue' : 'env-cal-session-card-orange';
-                                const icon = isBlue ? '<i class="fa-solid fa-desktop me-1"></i>' : '<i class="fa-solid fa-users me-1"></i>';
-                                const horaIni = s.hora_inicio.substring(0, 5);
-                                const horaFin = s.hora_fin.substring(0, 5);
+                                const cardBorderColor = isBlue ? '#0288d1' : '#ea580c';
+                                const cardBgColor = isBlue ? '#e0f2fe' : '#fff7ed';
                                 
                                 html += `
-                                    <div class="env-cal-session-card ${cardClass}" onclick="event.stopPropagation(); mostrarDetalleSessionAmbiente('${s.instructor_nombre} ${s.instructor_apellido}', '${encodeURIComponent(JSON.stringify(s))}')">
-                                        <div class="fw-bold">${horaIni} - ${horaFin}</div>
-                                        <div class="text-truncate">${icon} ${s.competencia_nombre || s.ra_descripcion || 'Formación'}</div>
+                                    <div class="calendar-session-card" style="border-left: 3px solid ${cardBorderColor}; background-color: ${cardBgColor};" onclick="event.stopPropagation(); mostrarDetalleSessionAmbiente('${instNombre}', '${infoEscapada}')">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="calendar-session-time">${s.hora_inicio.substring(0,5)} - ${s.hora_fin.substring(0,5)}</span>
+                                            <span class="calendar-session-ficha">#${s.numero_ficha}</span>
+                                        </div>
+                                        <span class="calendar-session-instructor">
+                                            <i class="fa-solid fa-user-tie text-secondary small"></i> ${instNombreCorto}
+                                        </span>
                                     </div>
                                 `;
                             });
