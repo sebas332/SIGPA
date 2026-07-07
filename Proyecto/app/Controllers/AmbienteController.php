@@ -97,12 +97,27 @@ class AmbienteController extends BaseController {
             $descripcion = trim($_POST['descripcion'] ?? '');
             $fecha_reporte = $_POST['fecha_reporte'] ?? date('Y-m-d');
             
+            $evidenciaUrl = null;
+            if (isset($_FILES['evidencia']) && $_FILES['evidencia']['error'] === 0) {
+                $uploadDir = dirname(__DIR__, 2) . '/public/uploads/novedades/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $ext = pathinfo($_FILES['evidencia']['name'], PATHINFO_EXTENSION);
+                $newName = 'nov_' . time() . '_' . uniqid() . '.' . $ext;
+                $dest = $uploadDir . $newName;
+                if (move_uploaded_file($_FILES['evidencia']['tmp_name'], $dest)) {
+                    $evidenciaUrl = ASSETROOT . '/uploads/novedades/' . $newName;
+                }
+            }
+            
             if ($id_numero_ambiente !== '' && !empty($descripcion)) {
                 $data = [
                     'id_numero_ambiente' => $id_numero_ambiente,
                     'id_usuario' => $_SESSION['user_id'],
                     'descripcion' => $descripcion,
-                    'fecha_reporte' => $fecha_reporte
+                    'fecha_reporte' => $fecha_reporte,
+                    'evidencia' => $evidenciaUrl
                 ];
                 
                 if ($this->novedadModel->create($data)) {

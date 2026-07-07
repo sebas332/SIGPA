@@ -2888,6 +2888,11 @@
                                     </div>
                                 </div>
                                 <div class="text-md-end">
+                                    <?php if (!empty($nov->evidencia)): ?>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm me-2" style="border-radius: 8px;" onclick="mostrarEvidencia('<?= $nov->evidencia; ?>')">
+                                            <i class="fa-solid fa-image"></i> Ver Evidencia
+                                        </button>
+                                    <?php endif; ?>
                                     <a href="<?= URLROOT; ?>/index.php?route=ambientes/resolverNovedad&id=<?= $nov->id_novedad; ?>" class="btn-resuelta">
                                         Marcar como Resuelta
                                     </a>
@@ -2897,6 +2902,28 @@
                     <?php endif; ?>
 
                 </div>
+
+                <!-- Modal para Ver Evidencia -->
+                <div class="modal fade" id="modalVerEvidencia" tabindex="-1" aria-labelledby="modalVerEvidenciaLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content border-0 rounded-4 shadow">
+                            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                                <h5 class="modal-title fw-bold text-dark" id="modalVerEvidenciaLabel"><i class="fa-solid fa-image text-secondary me-2"></i>Evidencia Fotográfica</h5>
+                                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center p-4">
+                                <img id="imagenEvidenciaModal" src="" alt="Evidencia de novedad" class="img-fluid rounded-3" style="max-height: 70vh; object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    function mostrarEvidencia(url) {
+                        document.getElementById('imagenEvidenciaModal').src = url;
+                        var evidenciaModal = new bootstrap.Modal(document.getElementById('modalVerEvidencia'));
+                        evidenciaModal.show();
+                    }
+                </script>
 
             </div>
 
@@ -3270,7 +3297,7 @@
                 <!-- Formulario de Registro de Incidencia (Exactamente igual a la imagen 3) -->
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
                     
-                    <form action="<?= URLROOT; ?>/index.php?route=ambientes/guardarNovedad" method="POST">
+                    <form action="<?= URLROOT; ?>/index.php?route=ambientes/guardarNovedad" method="POST" enctype="multipart/form-data">
                         
                         <div class="row g-4 mb-4">
                             <!-- Columna 1: Seleccionar Ambiente -->
@@ -3294,9 +3321,15 @@
                         </div>
 
                         <!-- Textarea de Descripción -->
-                        <div class="mb-5">
+                        <div class="mb-4">
                             <label class="text-muted small fw-bold mb-2">Descripción Detallada del Suceso</label>
                             <textarea name="descripcion" rows="5" class="form-control p-4 shadow-sm" style="border: 1px solid rgba(0,0,0,0.12); border-radius: 16px; font-size: 0.95rem;" placeholder="Describe el daño o anomalía. Ejemplo: El cable de conexión de red del Smart TV está cortado o no hay señal en el tablero digital." required></textarea>
+                        </div>
+
+                        <!-- Subir Evidencia -->
+                        <div class="mb-5">
+                            <label class="text-muted small fw-bold mb-2">Adjuntar Evidencia (Opcional)</label>
+                            <input type="file" name="evidencia" class="form-control shadow-sm" style="border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);" accept="image/*">
                         </div>
 
                         <!-- Botón de Envío -->

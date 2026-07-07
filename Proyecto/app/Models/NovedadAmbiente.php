@@ -55,12 +55,13 @@ class NovedadAmbiente {
      * @return bool
      */
     public function create($data) {
-        $this->db->query("INSERT INTO novedad_ambiente (id_numero_ambiente, id_usuario, descripcion, fecha_reporte) 
-                          VALUES (:id_numero_ambiente, :id_usuario, :descripcion, :fecha_reporte)");
+        $this->db->query("INSERT INTO novedad_ambiente (id_numero_ambiente, id_usuario, descripcion, fecha_reporte, evidencia) 
+                          VALUES (:id_numero_ambiente, :id_usuario, :descripcion, :fecha_reporte, :evidencia)");
         $this->db->bind(':id_numero_ambiente', $data['id_numero_ambiente']);
         $this->db->bind(':id_usuario', $data['id_usuario']);
         $this->db->bind(':descripcion', $data['descripcion']);
         $this->db->bind(':fecha_reporte', empty($data['fecha_reporte']) ? date('Y-m-d') : $data['fecha_reporte']);
+        $this->db->bind(':evidencia', empty($data['evidencia']) ? null : $data['evidencia']);
         return $this->db->execute();
     }
 
