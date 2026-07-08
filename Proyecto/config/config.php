@@ -29,10 +29,28 @@ define('ASSETROOT', URLROOT . '/public');
 
 define('SITENAME', 'Sistema de Gestión Académica');
 
-// Configuración SMTP para Recuperación de Contraseñas (PHPMailer)
-define('SMTP_HOST', getenv('SIGPA_SMTP_HOST') ?: 'smtp.gmail.com');
-define('SMTP_USER', getenv('SIGPA_SMTP_USER') ?: 'tu_correo@gmail.com');
-define('SMTP_PASS', getenv('SIGPA_SMTP_PASS') ?: 'tu_contraseña_de_aplicación');
-define('SMTP_PORT', (int) (getenv('SIGPA_SMTP_PORT') ?: 587));
-define('SMTP_SECURE', getenv('SIGPA_SMTP_SECURE') ?: 'tls'); // 'ssl' o 'tls'
-define('SMTP_FROM_NAME', getenv('SIGPA_SMTP_FROM_NAME') ?: 'SGA - Sistema de Gestión Académica');
+// Configuracion SMTP para Recuperacion de Contrasenas (PHPMailer)
+// Puedes crear Proyecto/config/smtp.local.php con tus credenciales reales de Gmail.
+$smtpLocalConfig = __DIR__ . '/smtp.local.php';
+$smtpLocal = [];
+
+if (is_file($smtpLocalConfig)) {
+    $smtpLocal = require $smtpLocalConfig;
+    $smtpLocal = is_array($smtpLocal) ? $smtpLocal : [];
+}
+
+$smtpValue = function ($key, $envName, $default) use ($smtpLocal) {
+    if (isset($smtpLocal[$key]) && $smtpLocal[$key] !== '') {
+        return $smtpLocal[$key];
+    }
+
+    $envValue = getenv($envName);
+    return ($envValue !== false && $envValue !== '') ? $envValue : $default;
+};
+
+define('SMTP_HOST', $smtpValue('host', 'SIGPA_SMTP_HOST', 'smtp.gmail.com'));
+define('SMTP_USER', $smtpValue('user', 'SIGPA_SMTP_USER', 'tu_correo@gmail.com'));
+define('SMTP_PASS', $smtpValue('pass', 'SIGPA_SMTP_PASS', 'tu_contraseña_de_aplicación'));
+define('SMTP_PORT', (int) $smtpValue('port', 'SIGPA_SMTP_PORT', 587));
+define('SMTP_SECURE', $smtpValue('secure', 'SIGPA_SMTP_SECURE', 'tls')); // 'ssl' o 'tls'
+define('SMTP_FROM_NAME', $smtpValue('from_name', 'SIGPA_SMTP_FROM_NAME', 'SGA - Sistema de Gestión Académica'));

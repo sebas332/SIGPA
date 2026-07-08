@@ -247,9 +247,16 @@ class Usuario {
         ];
 
         foreach ($requiredColumns as $column => $alterSql) {
-            $stmt = $pdo->prepare("SHOW COLUMNS FROM usuarios LIKE :column_name");
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) AS total
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'usuarios'
+                  AND COLUMN_NAME = :column_name
+            ");
             $stmt->execute([':column_name' => $column]);
-            if (!$stmt->fetch()) {
+
+            if ((int) $stmt->fetchColumn() === 0) {
                 $pdo->exec($alterSql);
             }
         }
@@ -283,6 +290,25 @@ class Usuario {
         $this->db->query("SELECT * FROM usuarios WHERE reset_token = :token AND reset_expira > NOW() LIMIT 1");
         $this->db->bind(':token', $token);
         return $this->db->single();
+    }
+
+    /**
+     * Verificar un codigo de recuperacion activo para el correo indicado.
+     * @param string $email
+     * @param string $code
+     * @return object|false
+     */
+    public function verifyResetCode($email, $code) {
+        $this->ensurePasswordResetColumns();
+        $this->db->query("SELECT * FROM usuarios WHERE correo = :correo AND reset_token IS NOT NULL AND reset_expira > NOW() LIMIT 1");
+        $this->db->bind(':correo', $email);
+        $user = $this->db->single();
+
+        if (!$user || empty($user->reset_token)) {
+            return false;
+        }
+
+        return password_verify($code, $user->reset_token) ? $user : false;
     }
 
     /**

@@ -429,7 +429,7 @@ footer {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small mb-4">Ingresa tu correo electrónico registrado. Te enviaremos un enlace con las instrucciones para restablecer tu contraseña.</p>
+                <p class="text-muted small mb-4">Ingresa tu correo electrónico registrado. Te enviaremos un código de 6 dígitos para restablecer tu contraseña.</p>
                 <form id="forgotPasswordForm" class="needs-validation" novalidate>
                     <div class="mb-4">
                         <div class="custom-input-group">
@@ -440,7 +440,44 @@ footer {
                     </div>
                     <div class="d-grid">
                         <button type="submit" id="btnSendRecovery" class="btn-sena-submit">
-                            <i class="fa-solid fa-paper-plane"></i> Enviar Enlace de Recuperación
+                            <i class="fa-solid fa-paper-plane"></i> Enviar Código
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Código y Nueva Contraseña -->
+<div class="modal fade" id="resetCodeModal" tabindex="-1" aria-labelledby="resetCodeModalLabel" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg p-3">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="resetCodeModalLabel">Confirmar Código</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Escribe el código enviado a <strong id="resetEmailLabel">tu correo</strong> y crea una contraseña nueva.</p>
+                <form id="resetCodeForm" class="needs-validation" novalidate>
+                    <input type="hidden" id="resetEmail" name="correo">
+                    <div class="mb-3">
+                        <label for="resetCode" class="form-label small fw-bold text-muted mb-1">Código</label>
+                        <input type="text" class="form-control text-center fw-bold fs-4 rounded-3" id="resetCode" name="codigo" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code" required>
+                        <div id="resetCodeFeedback" class="feedback-text text-muted mt-1 px-1">Revisa tu bandeja de entrada o spam.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="resetNewPassword" class="form-label small fw-bold text-muted mb-1">Nueva contraseña</label>
+                        <input type="password" class="form-control rounded-3" id="resetNewPassword" name="contrasena" placeholder="Nueva contraseña" autocomplete="new-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="resetConfirmPassword" class="form-label small fw-bold text-muted mb-1">Confirmar contraseña</label>
+                        <input type="password" class="form-control rounded-3" id="resetConfirmPassword" name="contrasena_confirm" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                        <div id="resetPasswordFeedback" class="feedback-text text-muted mt-1 px-1">Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" id="btnResetWithCode" class="btn-sena-submit">
+                            <i class="fa-solid fa-key"></i> Cambiar Contraseña
                         </button>
                     </div>
                 </form>
@@ -554,6 +591,63 @@ if (passwordInput && passwordFeedback) {
 const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 const forgotEmail = document.getElementById('forgotEmail');
 const forgotEmailFeedback = document.getElementById('forgotEmail-feedback');
+const resetCodeForm = document.getElementById('resetCodeForm');
+const resetCodeModalEl = document.getElementById('resetCodeModal');
+const resetEmailInput = document.getElementById('resetEmail');
+const resetEmailLabel = document.getElementById('resetEmailLabel');
+const resetCodeInput = document.getElementById('resetCode');
+const resetCodeFeedback = document.getElementById('resetCodeFeedback');
+const resetNewPassword = document.getElementById('resetNewPassword');
+const resetConfirmPassword = document.getElementById('resetConfirmPassword');
+const resetPasswordFeedback = document.getElementById('resetPasswordFeedback');
+
+function parseJsonResponse(response) {
+    return response.text().then(text => {
+        let data = null;
+        try {
+            data = text ? JSON.parse(text) : null;
+        } catch (error) {
+            throw new Error("Respuesta no válida del servidor: " + text);
+        }
+
+        if (!response.ok) {
+            throw new Error((data && data.message) || 'No fue posible procesar la solicitud.');
+        }
+
+        return data;
+    });
+}
+
+function validateResetPasswordFields() {
+    if (!resetNewPassword || !resetConfirmPassword || !resetPasswordFeedback) return true;
+
+    const pass = resetNewPassword.value;
+    const confirm = resetConfirmPassword.value;
+    const rulesFailed = [];
+
+    if (pass.length < 8) rulesFailed.push("Mínimo 8 caracteres.");
+    if (!/[A-Z]/.test(pass)) rulesFailed.push("Una mayúscula.");
+    if (!/[a-z]/.test(pass)) rulesFailed.push("Una minúscula.");
+    if (!/[0-9]/.test(pass)) rulesFailed.push("Un número.");
+    if (!/[!@#$%^&*(),.?":{}|<>_\-\[\]]/.test(pass)) rulesFailed.push("Un carácter especial.");
+    if (pass !== confirm) rulesFailed.push("Las contraseñas deben coincidir.");
+
+    if (pass === "" || confirm === "") {
+        resetPasswordFeedback.textContent = "Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.";
+        resetPasswordFeedback.className = "feedback-text text-muted mt-1 px-1";
+        return false;
+    }
+
+    if (rulesFailed.length > 0) {
+        resetPasswordFeedback.textContent = rulesFailed.join(" ");
+        resetPasswordFeedback.className = "feedback-text text-danger mt-1 px-1";
+        return false;
+    }
+
+    resetPasswordFeedback.textContent = "Contraseña válida.";
+    resetPasswordFeedback.className = "feedback-text text-success mt-1 px-1";
+    return true;
+}
 
 if (forgotPasswordForm && forgotEmail) {
     forgotPasswordForm.addEventListener('submit', function(e) {
@@ -585,47 +679,48 @@ if (forgotPasswordForm && forgotEmail) {
             method: 'POST',
             body: formData
         })
-        .then(res => {
-            const contentType = res.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                return res.json();
-            } else {
-                return res.text().then(text => {
-                    throw new Error("Respuesta no válida del servidor: " + text);
-                });
-            }
-        })
+        .then(parseJsonResponse)
         .then(data => {
+            if (!data || data.success === false) {
+                throw new Error((data && data.message) || 'No fue posible enviar el código.');
+            }
+
             Swal.close();
             
             // Ocultar modal
             const modalEl = document.getElementById('forgotPasswordModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             if (modal) {
                 modal.hide();
             }
-            
-            // Mostrar SweetAlert2
-            const swalOptions = {
-                icon: 'success',
-                title: 'Solicitud procesada',
-                text: data.message || 'Si el correo está registrado, recibirás un enlace para recuperar tu contraseña.',
-                confirmButtonColor: '#39A900'
-            };
 
-            if (data.reset_link) {
-                swalOptions.html = `
-                    <p class="mb-3">${data.message || 'Usa este enlace temporal para recuperar tu contraseña.'}</p>
-                    <a href="${data.reset_link}" class="btn btn-success fw-bold" style="background:#39A900;border-color:#39A900;">
-                        <i class="fa-solid fa-key me-2"></i>Abrir enlace temporal
-                    </a>
-                    <div class="small text-muted mt-3" style="word-break: break-all;">${data.reset_link}</div>
-                `;
-                delete swalOptions.text;
+            if (resetEmailInput) resetEmailInput.value = val;
+            if (resetEmailLabel) resetEmailLabel.textContent = val;
+            if (resetCodeInput) resetCodeInput.value = data.reset_code || "";
+            if (resetNewPassword) resetNewPassword.value = "";
+            if (resetConfirmPassword) resetConfirmPassword.value = "";
+            if (resetCodeFeedback) {
+                resetCodeFeedback.textContent = data.reset_code
+                    ? `Modo local: código ${data.reset_code}`
+                    : "Revisa tu bandeja de entrada o spam.";
+                resetCodeFeedback.className = data.reset_code
+                    ? "feedback-text text-success mt-1 px-1"
+                    : "feedback-text text-muted mt-1 px-1";
+            }
+            if (resetPasswordFeedback) {
+                resetPasswordFeedback.textContent = "Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.";
+                resetPasswordFeedback.className = "feedback-text text-muted mt-1 px-1";
             }
 
+            const resetModal = bootstrap.Modal.getOrCreateInstance(resetCodeModalEl);
+            resetModal.show();
+
             Swal.fire({
-                ...swalOptions
+                icon: 'success',
+                title: 'Código enviado',
+                text: data.message || 'Si el correo está registrado, recibirás un código de 6 dígitos.',
+                confirmButtonColor: '#39A900',
+                timer: 2200
             });
 
             // Limpiar input y feedback
@@ -642,6 +737,84 @@ if (forgotPasswordForm && forgotEmail) {
                 icon: 'error',
                 title: 'Error de red / servidor',
                 text: err.message || 'No se pudo establecer comunicación con el servidor.',
+                confirmButtonColor: '#39A900'
+            });
+        });
+    });
+}
+
+if (resetCodeInput) {
+    resetCodeInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        if (resetCodeFeedback) {
+            resetCodeFeedback.textContent = this.value.length === 6 ? "Código completo." : "Ingresa los 6 dígitos.";
+            resetCodeFeedback.className = this.value.length === 6
+                ? "feedback-text text-success mt-1 px-1"
+                : "feedback-text text-muted mt-1 px-1";
+        }
+    });
+}
+
+if (resetNewPassword && resetConfirmPassword) {
+    resetNewPassword.addEventListener('input', validateResetPasswordFields);
+    resetConfirmPassword.addEventListener('input', validateResetPasswordFields);
+}
+
+if (resetCodeForm) {
+    resetCodeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const code = resetCodeInput ? resetCodeInput.value.trim() : "";
+        if (!/^\d{6}$/.test(code)) {
+            if (resetCodeFeedback) {
+                resetCodeFeedback.textContent = "El código debe tener 6 dígitos.";
+                resetCodeFeedback.className = "feedback-text text-danger mt-1 px-1";
+            }
+            return;
+        }
+
+        if (!validateResetPasswordFields()) {
+            return;
+        }
+
+        Swal.fire({
+            title: 'Actualizando contraseña...',
+            text: 'Estamos validando el código.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        const formData = new FormData(resetCodeForm);
+
+        fetch('<?= URLROOT; ?>/index.php?route=auth/resetPasswordWithCode', {
+            method: 'POST',
+            body: formData
+        })
+        .then(parseJsonResponse)
+        .then(data => {
+            if (!data || data.success === false) {
+                throw new Error((data && data.message) || 'No fue posible cambiar la contraseña.');
+            }
+
+            Swal.close();
+            const resetModal = bootstrap.Modal.getOrCreateInstance(resetCodeModalEl);
+            resetModal.hide();
+            resetCodeForm.reset();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Contraseña actualizada',
+                text: data.message || 'Ya puedes iniciar sesión con tu nueva contraseña.',
+                confirmButtonColor: '#39A900'
+            });
+        })
+        .catch(err => {
+            Swal.close();
+            console.error(err);
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo cambiar',
+                text: err.message || 'Verifica el código e inténtalo nuevamente.',
                 confirmButtonColor: '#39A900'
             });
         });

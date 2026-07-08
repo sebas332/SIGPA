@@ -135,48 +135,118 @@ class AuthController extends BaseController {
 
         header('Content-Type: application/json');
         $email = trim($_POST['correo'] ?? '');
-        $localResetLink = null;
+        $localResetCode = null;
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'Por favor ingresa un correo electrónico válido.']);
             exit;
         }
 
-        $user = $this->usuarioModel->findByEmail($email);
+        try {
+            $user = $this->usuarioModel->findByEmail($email);
 
-        if ($user) {
-            $token = bin2hex(random_bytes(32));
-            $expiry = date('Y-m-d H:i:s', time() + 900); // 15 minutos
+            if ($user) {
+                $code = (string) random_int(100000, 999999);
+                $codeHash = password_hash($code, PASSWORD_DEFAULT);
+                $expiry = date('Y-m-d H:i:s', time() + 900); // 15 minutos
 
-            if ($this->usuarioModel->saveResetToken($user->id_usuario, $token, $expiry)) {
-                $resetLink = $this->buildResetLink($token);
+                if ($this->usuarioModel->saveResetToken($user->id_usuario, $codeHash, $expiry)) {
+                    if ($this->isSmtpConfigured()) {
+                        require_once APPROOT . '/libraries/PHPMailer/Exception.php';
+                        require_once APPROOT . '/libraries/PHPMailer/PHPMailer.php';
+                        require_once APPROOT . '/libraries/PHPMailer/SMTP.php';
 
-                if ($this->isSmtpConfigured()) {
-                    require_once APPROOT . '/libraries/PHPMailer/Exception.php';
-                    require_once APPROOT . '/libraries/PHPMailer/PHPMailer.php';
-                    require_once APPROOT . '/libraries/PHPMailer/SMTP.php';
-
-                    $emailSent = $this->sendRecoveryEmail($user->correo, $user->nombre . ' ' . $user->apellido, $resetLink);
-                    if (!$emailSent && $this->isLocalRequest()) {
-                        $localResetLink = $resetLink;
+                        $emailSent = $this->sendRecoveryEmail($user->correo, $user->nombre . ' ' . $user->apellido, $code);
+                        if (!$emailSent && $this->isLocalRequest()) {
+                            $localResetCode = $code;
+                        }
+                    } elseif ($this->isLocalRequest()) {
+                        $localResetCode = $code;
                     }
-                } elseif ($this->isLocalRequest()) {
-                    $localResetLink = $resetLink;
                 }
             }
+
+            $response = [
+                'success' => true,
+                'message' => 'Si el correo está registrado, recibirás un código de 6 dígitos para recuperar tu contraseña.',
+                'mode' => 'code'
+            ];
+
+            if ($localResetCode) {
+                $response['message'] = 'Modo local: usa este código temporal para restablecer la contraseña.';
+                $response['reset_code'] = $localResetCode;
+            }
+
+            echo json_encode($response);
+        } catch (\Throwable $e) {
+            error_log('Error en recuperación de contraseña: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No fue posible procesar la recuperación en este momento. Intenta nuevamente.'
+            ]);
+        }
+        exit;
+    }
+
+    /**
+     * Procesa el restablecimiento de contraseña mediante codigo de 6 digitos.
+     */
+    public function resetPasswordWithCode() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit;
         }
 
-        $response = [
-            'success' => true,
-            'message' => 'Si el correo está registrado, recibirás un enlace para recuperar tu contraseña.'
-        ];
+        header('Content-Type: application/json');
 
-        if ($localResetLink) {
-            $response['message'] = 'Modo local: SMTP no está configurado. Usa el enlace temporal para restablecer la contraseña.';
-            $response['reset_link'] = $localResetLink;
+        $email = trim($_POST['correo'] ?? '');
+        $code = preg_replace('/\D+/', '', $_POST['codigo'] ?? '');
+        $password = $_POST['contrasena'] ?? '';
+        $passwordConfirm = $_POST['contrasena_confirm'] ?? '';
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'Ingresa un correo electrónico válido.']);
+            exit;
         }
 
-        echo json_encode($response);
+        if (!preg_match('/^\d{6}$/', $code)) {
+            echo json_encode(['success' => false, 'message' => 'Ingresa el código de 6 dígitos que recibiste.']);
+            exit;
+        }
+
+        $passwordError = $this->validatePasswordRules($password, $passwordConfirm);
+        if ($passwordError !== null) {
+            echo json_encode(['success' => false, 'message' => $passwordError]);
+            exit;
+        }
+
+        try {
+            $user = $this->usuarioModel->verifyResetCode($email, $code);
+            if (!$user) {
+                echo json_encode(['success' => false, 'message' => 'El código no es válido o ya expiró. Solicita uno nuevo.']);
+                exit;
+            }
+
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            if (!$this->usuarioModel->updatePasswordAndClearToken($user->id_usuario, $hashedPassword)) {
+                echo json_encode(['success' => false, 'message' => 'No fue posible actualizar la contraseña. Inténtalo nuevamente.']);
+                exit;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Tu contraseña fue restablecida correctamente. Ya puedes iniciar sesión.'
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Error al restablecer contraseña con código: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No fue posible restablecer la contraseña en este momento.'
+            ]);
+        }
         exit;
     }
 
@@ -280,9 +350,44 @@ class AuthController extends BaseController {
     }
 
     /**
+     * Valida las reglas de seguridad para una nueva contraseña.
+     */
+    private function validatePasswordRules($password, $passwordConfirm) {
+        if ($password === '') {
+            return 'La nueva contraseña no puede estar vacía.';
+        }
+
+        if ($password !== $passwordConfirm) {
+            return 'Las contraseñas no coinciden.';
+        }
+
+        if (strlen($password) < 8) {
+            return 'La contraseña debe tener al menos 8 caracteres.';
+        }
+
+        if (!preg_match('/[A-Z]/', $password)) {
+            return 'Debe contener al menos una letra mayúscula.';
+        }
+
+        if (!preg_match('/[a-z]/', $password)) {
+            return 'Debe contener al menos una letra minúscula.';
+        }
+
+        if (!preg_match('/[0-9]/', $password)) {
+            return 'Debe contener al menos un número.';
+        }
+
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>_\-\[\]]/', $password)) {
+            return 'Debe contener al menos un carácter especial.';
+        }
+
+        return null;
+    }
+
+    /**
      * Helper para enviar el correo mediante PHPMailer
      */
-    private function sendRecoveryEmail($email, $nombre, $resetLink) {
+    private function sendRecoveryEmail($email, $nombre, $code) {
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
         try {
@@ -305,9 +410,9 @@ class AuthController extends BaseController {
             }
 
             $mail->isHTML(true);
-            $mail->Subject = 'Recuperar Contraseña - SIGPA';
+            $mail->Subject = 'Código de Recuperación - SIGPA';
             $safeName = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
-            $safeResetLink = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
+            $safeCode = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
 
             $mail->Body = '
             <!DOCTYPE html>
@@ -322,9 +427,7 @@ class AuthController extends BaseController {
                     .email-header h1 { margin: 0; font-size: 1.6rem; font-weight: 700; }
                     .email-body { padding: 40px 30px; line-height: 1.6; }
                     .email-body h2 { color: #005026; font-size: 1.3rem; margin-top: 0; }
-                    .btn-container { text-align: center; margin: 30px 0; }
-                    .btn-recovery { background-color: #39A900; color: #ffffff !important; text-decoration: none; padding: 12px 30px; font-weight: 700; border-radius: 8px; font-size: 0.95rem; display: inline-block; box-shadow: 0 4px 10px rgba(57, 169, 0, 0.25); }
-                    .btn-recovery:hover { background-color: #007832; }
+                    .code-box { background-color: #eef9f2; border: 1px solid #bde7cb; border-radius: 14px; color: #005026; font-size: 2.4rem; font-weight: 800; letter-spacing: 10px; margin: 28px 0; padding: 18px 20px; text-align: center; }
                     .email-footer { background-color: #fafbfc; padding: 20px; text-align: center; font-size: 0.75rem; color: #868e96; border-top: 1px solid #f1f3f5; }
                     .email-footer a { color: #868e96; text-decoration: none; }
                 </style>
@@ -338,13 +441,11 @@ class AuthController extends BaseController {
                     </div>
                     <div class="email-body">
                         <h2>Hola, ' . $safeName . '</h2>
-                        <p>Se ha solicitado la recuperación de contraseña para tu cuenta en el sistema SIGPA. Para restablecerla, haz clic en el siguiente botón:</p>
-                        <div class="btn-container">
-                            <a href="' . $safeResetLink . '" class="btn-recovery">Restablecer Contraseña</a>
-                        </div>
-                        <p style="color: #6c757d; font-size: 0.82rem;">Este enlace es válido por 15 minutos. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+                        <p>Se ha solicitado la recuperación de contraseña para tu cuenta en el sistema SIGPA. Ingresa este código en la ventana de recuperación:</p>
+                        <div class="code-box">' . $safeCode . '</div>
+                        <p style="color: #6c757d; font-size: 0.82rem;">Este código es válido por 15 minutos. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
                         <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 30px 0;">
-                        <p style="font-size: 0.78rem; color: #868e96;">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:<br>' . $safeResetLink . '</p>
+                        <p style="font-size: 0.78rem; color: #868e96;">Por seguridad, no compartas este código con nadie.</p>
                     </div>
                     <div class="email-footer">
                         SGA SENA © ' . date('Y') . ' • Todos los derechos reservados.<br>
