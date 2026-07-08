@@ -178,14 +178,12 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
             ],
             'CONFIGURACIÓN' => [
                 ['dashboard/index#pills-usuarios', 'fa-users-gear', 'Usuarios'],
-                ['#', 'fa-user-lock', 'Roles y Permisos'],
                 ['#', 'fa-sliders', 'Configuración']
             ]
         ],
         'Instructor' => [
             'MENÚ PRINCIPAL' => [
                 ['dashboard/index', 'fa-house', 'Visión General'],
-                ['dashboard/index#pills-inst-horario', 'fa-calendar-days', 'Mis clases'],
                 ['dashboard/index#pills-inst-asistencia', 'fa-clipboard-check', 'Registrar asistencia'],
                 ['dashboard/index#pills-inst-novedad', 'fa-triangle-exclamation', 'Reportar novedad']
             ],
@@ -197,7 +195,6 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
             'MENÚ PRINCIPAL' => [
                 ['dashboard/index', 'fa-house', 'Visión General'],
                 ['dashboard/index#pills-apr-ficha', 'fa-id-card', 'Mi ficha académica'],
-                ['dashboard/index#pills-apr-horario', 'fa-calendar-days', 'Horario de clases'],
                 ['dashboard/index#pills-apr-asist', 'fa-chart-line', 'Mi asistencia']
             ],
             'CUENTA Y CONTROL' => [
@@ -211,9 +208,13 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
     <aside class="sga-sidebar" id="sgaSidebar">
         <a class="sga-brand" href="<?= URLROOT; ?>/index.php?route=dashboard/index">
             <span class="sga-brand-icon">
-                <img src="<?= ASSETROOT; ?>/logo-sigpa-icon.png" alt="SIGPA" style="width: 26px; height: 26px; object-fit: contain;">
+                <img src="<?= ASSETROOT; ?>/logo-sigpa-icon.png" alt="SIGPA">
             </span>
-            <span class="sga-brand-text">SIGPA</span>
+            <span class="sga-brand-copy">
+                <span class="sga-brand-text">SIGPA</span>
+                <small>Gestión Académica</small>
+                <small>SENA</small>
+            </span>
         </a>
         <label class="sga-menu-search"><i class="fa-solid fa-magnifying-glass"></i><input id="menuSearch" type="search" placeholder="Buscar en el sistema..."></label>
         <nav class="sga-menu" aria-label="Menú principal">
@@ -242,6 +243,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
         <a class="sga-sidebar-user" href="<?= URLROOT; ?>/index.php?route=perfil/index">
             <img class="sga-sidebar-avatar-img" src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
             <span><strong><?= htmlspecialchars($_SESSION['user_name']); ?></strong><small><?= htmlspecialchars($current_role); ?></small></span>
+            <i class="fa-solid fa-chevron-down"></i>
         </a>
     </aside>
     <button id="sidebarBackdrop" class="sga-sidebar-backdrop" type="button" aria-label="Cerrar menú"></button>

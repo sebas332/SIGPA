@@ -1992,52 +1992,249 @@
 
             <!-- PESTAÑA NUEVA: PROGRAMAS DE FORMACIÓN -->
             <div class="tab-pane fade" id="pills-programas" role="tabpanel" aria-labelledby="pills-programas-tab">
-                
-                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <div>
-                            <h5 class="fw-bold text-dark mb-1">Catálogo de Programas de Formación</h5>
-                            <p class="text-muted small mb-0">Gestión de la oferta educativa, competencias y resultados.</p>
-                        </div>
-                        <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn-new-ficha text-decoration-none">
-                            <i class="fa-solid fa-circle-plus"></i> Crear Programa
-                        </a>
+                <style>
+                    .programas-hero-card,
+                    .programas-filter-card {
+                        background: #ffffff;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                        border-radius: 24px;
+                        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+                    }
+
+                    .programas-hero-card {
+                        display: grid;
+                        grid-template-columns: auto minmax(0, 1fr) 1px auto;
+                        align-items: center;
+                        gap: 1.6rem;
+                        padding: 1.7rem 2.1rem;
+                    }
+
+                    .programas-hero-icon {
+                        width: 82px;
+                        height: 82px;
+                        border-radius: 50%;
+                        background: linear-gradient(145deg, #eef9f1 0%, #dff2e6 100%);
+                        color: #118a3b;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 2.45rem;
+                    }
+
+                    .programas-hero-title {
+                        color: #111827;
+                        font-size: clamp(1.35rem, 2vw, 1.85rem);
+                        font-weight: 800;
+                        letter-spacing: 0;
+                        margin-bottom: 0.55rem;
+                    }
+
+                    .programas-hero-subtitle {
+                        color: #6b7280;
+                        font-size: 0.98rem;
+                        line-height: 1.45;
+                        max-width: 760px;
+                    }
+
+                    .programas-hero-divider {
+                        width: 1px;
+                        height: 86px;
+                        background: #a8d8b6;
+                    }
+
+                    .programas-create-btn {
+                        min-width: 205px;
+                        justify-content: center;
+                        border-radius: 14px;
+                        padding: 0.85rem 1.25rem;
+                        background: #0f8f2f;
+                        color: #ffffff;
+                        box-shadow: 0 10px 22px rgba(15, 143, 47, 0.2);
+                        font-size: 0.95rem;
+                        font-weight: 800;
+                    }
+
+                    .programas-create-btn:hover {
+                        background: #087329;
+                        color: #ffffff;
+                    }
+
+                    .programas-create-btn .programas-create-icon {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        background: #ffffff;
+                        color: #0f8f2f;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.82rem;
+                    }
+
+                    .programas-filter-card {
+                        display: grid;
+                        grid-template-columns: minmax(280px, 1fr) minmax(230px, 0.58fr) auto;
+                        gap: 1rem;
+                        padding: 1.45rem;
+                        align-items: center;
+                    }
+
+                    .programas-search-box,
+                    .programas-select-box,
+                    .programas-count-pill {
+                        min-height: 56px;
+                        border-radius: 14px;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.85rem;
+                        padding: 0 1.15rem;
+                    }
+
+                    .programas-search-box {
+                        border: 1.5px solid #0f8f2f;
+                        background: #ffffff;
+                    }
+
+                    .programas-select-box {
+                        border: 1px solid #d7dee8;
+                        background: #ffffff;
+                        position: relative;
+                    }
+
+                    .programas-count-pill {
+                        min-width: 205px;
+                        justify-content: center;
+                        border: 1px solid #c7e9d2;
+                        background: #eaf7ef;
+                        color: #0f8f2f;
+                        font-size: 0.95rem;
+                        font-weight: 800;
+                    }
+
+                    .programas-field-icon {
+                        color: #0f8f2f;
+                        font-size: 1.28rem;
+                        flex: 0 0 auto;
+                    }
+
+                    .programas-search-input,
+                    .programas-select-input {
+                        width: 100%;
+                        border: 0;
+                        outline: 0;
+                        box-shadow: none;
+                        background: transparent;
+                        color: #111827;
+                        font-size: 0.95rem;
+                        font-weight: 500;
+                    }
+
+                    .programas-search-input::placeholder {
+                        color: #7b8494;
+                    }
+
+                    .programas-select-input {
+                        appearance: none;
+                        padding-right: 2.4rem;
+                    }
+
+                    .programas-select-chevron {
+                        position: absolute;
+                        right: 1.35rem;
+                        color: #0f8f2f;
+                        pointer-events: none;
+                    }
+
+                    @media (max-width: 1199.98px) {
+                        .programas-hero-card {
+                            grid-template-columns: auto minmax(0, 1fr);
+                        }
+
+                        .programas-hero-divider {
+                            display: none;
+                        }
+
+                        .programas-create-btn {
+                            grid-column: 1 / -1;
+                            width: 100%;
+                        }
+
+                        .programas-filter-card {
+                            grid-template-columns: 1fr;
+                        }
+
+                        .programas-count-pill {
+                            width: 100%;
+                        }
+                    }
+
+                    @media (max-width: 767.98px) {
+                        .programas-hero-card {
+                            grid-template-columns: 1fr;
+                            padding: 1.4rem;
+                            text-align: left;
+                        }
+
+                        .programas-hero-icon {
+                            width: 70px;
+                            height: 70px;
+                            font-size: 2.1rem;
+                        }
+
+                        .programas-filter-card {
+                            padding: 1rem;
+                        }
+
+                        .programas-search-box,
+                        .programas-select-box,
+                        .programas-count-pill {
+                            min-height: 54px;
+                            padding: 0 1rem;
+                        }
+                    }
+                </style>
+
+                <div class="programas-hero-card mb-4">
+                    <div class="programas-hero-icon" aria-hidden="true">
+                        <i class="fa-solid fa-graduation-cap"></i>
                     </div>
+                    <div class="programas-hero-copy">
+                        <h5 class="programas-hero-title">Catálogo de Programas de Formación</h5>
+                        <p class="programas-hero-subtitle mb-0">Explora la oferta académica disponible para aprendices y consulta los detalles de cada programa de formación.</p>
+                    </div>
+                    <div class="programas-hero-divider" aria-hidden="true"></div>
+                    <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn programas-create-btn text-decoration-none d-inline-flex align-items-center gap-3">
+                        <span class="programas-create-icon"><i class="fa-solid fa-plus"></i></span>
+                        <span>Crear Programa</span>
+                    </a>
                 </div>
 
                 <!-- Buscador de Programas -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-3">
-                            <div class="row g-2 align-items-center">
-                                <div class="col-md-6">
-                                    <div class="position-relative">
-                                        <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                                        <input type="text" id="buscarPrograma" class="form-control form-control-lg bg-light border-0 ps-5 rounded-pill shadow-none" placeholder="Buscar por código o nombre del programa..." style="font-size: 0.95rem;">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="position-relative">
-                                        <i class="fa-regular fa-calendar position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                                        <select id="filtroVigenciaPrograma" class="form-select form-select-lg bg-light border-0 ps-5 rounded-pill shadow-none" style="font-size: 0.95rem;">
-                                            <option value="">Todas las vigencias</option>
-                                            <?php 
-                                            $vigencias = array_unique(array_column($programas ?? [], 'vigencia'));
-                                            rsort($vigencias);
-                                            foreach ($vigencias as $v): ?>
-                                                <option value="<?= htmlspecialchars($v); ?>"><?= htmlspecialchars($v); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 text-md-end text-center mt-3 mt-md-0">
-                                    <div class="d-inline-flex align-items-center bg-primary-subtle text-primary rounded-pill px-4 py-2 fw-bold" style="font-size: 0.95rem;">
-                                        <i class="fa-solid fa-layer-group me-2"></i>
-                                        <span id="contadorProgramas"><?= count($programas); ?> programas</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="programas-filter-card mb-4">
+                    <label class="programas-search-box mb-0" for="buscarPrograma">
+                        <i class="fa-solid fa-magnifying-glass programas-field-icon"></i>
+                        <input type="text" id="buscarPrograma" class="programas-search-input" placeholder="Buscar por código o nombre del programa...">
+                    </label>
+
+                    <label class="programas-select-box mb-0" for="filtroVigenciaPrograma">
+                        <i class="fa-regular fa-calendar programas-field-icon"></i>
+                        <select id="filtroVigenciaPrograma" class="programas-select-input">
+                            <option value="">Todas las vigencias</option>
+                            <?php 
+                            $vigencias = array_unique(array_column($programas ?? [], 'vigencia'));
+                            rsort($vigencias);
+                            foreach ($vigencias as $v): ?>
+                                <option value="<?= htmlspecialchars($v); ?>"><?= htmlspecialchars($v); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <i class="fa-solid fa-chevron-down programas-select-chevron"></i>
+                    </label>
+
+                    <div class="programas-count-pill">
+                        <i class="fa-solid fa-layer-group programas-field-icon"></i>
+                        <span id="contadorProgramas"><?= count($programas ?? []); ?> programas</span>
                     </div>
+                </div>
 
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-0 overflow-hidden" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="card-body p-0">
@@ -2158,53 +2355,376 @@
 
             <!-- PESTAÑA 2: PROGRAMACIÓN ACADÉMICA -->
             <div class="tab-pane fade" id="pills-programacion" role="tabpanel" aria-labelledby="pills-programacion-tab">
-                
+                <style>
+                    .programacion-hero-card,
+                    .programacion-view-toggle,
+                    .programacion-control-card {
+                        background: #ffffff;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                        border-radius: 24px;
+                        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+                    }
+
+                    .programacion-hero-card {
+                        display: grid;
+                        grid-template-columns: auto 1px minmax(0, 1fr) auto;
+                        align-items: center;
+                        gap: 1.7rem;
+                        padding: 1.7rem 2.1rem;
+                    }
+
+                    .programacion-hero-icon {
+                        width: 82px;
+                        height: 82px;
+                        border-radius: 50%;
+                        background: linear-gradient(145deg, #eef9f1 0%, #dff2e6 100%);
+                        color: #0f8f2f;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 2.75rem;
+                    }
+
+                    .programacion-hero-divider {
+                        width: 1px;
+                        height: 86px;
+                        background: #a8d8b6;
+                    }
+
+                    .programacion-hero-title {
+                        color: #111827;
+                        font-size: clamp(1.35rem, 2vw, 1.85rem);
+                        font-weight: 800;
+                        letter-spacing: 0;
+                        margin-bottom: 0.55rem;
+                    }
+
+                    .programacion-hero-subtitle {
+                        color: #6b7280;
+                        font-size: 0.98rem;
+                        line-height: 1.45;
+                        max-width: 760px;
+                    }
+
+                    .programacion-action-btn {
+                        min-width: 205px;
+                        justify-content: center;
+                        border: 0;
+                        border-radius: 16px;
+                        padding: 0.85rem 1.25rem;
+                        background: #0f8f2f;
+                        color: #ffffff;
+                        box-shadow: 0 10px 22px rgba(15, 143, 47, 0.2);
+                        font-size: 0.95rem;
+                        font-weight: 800;
+                    }
+
+                    .programacion-action-btn:hover {
+                        background: #087329;
+                        color: #ffffff;
+                    }
+
+                    .programacion-action-icon {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        background: #ffffff;
+                        color: #0f8f2f;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.82rem;
+                    }
+
+                    .programacion-view-row {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-bottom: 1.5rem;
+                    }
+
+                    .programacion-view-toggle {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.65rem;
+                        border-radius: 999px;
+                        padding: 0.45rem;
+                    }
+
+                    .programacion-view-label {
+                        color: #6b7280;
+                        font-size: 0.82rem;
+                        font-weight: 800;
+                        letter-spacing: 0.6px;
+                        text-transform: uppercase;
+                        padding: 0 0.7rem;
+                    }
+
+                    .programacion-view-btn {
+                        min-height: 44px;
+                        border: 1px solid rgba(15, 23, 42, 0.08) !important;
+                        border-radius: 999px !important;
+                        background: #ffffff !important;
+                        color: #1f2937 !important;
+                        padding: 0 1.35rem !important;
+                        font-weight: 700;
+                        box-shadow: none !important;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.55rem;
+                    }
+
+                    .programacion-view-btn.active,
+                    .programacion-view-btn.btn-success {
+                        background: #eaf7ef !important;
+                        color: #0f8f2f !important;
+                        border-color: #c7e9d2 !important;
+                    }
+
+                    .programacion-control-card {
+                        display: grid;
+                        grid-template-columns: auto 1px minmax(0, 1fr);
+                        align-items: center;
+                        gap: 1.05rem;
+                        padding: 1.35rem 1.45rem;
+                    }
+
+                    .programacion-month-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.65rem;
+                        flex: 0 0 auto;
+                    }
+
+                    .programacion-nav-btn {
+                        width: 42px;
+                        height: 42px;
+                        border: 1px solid #dfe6ee;
+                        border-radius: 12px !important;
+                        background: #ffffff;
+                        color: #0f8f2f;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.95rem;
+                    }
+
+                    .programacion-nav-btn:hover {
+                        background: #f0fdf4;
+                        border-color: #c7e9d2;
+                        color: #087329;
+                    }
+
+                    .programacion-month-box {
+                        min-width: 172px;
+                        min-height: 42px;
+                        border: 1px solid #dfe6ee;
+                        border-radius: 12px;
+                        background: #ffffff;
+                        color: #111827;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.65rem;
+                        padding: 0 0.9rem;
+                        font-weight: 800;
+                        font-size: 0.9rem;
+                    }
+
+                    .programacion-month-box i {
+                        color: #0f8f2f;
+                    }
+
+                    .programacion-control-divider {
+                        width: 1px;
+                        height: 48px;
+                        background: #e1e8ef;
+                    }
+
+                    .programacion-filter-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        gap: 0.75rem;
+                        min-width: 0;
+                    }
+
+                    .programacion-filter-field {
+                        min-height: 42px;
+                        border: 1px solid #dfe6ee;
+                        border-radius: 12px;
+                        background: #ffffff;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.52rem;
+                        padding: 0 0.75rem;
+                        position: relative;
+                        margin: 0;
+                        min-width: 0;
+                    }
+
+                    .programacion-filter-field.is-primary {
+                        border-color: #85d39a;
+                    }
+
+                    .programacion-filter-field > i:first-child {
+                        color: #0f8f2f;
+                        font-size: 0.98rem;
+                        flex: 0 0 auto;
+                    }
+
+                    .programacion-filter-select {
+                        width: 100%;
+                        border: 0;
+                        background: transparent;
+                        color: #1f2937;
+                        font-size: 0.82rem;
+                        font-weight: 700;
+                        outline: 0;
+                        box-shadow: none;
+                        appearance: none;
+                        min-width: 0;
+                        padding-right: 1.25rem;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        overflow: hidden;
+                    }
+
+                    .programacion-filter-chevron {
+                        position: absolute;
+                        right: 0.72rem;
+                        color: #111827;
+                        pointer-events: none;
+                        font-size: 0.78rem;
+                    }
+
+                    @media (max-width: 1199.98px) {
+                        .programacion-hero-card {
+                            grid-template-columns: auto 1px minmax(0, 1fr);
+                        }
+
+                        .programacion-action-btn {
+                            grid-column: 1 / -1;
+                            width: 100%;
+                        }
+
+                        .programacion-control-card {
+                            grid-template-columns: 1fr;
+                        }
+
+                        .programacion-control-divider {
+                            display: none;
+                        }
+
+                        .programacion-month-controls {
+                            justify-content: center;
+                        }
+
+                        .programacion-filter-grid {
+                            grid-template-columns: repeat(2, minmax(220px, 1fr));
+                        }
+                    }
+
+                    @media (max-width: 767.98px) {
+                        .programacion-hero-card {
+                            grid-template-columns: 1fr;
+                            padding: 1.4rem;
+                        }
+
+                        .programacion-hero-icon {
+                            width: 70px;
+                            height: 70px;
+                            font-size: 2.25rem;
+                        }
+
+                        .programacion-hero-divider {
+                            display: none;
+                        }
+
+                        .programacion-view-row {
+                            justify-content: stretch;
+                        }
+
+                        .programacion-view-toggle {
+                            width: 100%;
+                            flex-wrap: wrap;
+                        }
+
+                        .programacion-view-btn {
+                            flex: 1 1 150px;
+                            justify-content: center;
+                        }
+
+                        .programacion-month-controls,
+                        .programacion-filter-grid {
+                            width: 100%;
+                        }
+
+                        .programacion-month-controls {
+                            display: grid;
+                            grid-template-columns: 42px 1fr 42px;
+                        }
+
+                        .programacion-month-box {
+                            min-width: 0;
+                        }
+
+                        .programacion-filter-grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                </style>
+
                 <!-- Cabecera de Horarios y Programación -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                        <div>
-                            <h5 class="fw-bold text-dark mb-1">Horarios y Programación</h5>
-                            <p class="text-muted small mb-0">Distribución del calendario lectivo y asignaciones de docentes.</p>
-                        </div>
-                        <?php if ($current_role === 'Coordinador'): ?>
-                            <button type="button" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm d-inline-flex align-items-center gap-2" style="background-color: #00965e; border-color: #00965e; padding: 0.7rem 1.6rem;" data-bs-toggle="modal" data-bs-target="#modalAsignarHorario">
-                                <i class="fa-solid fa-plus"></i> Asignar Horario
-                            </button>
-                        <?php endif; ?>
+                <div class="programacion-hero-card mb-4">
+                    <div class="programacion-hero-icon" aria-hidden="true">
+                        <i class="fa-regular fa-clock"></i>
                     </div>
+                    <div class="programacion-hero-divider" aria-hidden="true"></div>
+                    <div class="programacion-hero-copy">
+                        <h5 class="programacion-hero-title">Horarios y Programación</h5>
+                        <p class="programacion-hero-subtitle mb-0">Distribución del calendario lectivo y asignaciones de docentes.</p>
+                    </div>
+                    <?php if ($current_role === 'Coordinador'): ?>
+                        <button type="button" class="btn programacion-action-btn d-inline-flex align-items-center gap-3" data-bs-toggle="modal" data-bs-target="#modalAsignarHorario">
+                            <span class="programacion-action-icon"><i class="fa-solid fa-plus"></i></span>
+                            <span>Asignar Horario</span>
+                        </button>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Selector de Vista -->
-                <div class="d-flex justify-content-end mb-3">
-                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
-                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
-                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendario" style="background-color: #39A900;" onclick="cambiarVista('calendario')">
-                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                <div class="programacion-view-row">
+                    <div class="programacion-view-toggle">
+                        <span class="programacion-view-label">Vista:</span>
+                        <button type="button" class="btn programacion-view-btn active" id="btnVistaCalendario" onclick="cambiarVista('calendario')">
+                            <i class="fa-solid fa-calendar-days"></i> Calendario Mensual
                         </button>
-                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaLista" onclick="cambiarVista('lista')">
-                            <i class="fa-solid fa-list me-1"></i> Lista Completa
+                        <button type="button" class="btn programacion-view-btn text-secondary" id="btnVistaLista" onclick="cambiarVista('lista')">
+                            <i class="fa-solid fa-list"></i> Lista Completa
                         </button>
                     </div>
                 </div>
 
                 <!-- Barra de Navegación del Mes y Filtros Unificados SGA -->
-                <div class="card bg-white shadow-sm unified-filter-bar mb-4" id="seccionNavegacionMes">
-                    <div class="card-body p-2 d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
-                        <!-- Left Side: Calendar Nav -->
-                        <div class="d-flex align-items-center gap-2 flex-nowrap">
-                            <button type="button" class="btn btn-nav-mes" onclick="navegarMes(-1)">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <span class="badge-mes-actual d-flex align-items-center justify-content-center" id="nombreMesAnio" style="min-width: 130px;">Julio 2026</span>
-                            <button type="button" class="btn btn-nav-mes" onclick="navegarMes(1)">
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
+                <div class="programacion-control-card mb-4" id="seccionNavegacionMes">
+                    <div class="programacion-month-controls">
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMes(-1)" title="Mes anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="programacion-month-box">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <span id="nombreMesAnio">Julio 2026</span>
                         </div>
-                        
-                        <!-- Right Side: Dropdown Filters -->
-                        <div class="d-flex align-items-center gap-2 ms-lg-auto flex-wrap flex-lg-nowrap">
-                            <!-- Todos los días -->
-                            <select id="filtroDiaSemana" class="form-select select-filtro-custom">
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMes(1)" title="Mes siguiente">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="programacion-control-divider" aria-hidden="true"></div>
+
+                    <div class="programacion-filter-grid">
+                        <label class="programacion-filter-field is-primary" for="filtroDiaSemana">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <select id="filtroDiaSemana" class="programacion-filter-select">
                                 <option value="">Todos los días</option>
                                 <option value="Lunes">Lunes</option>
                                 <option value="Martes">Martes</option>
@@ -2214,22 +2734,32 @@
                                 <option value="Sábado">Sábado</option>
                                 <option value="Domingo">Domingo</option>
                             </select>
+                            <i class="fa-solid fa-chevron-down programacion-filter-chevron"></i>
+                        </label>
 
-                            <!-- Instructores (Todos) (Highlight verde conforme a la imagen) -->
-                            <select id="filtroInstructor" class="form-select select-filtro-custom select-filtro-highlighted">
+                        <label class="programacion-filter-field" for="filtroInstructor">
+                            <i class="fa-solid fa-users"></i>
+                            <select id="filtroInstructor" class="programacion-filter-select">
                                 <option value="">Instructores (Todos)</option>
                             </select>
+                            <i class="fa-solid fa-chevron-down programacion-filter-chevron"></i>
+                        </label>
 
-                            <!-- Ambientes (Todos) -->
-                            <select id="filtroAmbiente" class="form-select select-filtro-custom">
+                        <label class="programacion-filter-field" for="filtroAmbiente">
+                            <i class="fa-regular fa-building"></i>
+                            <select id="filtroAmbiente" class="programacion-filter-select">
                                 <option value="">Ambientes (Todos)</option>
                             </select>
+                            <i class="fa-solid fa-chevron-down programacion-filter-chevron"></i>
+                        </label>
 
-                            <!-- Fichas (Todas) -->
-                            <select id="filtroFicha" class="form-select select-filtro-custom">
+                        <label class="programacion-filter-field" for="filtroFicha">
+                            <i class="fa-regular fa-address-card"></i>
+                            <select id="filtroFicha" class="programacion-filter-select">
                                 <option value="">Fichas (Todas)</option>
                             </select>
-                        </div>
+                            <i class="fa-solid fa-chevron-down programacion-filter-chevron"></i>
+                        </label>
                     </div>
                 </div>
 
@@ -4217,9 +4747,6 @@
                 <button class="nav-link active" id="pills-vision-inst-tab" data-bs-toggle="pill" data-bs-target="#pills-vision-inst" type="button" role="tab" aria-controls="pills-vision-inst" aria-selected="true">Visión General</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-inst-horario-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-horario" type="button" role="tab" aria-controls="pills-inst-horario" aria-selected="false">Mi Horario</button>
-            </li>
-            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-inst-asistencia-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-asistencia" type="button" role="tab" aria-controls="pills-inst-asistencia" aria-selected="false">Registrar Asistencia</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -4502,106 +5029,7 @@
                 </script>
             </div>
 
-            <!-- PESTAÑA 1: MI HORARIO Y SESIONES (Original) -->
-            <div class="tab-pane fade" id="pills-inst-horario" role="tabpanel" aria-labelledby="pills-inst-horario-tab">
-                <!-- Encabezado Limpio -->
-                                <div class="mb-4 pb-1">
-                                    <h5 class="fw-bold text-dark mb-1">Sesiones Formativas Bajo mi Cargo</h5>
-                                    <p class="text-muted small mb-0">Horario de formación y cumplimiento de competencias asignadas por el coordinador.</p>
-                                </div>
-                
-                                <!-- SELECTOR DE VISTA PARA INSTRUCTOR -->
-                                <div class="d-flex justify-content-end mb-3">
-                                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
-                                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
-                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioInst" style="background-color: #39A900;" onclick="cambiarVistaInst('calendario')">
-                                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaInst" onclick="cambiarVistaInst('lista')">
-                                            <i class="fa-solid fa-list me-1"></i> Mis Sesiones
-                                        </button>
-                                    </div>
-                                </div>
-                
-                                <!-- Cabecera Mes/Año -->
-                                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesInst">
-                                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
-                                        <i class="fa-solid fa-chevron-left"></i>
-                                    </button>
-                                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
-                                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
-                                        <i class="fa-solid fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                
-                                <!-- Contenedor del Calendario -->
-                                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioInst" style="border: 1px solid rgba(0,0,0,0.06);">
-                                    <div class="calendar-days-grid mb-2">
-                                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
-                                    </div>
-                                    <div class="calendar-days-grid" id="gridDiasCalendario">
-                                        <!-- Generado dinámicamente con JS -->
-                                    </div>
-                                </div>
-                
-                                <!-- Grid de Tarjetas de Sesiones -->
-                                <div class="row g-4 d-none" id="cardListaCompletaInst">
-                                    <?php if (empty($programacion)): ?>
-                                        <div class="col-12 text-center py-5 text-muted">
-                                            <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
-                                            <h5 class="fw-bold">No tienes sesiones formativas asignadas</h5>
-                                            <p class="small mb-0">El Coordinador Académico aún no ha agendado bloques de horario bajo tu liderazgo.</p>
-                                        </div>
-                                    <?php else: ?>
-                                        <?php foreach ($programacion as $prog): ?>
-                                            <div class="col-12 col-md-6">
-                                                <div class="card bg-white shadow-sm ficha-card p-4 h-100 d-flex flex-column">
-                                                    
-                                                    <!-- Header Tarjeta -->
-                                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                                        <span class="badge-ficha-id">Ficha #<?= $prog->numero_ficha; ?></span>
-                                                        <span class="text-success fw-bold small"><i class="fa-regular fa-clock me-1"></i> <?= $prog->nombre_dia; ?> (<?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?>)</span>
-                                                    </div>
-                
-                                                    <!-- Título Programa -->
-                                                    <h5 class="fw-bold text-dark mb-4"><?= $programas_fichas[$prog->numero_ficha] ?? 'Análisis y Desarrollo de Software'; ?></h5>
-                
-                                                    <!-- Contenedor Gris RAP -->
-                                                    <div class="bg-light rounded-4 p-4 mb-4 border border-light-subtle">
-                                                        <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">RESULTADO DE APRENDIZAJE (RAP):</div>
-                                                        <p class="text-dark small mb-0 fw-medium" style="line-height: 1.5;"><?= $prog->ra_descripcion; ?></p>
-                                                    </div>
-                
-                                                    <!-- Ubicación -->
-                                                    <div class="text-secondary small fw-medium mb-4">
-                                                        <i class="fa-solid fa-location-dot me-2 text-muted"></i> Ubicación: <?= $prog->ambiente_nombre; ?>
-                                                    </div>
-                
-                                                    <!-- Pie Tarjeta (Sesiones y Botón) -->
-                                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light-subtle mt-auto">
-                                                        <div>
-                                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">SESIONES FORMATIVAS</div>
-                                                            <div class="text-dark fw-bold small mt-1">Realizadas: <?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?></div>
-                                                        </div>
-                                                        <button type="button" class="btn-sena-sm" onclick="document.getElementById('pills-inst-asistencia-tab').click();">
-                                                            Tomar Asistencia
-                                                        </button>
-                                                    </div>
-                
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </div>
-            </div>
-
-            <!-- PESTAÑA 2: REGISTRAR ASISTENCIA (Rediseño) -->
+            <!-- PESTAÑA 1: REGISTRAR ASISTENCIA (Rediseño) -->
             <div class="tab-pane fade" id="pills-inst-asistencia" role="tabpanel" aria-labelledby="pills-inst-asistencia-tab">
 
                 <style>
@@ -6054,9 +6482,6 @@
                                 <div class="small text-secondary fw-medium"><i class="fa-solid fa-user-tie me-1 text-muted"></i> Instructor: <strong class="text-dark">${instructor}</strong></div>
                                 <div class="small text-secondary fw-medium">Sesiones: <strong class="text-dark">${sesionesRealizadas}/${totalSesiones}</strong></div>
                             </div>
-                            <button class="apr-btn-detail" type="button" onclick="document.getElementById('pills-apr-horario-tab')?.click(); window.location.hash = '#pills-apr-horario';">
-                                <i class="fa-solid fa-eye me-2"></i> Ver detalle
-                            </button>
                         </div>
                     </div>
                 `;
@@ -6076,7 +6501,7 @@
         }
 
         function sincronizarVistaAprendizResumen() {
-            const detalleHashes = ['#pills-apr-ficha', '#pills-apr-horario', '#pills-apr-asist'];
+            const detalleHashes = ['#pills-apr-ficha', '#pills-apr-asist'];
             const mostrandoDetalle = detalleHashes.includes(window.location.hash);
             const resumen = document.querySelector('.apr-overview');
             const detalle = document.getElementById('pills-tabContentApr');
@@ -6097,11 +6522,6 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="pills-apr-ficha-tab" data-bs-toggle="pill" data-bs-target="#pills-apr-ficha" type="button" role="tab" aria-controls="pills-apr-ficha" aria-selected="true">
                     <i class="fa-solid fa-id-card me-1"></i> Mi Ficha y Avance
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-apr-horario-tab" data-bs-toggle="pill" data-bs-target="#pills-apr-horario" type="button" role="tab" aria-controls="pills-apr-horario" aria-selected="false">
-                    <i class="fa-solid fa-calendar-day me-1"></i> Mi Horario de Formación
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -6567,86 +6987,7 @@
 
             </div>
 
-            <!-- PESTAÑA 2: MI HORARIO DE FORMACIÓN -->
-            <div class="tab-pane fade" id="pills-apr-horario" role="tabpanel" aria-labelledby="pills-apr-horario-tab">
-                <div class="mb-4 pb-1">
-                    <h5 class="fw-bold text-dark mb-1">Mi Programación Semanal de Clases</h5>
-                    <p class="text-muted small mb-0">Muestra las sesiones programadas para tu ficha formativa actual.</p>
-                </div>
-
-                <!-- SELECTOR DE VISTA PARA APRENDIZ -->
-                <div class="d-flex justify-content-end mb-3">
-                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
-                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
-                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioApr" style="background-color: #39A900;" onclick="cambiarVistaApr('calendario')">
-                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
-                        </button>
-                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaApr" onclick="cambiarVistaApr('lista')">
-                            <i class="fa-solid fa-list me-1"></i> Mis Clases
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Cabecera Mes/Año -->
-                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesApr">
-                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
-                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-
-                <!-- Contenedor del Calendario -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioApr" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="calendar-days-grid mb-2">
-                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
-                    </div>
-                    <div class="calendar-days-grid" id="gridDiasCalendario">
-                        <!-- Generado dinámicamente con JS -->
-                    </div>
-                </div>
-
-                <div class="row g-4 d-none" id="cardListaCompletaApr">
-                    <?php if (empty($programacion)): ?>
-                        <div class="col-12 text-center py-5 text-muted">
-                            <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
-                            <h5 class="fw-bold">No tienes clases programadas en tu horario</h5>
-                            <p class="small mb-0">El Coordinador Académico aún no ha asignado instructores ni ambientes a tu ficha.</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($programacion as $prog): ?>
-                            <div class="col-12 col-md-6">
-                                <div class="card bg-white shadow-sm ficha-card p-4 h-100 d-flex flex-column">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <span class="badge-dia-sena"><?= $prog->nombre_dia; ?></span>
-                                        <span class="text-secondary small fw-medium"><i class="fa-regular fa-clock me-1"></i> <?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?></span>
-                                    </div>
-                                    <h5 class="fw-bold text-dark mb-1"><?= $prog->instructor_nombre . ' ' . $prog->instructor_apellido; ?></h5>
-                                    <div class="text-secondary small mb-4">Instructor Especialista</div>
-                                    <div class="bg-light rounded-4 p-4 mb-4 border border-light-subtle">
-                                        <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">MÓDULO / RESULTADO DE APRENDIZAJE:</div>
-                                        <p class="text-dark small mb-0 fw-medium" style="line-height: 1.5;"><?= $prog->ra_descripcion; ?></p>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center text-secondary small pt-3 border-top border-light-subtle mt-auto" style="font-size: 0.82rem;">
-                                        <span><i class="fa-solid fa-book-open me-2 text-muted"></i> Sala: <?= $prog->ambiente_nombre; ?></span>
-                                        <span class="fw-medium">Avance: <?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?> Sesiones</span>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- PESTAÑA 3: SEGUIMIENTO DE ASISTENCIA -->
+            <!-- PESTAÑA 2: SEGUIMIENTO DE ASISTENCIA -->
             <div class="tab-pane fade" id="pills-apr-asist" role="tabpanel" aria-labelledby="pills-apr-asist-tab">
                 <?php
                 $total_asistencias = count($asistencias ?? []);
@@ -9905,72 +10246,5 @@ function iniciarMonitoreoProgramacion() {
             })
             .catch(err => console.error("Error al sincronizar la programación:", err));
     }, 5000); // Sincronizar cada 5 segundos
-}
-function cambiarVistaInst(vista) {
-    const btnCal = document.getElementById('btnVistaCalendarioInst');
-    const btnList = document.getElementById('btnVistaListaInst');
-    const cardCal = document.getElementById('cardCalendarioInst');
-    const navMes = document.getElementById('seccionNavegacionMesInst');
-    const cardList = document.getElementById('cardListaCompletaInst');
-    
-    if (vista === 'calendario') {
-        btnCal.classList.add('btn-success', 'active');
-        btnCal.classList.remove('btn-light', 'text-secondary');
-        btnCal.style.backgroundColor = '#39A900';
-        
-        btnList.classList.add('btn-light', 'text-secondary');
-        btnList.classList.remove('btn-success', 'active');
-        btnList.style.backgroundColor = '';
-        
-        cardCal.classList.remove('d-none');
-        navMes.classList.remove('d-none');
-        cardList.classList.add('d-none');
-    } else {
-        btnList.classList.add('btn-success', 'active');
-        btnList.classList.remove('btn-light', 'text-secondary');
-        btnList.style.backgroundColor = '#39A900';
-        
-        btnCal.classList.add('btn-light', 'text-secondary');
-        btnCal.classList.remove('btn-success', 'active');
-        btnCal.style.backgroundColor = '';
-        
-        cardCal.classList.add('d-none');
-        navMes.classList.add('d-none');
-        cardList.classList.remove('d-none');
-    }
-}
-
-function cambiarVistaApr(vista) {
-    const btnCal = document.getElementById('btnVistaCalendarioApr');
-    const btnList = document.getElementById('btnVistaListaApr');
-    const cardCal = document.getElementById('cardCalendarioApr');
-    const navMes = document.getElementById('seccionNavegacionMesApr');
-    const cardList = document.getElementById('cardListaCompletaApr');
-    
-    if (vista === 'calendario') {
-        btnCal.classList.add('btn-success', 'active');
-        btnCal.classList.remove('btn-light', 'text-secondary');
-        btnCal.style.backgroundColor = '#39A900';
-        
-        btnList.classList.add('btn-light', 'text-secondary');
-        btnList.classList.remove('btn-success', 'active');
-        btnList.style.backgroundColor = '';
-        
-        cardCal.classList.remove('d-none');
-        navMes.classList.remove('d-none');
-        cardList.classList.add('d-none');
-    } else {
-        btnList.classList.add('btn-success', 'active');
-        btnList.classList.remove('btn-light', 'text-secondary');
-        btnList.style.backgroundColor = '#39A900';
-        
-        btnCal.classList.add('btn-light', 'text-secondary');
-        btnCal.classList.remove('btn-success', 'active');
-        btnCal.style.backgroundColor = '';
-        
-        cardCal.classList.add('d-none');
-        navMes.classList.add('d-none');
-        cardList.classList.remove('d-none');
-    }
 }
 </script>

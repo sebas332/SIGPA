@@ -36,22 +36,46 @@ foreach ($db->resultSet() as $r) {
 
     /* Encabezado */
     .fichas-header {
-        background-color: #ffffff;
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--card-shadow);
-        padding: 1.8rem 2.5rem;
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+        padding: 1.7rem 2.1rem;
         margin-bottom: 2rem;
-        border: 1px solid rgba(0,0,0,0.04);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) 1px auto;
+        align-items: center;
+        gap: 1.6rem;
+    }
+    .fichas-header-icon {
+        width: 82px;
+        height: 82px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #eef9f1 0%, #dff2e6 100%);
+        color: #118a3b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.35rem;
+        flex: 0 0 auto;
     }
     .fichas-header h1 {
-        font-size: 1.8rem;
-        font-weight: 700;
+        font-size: clamp(1.35rem, 2vw, 1.85rem);
+        font-weight: 800;
         color: #111827;
-        margin-bottom: 0.2rem;
+        letter-spacing: 0;
+        margin-bottom: 0.55rem;
     }
     .fichas-header p {
         color: #6b7280;
-        font-size: 0.95rem;
+        font-size: 0.98rem;
+        line-height: 1.45;
+        max-width: 760px;
+    }
+    .fichas-header-divider {
+        width: 1px;
+        height: 86px;
+        background: #a8d8b6;
     }
     .btn-sena-success {
         background-color: var(--sena-primary);
@@ -72,6 +96,55 @@ foreach ($db->resultSet() as $r) {
         color: #ffffff;
         transform: translateY(-1px);
         box-shadow: 0 6px 16px rgba(57, 169, 0, 0.25);
+    }
+    .fichas-hero-btn {
+        min-width: 205px;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.85rem 1.25rem;
+        background: #0f8f2f;
+        box-shadow: 0 10px 22px rgba(15, 143, 47, 0.2);
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+    .fichas-hero-btn:hover {
+        background: #087329;
+    }
+    .fichas-header-plus {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #0f8f2f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+    }
+
+    @media (max-width: 1199.98px) {
+        .fichas-header {
+            grid-template-columns: auto minmax(0, 1fr);
+        }
+        .fichas-header-divider {
+            display: none;
+        }
+        .fichas-hero-btn {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .fichas-header {
+            grid-template-columns: 1fr;
+            padding: 1.4rem;
+        }
+        .fichas-header-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 2rem;
+        }
     }
 
     /* Tarjetas de Estadísticas (Pixel Perfect) */
@@ -529,16 +602,19 @@ foreach ($db->resultSet() as $r) {
 
 <div class="fichas-container container-fluid px-0">
     <!-- Encabezado -->
-    <div class="fichas-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-        <div>
+    <div class="fichas-header">
+        <div class="fichas-header-icon" aria-hidden="true">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="fichas-header-copy">
             <h1>Gestión de Fichas Académicas</h1>
             <p class="mb-0">Visualiza, edita y registra las fichas de aprendices matriculados.</p>
         </div>
+        <div class="fichas-header-divider" aria-hidden="true"></div>
         <?php if ($current_role === 'Coordinador'): ?>
-            <button type="button" class="btn-sena-success" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
-                </svg> Matricular Ficha
+            <button type="button" class="btn-sena-success fichas-hero-btn" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
+                <span class="fichas-header-plus"><i class="fa-solid fa-plus"></i></span>
+                <span>Matricular Ficha</span>
             </button>
         <?php endif; ?>
     </div>
