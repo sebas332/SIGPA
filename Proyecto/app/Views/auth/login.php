@@ -606,11 +606,26 @@ if (forgotPasswordForm && forgotEmail) {
             }
             
             // Mostrar SweetAlert2
-            Swal.fire({
+            const swalOptions = {
                 icon: 'success',
                 title: 'Solicitud procesada',
                 text: data.message || 'Si el correo está registrado, recibirás un enlace para recuperar tu contraseña.',
                 confirmButtonColor: '#39A900'
+            };
+
+            if (data.reset_link) {
+                swalOptions.html = `
+                    <p class="mb-3">${data.message || 'Usa este enlace temporal para recuperar tu contraseña.'}</p>
+                    <a href="${data.reset_link}" class="btn btn-success fw-bold" style="background:#39A900;border-color:#39A900;">
+                        <i class="fa-solid fa-key me-2"></i>Abrir enlace temporal
+                    </a>
+                    <div class="small text-muted mt-3" style="word-break: break-all;">${data.reset_link}</div>
+                `;
+                delete swalOptions.text;
+            }
+
+            Swal.fire({
+                ...swalOptions
             });
 
             // Limpiar input y feedback

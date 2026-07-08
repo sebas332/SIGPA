@@ -34,11 +34,14 @@ class Asistencia {
      */
     public function getPorAprendiz($id_aprendiz) {
         $this->db->query("SELECT a.*, pa.fecha_inicio, pa.hora_inicio, pa.hora_fin, 
-                          f.numero_ficha, c.nombre as competencia_nombre, ra.codigo as ra_codigo, 
+                          f.numero_ficha, p.nombre as programa_nombre, c.nombre as competencia_nombre, 
+                          ra.codigo as ra_codigo, amb.nombre as ambiente_nombre,
                           u.nombre as instructor_nombre, u.apellido as instructor_apellido 
                           FROM asistencia a 
                           INNER JOIN programacion_academica pa ON a.id_programacion = pa.id_programacion 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
+                          INNER JOIN programa p ON f.id_programa = p.id_programa
+                          INNER JOIN ambientes amb ON pa.id_numero_ambiente = amb.id_numero_ambiente
                           INNER JOIN resultado_aprendizaje ra ON pa.id_resultado_aprendizaje = ra.id_resultado 
                           INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
@@ -107,5 +110,34 @@ class Asistencia {
             $this->db->bind(':observacion', $observacion);
             return $this->db->execute();
         }
+    }
+
+    /**
+     * Determina si una planilla ya fue registrada para una programación y fecha.
+     */
+    public function existePlanillaParaFecha($id_programacion, $fecha_asistencia) {
+        $this->db->query("SELECT COUNT(*) as total
+                          FROM asistencia
+                          WHERE id_programacion = :id_programacion
+                            AND fecha_asistencia = :fecha");
+        $this->db->bind(':id_programacion', (int) $id_programacion);
+        $this->db->bind(':fecha', $fecha_asistencia);
+        $row = $this->db->single();
+        return $row && (int) $row->total > 0;
+    }
+
+    /**
+     * Cuenta las sesiones vistas para el mismo RAP dentro de una ficha.
+     */
+    public function contarSesionesRealizadasPorResultado($numero_ficha, $id_resultado_aprendizaje) {
+        $this->db->query("SELECT COUNT(DISTINCT a.fecha_asistencia) as total
+                          FROM asistencia a
+                          INNER JOIN programacion_academica pa ON a.id_programacion = pa.id_programacion
+                          WHERE pa.numero_ficha = :numero_ficha
+                            AND pa.id_resultado_aprendizaje = :id_resultado");
+        $this->db->bind(':numero_ficha', $numero_ficha);
+        $this->db->bind(':id_resultado', (int) $id_resultado_aprendizaje);
+        $row = $this->db->single();
+        return $row ? (int) $row->total : 0;
     }
 }

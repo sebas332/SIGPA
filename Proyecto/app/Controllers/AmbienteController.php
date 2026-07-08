@@ -99,11 +99,29 @@ class AmbienteController extends BaseController {
             
             $evidenciaUrl = null;
             if (isset($_FILES['evidencia']) && $_FILES['evidencia']['error'] === 0) {
+                if (($_FILES['evidencia']['size'] ?? 0) > 10 * 1024 * 1024) {
+                    $_SESSION['flash_error'] = 'La evidencia no puede superar los 10MB.';
+                    $this->redirect('dashboard/index#pills-inst-novedad');
+                }
+
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime = $finfo->file($_FILES['evidencia']['tmp_name']);
+                $extensionesPermitidas = [
+                    'image/jpeg' => 'jpg',
+                    'image/png' => 'png',
+                    'image/webp' => 'webp'
+                ];
+
+                if (!isset($extensionesPermitidas[$mime])) {
+                    $_SESSION['flash_error'] = 'Formato de evidencia no permitido. Usa JPG, PNG o WEBP.';
+                    $this->redirect('dashboard/index#pills-inst-novedad');
+                }
+
                 $uploadDir = dirname(__DIR__, 2) . '/public/uploads/novedades/';
                 if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
+                    mkdir($uploadDir, 0755, true);
                 }
-                $ext = pathinfo($_FILES['evidencia']['name'], PATHINFO_EXTENSION);
+                $ext = $extensionesPermitidas[$mime];
                 $newName = 'nov_' . time() . '_' . uniqid() . '.' . $ext;
                 $dest = $uploadDir . $newName;
                 if (move_uploaded_file($_FILES['evidencia']['tmp_name'], $dest)) {

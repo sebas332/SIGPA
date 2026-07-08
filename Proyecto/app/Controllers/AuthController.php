@@ -135,6 +135,7 @@ class AuthController extends BaseController {
 
         header('Content-Type: application/json');
         $email = trim($_POST['correo'] ?? '');
+        $localResetLink = null;
 
         if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             echo json_encode(['success' => false, 'message' => 'Por favor ingresa un correo electrónico válido.']);
@@ -148,18 +149,34 @@ class AuthController extends BaseController {
             $expiry = date('Y-m-d H:i:s', time() + 900); // 15 minutos
 
             if ($this->usuarioModel->saveResetToken($user->id_usuario, $token, $expiry)) {
-                require_once APPROOT . '/libraries/PHPMailer/Exception.php';
-                require_once APPROOT . '/libraries/PHPMailer/PHPMailer.php';
-                require_once APPROOT . '/libraries/PHPMailer/SMTP.php';
+                $resetLink = $this->buildResetLink($token);
 
-                $this->sendRecoveryEmail($user->correo, $user->nombre . ' ' . $user->apellido, $token);
+                if ($this->isSmtpConfigured()) {
+                    require_once APPROOT . '/libraries/PHPMailer/Exception.php';
+                    require_once APPROOT . '/libraries/PHPMailer/PHPMailer.php';
+                    require_once APPROOT . '/libraries/PHPMailer/SMTP.php';
+
+                    $emailSent = $this->sendRecoveryEmail($user->correo, $user->nombre . ' ' . $user->apellido, $resetLink);
+                    if (!$emailSent && $this->isLocalRequest()) {
+                        $localResetLink = $resetLink;
+                    }
+                } elseif ($this->isLocalRequest()) {
+                    $localResetLink = $resetLink;
+                }
             }
         }
 
-        echo json_encode([
+        $response = [
             'success' => true,
             'message' => 'Si el correo está registrado, recibirás un enlace para recuperar tu contraseña.'
-        ]);
+        ];
+
+        if ($localResetLink) {
+            $response['message'] = 'Modo local: SMTP no está configurado. Usa el enlace temporal para restablecer la contraseña.';
+            $response['reset_link'] = $localResetLink;
+        }
+
+        echo json_encode($response);
         exit;
     }
 
@@ -265,7 +282,7 @@ class AuthController extends BaseController {
     /**
      * Helper para enviar el correo mediante PHPMailer
      */
-    private function sendRecoveryEmail($email, $nombre, $token) {
+    private function sendRecoveryEmail($email, $nombre, $resetLink) {
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
         try {
@@ -287,11 +304,10 @@ class AuthController extends BaseController {
                 $mail->addEmbeddedImage($logoPath, 'logo_sigpa');
             }
 
-            // URL del enlace de recuperación solicitada
-            $resetLink = URLROOT . '/index.php?route=auth/reset-password&token=' . $token;
-
             $mail->isHTML(true);
             $mail->Subject = 'Recuperar Contraseña - SIGPA';
+            $safeName = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
+            $safeResetLink = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
 
             $mail->Body = '
             <!DOCTYPE html>
@@ -321,14 +337,14 @@ class AuthController extends BaseController {
                         <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 5px;">SGA SENA</div>
                     </div>
                     <div class="email-body">
-                        <h2>Hola, ' . htmlspecialchars($nombre) . '</h2>
+                        <h2>Hola, ' . $safeName . '</h2>
                         <p>Se ha solicitado la recuperación de contraseña para tu cuenta en el sistema SIGPA. Para restablecerla, haz clic en el siguiente botón:</p>
                         <div class="btn-container">
-                            <a href="' . $resetLink . '" class="btn-recovery">Restablecer Contraseña</a>
+                            <a href="' . $safeResetLink . '" class="btn-recovery">Restablecer Contraseña</a>
                         </div>
                         <p style="color: #6c757d; font-size: 0.82rem;">Este enlace es válido por 15 minutos. Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
                         <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 30px 0;">
-                        <p style="font-size: 0.78rem; color: #868e96;">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:<br>' . $resetLink . '</p>
+                        <p style="font-size: 0.78rem; color: #868e96;">Si el botón no funciona, copia y pega la siguiente URL en tu navegador:<br>' . $safeResetLink . '</p>
                     </div>
                     <div class="email-footer">
                         SGA SENA © ' . date('Y') . ' • Todos los derechos reservados.<br>
@@ -344,5 +360,34 @@ class AuthController extends BaseController {
             error_log("Error al enviar correo: " . $mail->ErrorInfo);
             return false;
         }
+    }
+
+    /**
+     * Construye la URL absoluta para restablecer contraseña.
+     */
+    private function buildResetLink($token) {
+        return URLROOT . '/index.php?route=auth/resetPassword&token=' . urlencode($token);
+    }
+
+    /**
+     * Valida si las constantes SMTP fueron reemplazadas por credenciales reales.
+     */
+    private function isSmtpConfigured() {
+        return defined('SMTP_HOST') && defined('SMTP_USER') && defined('SMTP_PASS')
+            && SMTP_HOST !== ''
+            && SMTP_USER !== ''
+            && SMTP_PASS !== ''
+            && SMTP_USER !== 'tu_correo@gmail.com'
+            && SMTP_PASS !== 'tu_contraseña_de_aplicación';
+    }
+
+    /**
+     * Permite mostrar enlace de prueba solo en entorno local.
+     */
+    private function isLocalRequest() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        return strpos($host, 'localhost') !== false
+            || strpos($host, '127.0.0.1') !== false
+            || strpos($host, '::1') !== false;
     }
 }

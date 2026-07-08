@@ -253,7 +253,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
 <?php endif; ?>
     <?php 
     $currentRoute = $_GET['route'] ?? (isset($_SESSION['user_id']) ? 'dashboard/index' : 'auth/login');
-    if ($currentRoute !== 'dashboard/index' && $currentRoute !== 'auth/login' && $currentRoute !== 'auth/index'): 
+    if ($currentRoute !== 'dashboard/index' && $currentRoute !== 'auth/login' && $currentRoute !== 'auth/index' && $currentRoute !== 'perfil/index'): 
     ?>
         <div class="mb-4">
             <a href="javascript:history.back()" class="btn btn-sm shadow-sm" style="background-color: #ffffff; color: #495057; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; font-weight: 600; padding: 0.4rem 1rem; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#f8f9fa'; this.style.color='#212529';" onmouseout="this.style.backgroundColor='#ffffff'; this.style.color='#495057';">

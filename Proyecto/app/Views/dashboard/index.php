@@ -4762,8 +4762,9 @@
                                                 data-desc="<?= htmlspecialchars($prog->nombre_programa ?? 'Programa de Formación'); ?>"
                                                 data-amb="<?= htmlspecialchars($prog->id_numero_ambiente ?? 'Sin Asignar'); ?>"
                                                 data-hora="<?= htmlspecialchars($prog->hora_inicio ?? '00:00') . ' - ' . htmlspecialchars($prog->hora_fin ?? '00:00'); ?>"
-                                                data-jornada="<?= htmlspecialchars($prog->jornada ?? 'Diurna'); ?>">
-                                                <?= htmlspecialchars($prog->nombre_programa ?? 'Programación Web'); ?> - Ficha <?= $prog->numero_ficha; ?>
+                                                data-jornada="<?= htmlspecialchars($prog->jornada ?? 'Diurna'); ?>"
+                                                data-fecha="<?= htmlspecialchars($prog->fecha_inicio ?? date('Y-m-d')); ?>">
+                                                <?= htmlspecialchars(date('d/m/Y', strtotime($prog->fecha_inicio)) . ' - ' . ($prog->nombre_dia ?? 'Sesión') . ' ' . substr($prog->hora_inicio ?? '00:00', 0, 5) . ' - Ficha ' . $prog->numero_ficha . ' - RAP ' . ($prog->ra_codigo ?? '')); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -4771,7 +4772,7 @@
                             </div>
                             <div>
                                 <label>Fecha de Sesión</label>
-                                <input type="date" name="fecha_asistencia" value="<?= date('Y-m-d'); ?>" required>
+                                <input type="date" name="fecha_asistencia" id="fecha_asistencia_input" value="<?= date('Y-m-d'); ?>" required readonly>
                             </div>
                         </div>
                     </div>
@@ -4925,6 +4926,7 @@
                         const aprendicesPorProgramacion = <?= isset($aprendicesPorProgramacion) ? $aprendicesPorProgramacion : '{}'; ?>;
                         const listaContainer = document.getElementById('listaAprendicesContainer');
                         const selectProgramacion = document.getElementById('id_programacion_select');
+                        const fechaAsistenciaInput = document.getElementById('fecha_asistencia_input');
                         const buscador = document.getElementById('buscadorAprendices');
                         let currentAprendices = [];
 
@@ -4983,6 +4985,7 @@
                                 document.getElementById('info-amb').innerText = '-';
                                 document.getElementById('info-hora').innerText = '-';
                                 document.getElementById('info-jor').innerText = '-';
+                                if (fechaAsistenciaInput) fechaAsistenciaInput.value = '<?= date('Y-m-d'); ?>';
                                 return;
                             }
 
@@ -4991,6 +4994,7 @@
                             document.getElementById('info-amb').innerText = option.getAttribute('data-amb') ? `Ambiente ${option.getAttribute('data-amb')}` : 'Sin Asignar';
                             document.getElementById('info-hora').innerText = option.getAttribute('data-hora') || '00:00 - 00:00';
                             document.getElementById('info-jor').innerText = option.getAttribute('data-jornada') || 'Diurna';
+                            if (fechaAsistenciaInput) fechaAsistenciaInput.value = option.getAttribute('data-fecha') || '<?= date('Y-m-d'); ?>';
 
                             currentAprendices = aprendicesPorProgramacion[idProg];
                             renderizarListaAsistencia(currentAprendices);
@@ -5084,62 +5088,492 @@
                 </form>
 
             </div>
-            <!-- PESTAÑA 3: REPORTAR NOVEDAD DE AMBIENTE (Exactamente igual a la imagen 3 del usuario) -->
+            <!-- PESTAÑA 3: REPORTAR NOVEDAD DE AMBIENTE -->
             <div class="tab-pane fade" id="pills-inst-novedad" role="tabpanel" aria-labelledby="pills-inst-novedad-tab">
-                
-                <div class="mb-4 pb-1">
-                    <h5 class="fw-bold text-dark mb-1">Reportar Incidencia o Falla física</h5>
-                    <p class="text-muted small mb-0">Reporta problemas de aire acondicionado, computadores, redes o proyectores para gestión del coordinador.</p>
-                </div>
+                <style>
+                    .nov-report-shell {
+                        margin: 0;
+                    }
+                    .nov-report-hero {
+                        position: relative;
+                        overflow: hidden;
+                        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+                        color: #fff;
+                        border-radius: 20px;
+                        padding: 1.75rem 2rem;
+                        min-height: 150px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1.5rem;
+                        flex-wrap: wrap;
+                        box-shadow: 0 8px 24px rgba(6, 78, 59, 0.18);
+                    }
+                    .nov-report-hero::before {
+                        content: "";
+                        position: absolute;
+                        top: -40px;
+                        right: -40px;
+                        width: 200px;
+                        height: 200px;
+                        border-radius: 50%;
+                        background: radial-gradient(circle, rgba(52, 211, 153, 0.18) 0%, transparent 70%);
+                        pointer-events: none;
+                    }
+                    .nov-report-hero > * {
+                        position: relative;
+                        z-index: 1;
+                    }
+                    .nov-report-breadcrumb {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.55rem;
+                        color: rgba(255, 255, 255, 0.82);
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                        margin-bottom: 1.2rem;
+                    }
+                    .nov-report-hero h2 {
+                        font-size: clamp(1.55rem, 2.8vw, 2.45rem);
+                        font-weight: 800;
+                        margin: 0 0 0.65rem;
+                        letter-spacing: 0;
+                    }
+                    .nov-report-hero p {
+                        color: rgba(255, 255, 255, 0.82);
+                        font-size: 1rem;
+                        margin: 0;
+                        max-width: 760px;
+                    }
+                    .nov-report-visual {
+                        width: 132px;
+                        height: 120px;
+                        min-width: 132px;
+                        position: relative;
+                    }
+                    .nov-clipboard {
+                        position: absolute;
+                        inset: 10px 28px 10px 6px;
+                        background: #f8fafc;
+                        border-radius: 14px;
+                        transform: rotate(8deg);
+                        box-shadow: 0 16px 28px rgba(0, 0, 0, 0.22);
+                    }
+                    .nov-clipboard::before {
+                        content: "";
+                        position: absolute;
+                        top: -12px;
+                        left: 32px;
+                        width: 48px;
+                        height: 24px;
+                        border-radius: 12px 12px 8px 8px;
+                        background: #8bd450;
+                    }
+                    .nov-clipboard span {
+                        display: block;
+                        height: 7px;
+                        margin: 18px 18px 0;
+                        border-radius: 999px;
+                        background: #d7dee8;
+                    }
+                    .nov-clipboard span:first-child {
+                        width: 18px;
+                        background: #39a900;
+                    }
+                    .nov-alert-mark {
+                        position: absolute;
+                        right: 4px;
+                        bottom: 7px;
+                        width: 78px;
+                        height: 68px;
+                        background: #39a900;
+                        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+                        display: flex;
+                        align-items: flex-end;
+                        justify-content: center;
+                        padding-bottom: 10px;
+                        color: #fff;
+                        font-weight: 900;
+                        font-size: 2.05rem;
+                        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                    }
+                    .nov-report-card {
+                        background: #fff;
+                        border: 1px solid rgba(15, 23, 42, 0.06);
+                        border-radius: 8px;
+                        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+                        padding: 2rem;
+                        margin-top: 1.5rem;
+                    }
+                    .nov-report-titlebar {
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        padding-bottom: 1.55rem;
+                        margin-bottom: 1.55rem;
+                        border-bottom: 1px solid #e5e7eb;
+                    }
+                    .nov-title-icon {
+                        width: 52px;
+                        height: 52px;
+                        border-radius: 8px;
+                        display: grid;
+                        place-items: center;
+                        background: #dcfce7;
+                        color: #07823d;
+                        font-size: 1.35rem;
+                    }
+                    .nov-report-titlebar h3 {
+                        margin: 0 0 0.25rem;
+                        font-size: 1.15rem;
+                        font-weight: 800;
+                        color: #111827;
+                    }
+                    .nov-report-titlebar p {
+                        margin: 0;
+                        color: #6b7280;
+                        font-size: 0.92rem;
+                    }
+                    .nov-field-label {
+                        color: #111827;
+                        font-weight: 800;
+                        font-size: 0.86rem;
+                        margin-bottom: 0.7rem;
+                    }
+                    .nov-required {
+                        color: #ef4444;
+                    }
+                    .nov-field-wrap {
+                        position: relative;
+                    }
+                    .nov-field-icon {
+                        position: absolute;
+                        top: 50%;
+                        left: 1rem;
+                        transform: translateY(-50%);
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 8px;
+                        display: grid;
+                        place-items: center;
+                        background: #e9f9ef;
+                        color: #087d3b;
+                        pointer-events: none;
+                    }
+                    .nov-input,
+                    .nov-select,
+                    .nov-textarea {
+                        width: 100%;
+                        border: 1px solid #dfe4ea;
+                        border-radius: 8px;
+                        color: #1f2937;
+                        background-color: #fff;
+                        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                    }
+                    .nov-input,
+                    .nov-select {
+                        min-height: 58px;
+                        padding: 0 1rem 0 4.05rem;
+                        font-weight: 700;
+                    }
+                    .nov-input {
+                        padding-right: 3.5rem;
+                    }
+                    .nov-date-input {
+                        padding-left: 1rem;
+                    }
+                    .nov-select {
+                        appearance: none;
+                        background-image: linear-gradient(45deg, transparent 50%, #1f2937 50%), linear-gradient(135deg, #1f2937 50%, transparent 50%);
+                        background-position: calc(100% - 22px) 25px, calc(100% - 16px) 25px;
+                        background-size: 6px 6px, 6px 6px;
+                        background-repeat: no-repeat;
+                    }
+                    .nov-date-icon {
+                        position: absolute;
+                        top: 50%;
+                        right: 1.1rem;
+                        transform: translateY(-50%);
+                        color: #475569;
+                        pointer-events: none;
+                    }
+                    .nov-input:focus,
+                    .nov-select:focus,
+                    .nov-textarea:focus {
+                        border-color: #39a900;
+                        box-shadow: 0 0 0 4px rgba(57, 169, 0, 0.13);
+                        outline: none;
+                    }
+                    .nov-textarea {
+                        min-height: 158px;
+                        resize: vertical;
+                        padding: 1rem 1.1rem;
+                        line-height: 1.55;
+                    }
+                    .nov-char-count {
+                        text-align: right;
+                        color: #6b7280;
+                        font-size: 0.82rem;
+                        font-weight: 700;
+                        margin-top: 0.45rem;
+                    }
+                    .nov-upload-zone {
+                        position: relative;
+                        border: 1.5px dashed #cfd7e3;
+                        border-radius: 8px;
+                        min-height: 138px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 1.35rem;
+                        text-align: center;
+                        color: #6b7280;
+                        background: #fff;
+                        transition: border-color 0.2s ease, background 0.2s ease;
+                        cursor: pointer;
+                    }
+                    .nov-upload-zone:hover,
+                    .nov-upload-zone.is-dragover {
+                        border-color: #39a900;
+                        background: #f4fbf0;
+                    }
+                    .nov-upload-zone input {
+                        position: absolute;
+                        inset: 0;
+                        opacity: 0;
+                        cursor: pointer;
+                    }
+                    .nov-upload-icon {
+                        color: #087d3b;
+                        font-size: 1.75rem;
+                        margin-bottom: 0.45rem;
+                    }
+                    .nov-upload-main {
+                        color: #374151;
+                        font-weight: 800;
+                        margin-bottom: 0.2rem;
+                    }
+                    .nov-upload-help {
+                        font-size: 0.86rem;
+                        margin-bottom: 0.35rem;
+                    }
+                    .nov-file-name {
+                        color: #087d3b;
+                        font-size: 0.82rem;
+                        font-weight: 800;
+                        margin-top: 0.45rem;
+                    }
+                    .nov-report-footer {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        gap: 1rem;
+                        margin-top: 2rem;
+                    }
+                    .nov-info-note {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.8rem;
+                        background: #ecfdf3;
+                        border: 1px solid #d8f3df;
+                        color: #087d3b;
+                        border-radius: 8px;
+                        padding: 0.95rem 1.1rem;
+                        font-weight: 700;
+                        min-height: 58px;
+                        flex: 1;
+                    }
+                    .nov-submit-btn {
+                        min-height: 58px;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 0 1.65rem;
+                        background: #008d3f;
+                        color: #fff;
+                        font-weight: 800;
+                        box-shadow: 0 14px 26px rgba(0, 141, 63, 0.22);
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.75rem;
+                        white-space: nowrap;
+                    }
+                    .nov-submit-btn:hover {
+                        background: #007832;
+                    }
+                    @media (max-width: 768px) {
+                        .nov-report-shell {
+                            margin: 0;
+                        }
+                        .nov-report-hero {
+                            padding: 1.35rem;
+                            align-items: flex-start;
+                        }
+                        .nov-report-visual {
+                            display: none;
+                        }
+                        .nov-report-card {
+                            padding: 1.25rem;
+                        }
+                        .nov-report-footer {
+                            flex-direction: column;
+                            align-items: stretch;
+                        }
+                        .nov-submit-btn {
+                            width: 100%;
+                        }
+                    }
+                </style>
 
-                <!-- Formulario de Registro de Incidencia (Exactamente igual a la imagen 3) -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
-                    
-                    <form action="<?= URLROOT; ?>/index.php?route=ambientes/guardarNovedad" method="POST" enctype="multipart/form-data">
-                        
-                        <div class="row g-4 mb-4">
-                            <!-- Columna 1: Seleccionar Ambiente -->
-                            <div class="col-12 col-md-8">
-                                <label class="text-muted small fw-bold mb-2">Seleccionar Ambiente Físico</label>
-                                <select name="id_numero_ambiente" class="select-sena form-select shadow-sm w-100" required>
-                                    <option value="">Seleccione un ambiente...</option>
-                                    <?php if (!empty($ambientes)): ?>
-                                        <?php foreach ($ambientes as $amb): ?>
-                                            <option value="<?= $amb->id_numero_ambiente; ?>">Ambiente <?= $amb->id_numero_ambiente; ?> - <?= $amb->nombre; ?></option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
+                <div class="nov-report-shell">
+                    <section class="nov-report-hero" aria-labelledby="nov-report-title">
+                        <div>
+                            <div class="nov-report-breadcrumb">
+                                <i class="fa-solid fa-house"></i>
+                                <i class="fa-solid fa-chevron-right" style="font-size: 0.72rem;"></i>
+                                <span>Reportar novedad</span>
+                            </div>
+                            <h2 id="nov-report-title">Reportar Incidencia o Falla física</h2>
+                            <p>Reporta problemas de infraestructura o equipos para su gestión y seguimiento.</p>
+                        </div>
+                        <div class="nov-report-visual" aria-hidden="true">
+                            <div class="nov-clipboard">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <div class="nov-alert-mark">!</div>
+                        </div>
+                    </section>
+
+                    <section class="nov-report-card">
+                        <form action="<?= URLROOT; ?>/index.php?route=ambientes/guardarNovedad" method="POST" enctype="multipart/form-data" id="formReportarNovedad">
+                            <div class="nov-report-titlebar">
+                                <div class="nov-title-icon"><i class="fa-regular fa-clipboard"></i></div>
+                                <div>
+                                    <h3>Información del Reporte</h3>
+                                    <p>Completa los datos para registrar la incidencia o falla.</p>
+                                </div>
                             </div>
 
-                            <!-- Columna 2: Fecha del Reporte -->
-                            <div class="col-12 col-md-4">
-                                <label class="text-muted small fw-bold mb-2">Fecha del Reporte</label>
-                                <input type="date" name="fecha_reporte" class="input-date-sena form-control shadow-sm w-100" value="<?= date('Y-m-d'); ?>" required>
+                            <div class="row g-4 mb-4">
+                                <div class="col-12 col-lg-7">
+                                    <label class="nov-field-label" for="nov_ambiente">Ambiente Físico <span class="nov-required">*</span></label>
+                                    <div class="nov-field-wrap">
+                                        <span class="nov-field-icon"><i class="fa-regular fa-building"></i></span>
+                                        <select name="id_numero_ambiente" id="nov_ambiente" class="nov-select" required>
+                                            <option value="">Seleccione un ambiente...</option>
+                                            <?php if (!empty($ambientes)): ?>
+                                                <?php foreach ($ambientes as $amb): ?>
+                                                    <option value="<?= $amb->id_numero_ambiente; ?>">Ambiente <?= $amb->id_numero_ambiente; ?> - <?= htmlspecialchars($amb->nombre); ?></option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-lg-5">
+                                    <label class="nov-field-label" for="nov_fecha">Fecha del Reporte <span class="nov-required">*</span></label>
+                                    <div class="nov-field-wrap">
+                                        <input type="date" name="fecha_reporte" id="nov_fecha" class="nov-input nov-date-input" value="<?= date('Y-m-d'); ?>" required>
+                                        <span class="nov-date-icon"><i class="fa-regular fa-calendar"></i></span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Textarea de Descripción -->
-                        <div class="mb-4">
-                            <label class="text-muted small fw-bold mb-2">Descripción Detallada del Suceso</label>
-                            <textarea name="descripcion" rows="5" class="form-control p-4 shadow-sm" style="border: 1px solid rgba(0,0,0,0.12); border-radius: 16px; font-size: 0.95rem;" placeholder="Describe el daño o anomalía. Ejemplo: El cable de conexión de red del Smart TV está cortado o no hay señal en el tablero digital." required></textarea>
-                        </div>
+                            <div class="mb-4">
+                                <label class="nov-field-label" for="nov_descripcion">Descripción detallada del suceso <span class="nov-required">*</span></label>
+                                <textarea name="descripcion" id="nov_descripcion" rows="6" maxlength="1000" class="nov-textarea" placeholder="Describe el daño o anomalía de forma clara y detallada.&#10;&#10;Ejemplo: El cable de conexión de red del Smart TV está cortado o no hay señal en el tablero digital." required></textarea>
+                                <div class="nov-char-count"><span id="nov_desc_count">0</span> / 1000 caracteres</div>
+                            </div>
 
-                        <!-- Subir Evidencia -->
-                        <div class="mb-5">
-                            <label class="text-muted small fw-bold mb-2">Adjuntar Evidencia (Opcional)</label>
-                            <input type="file" name="evidencia" class="form-control shadow-sm" style="border-radius: 8px; border: 1px solid rgba(0,0,0,0.12);" accept="image/*">
-                        </div>
+                            <div class="mb-4">
+                                <label class="nov-field-label" for="nov_evidencia">Adjuntar evidencia <span class="fw-semibold text-secondary">(opcional)</span></label>
+                                <label class="nov-upload-zone" id="novUploadZone" for="nov_evidencia">
+                                    <input type="file" name="evidencia" id="nov_evidencia" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                                    <span>
+                                        <div class="nov-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                        <div class="nov-upload-main">Arrastra y suelta archivos aquí</div>
+                                        <div class="nov-upload-help">o selecciona un archivo desde tu dispositivo</div>
+                                        <div class="small fw-semibold text-secondary">Formatos permitidos: JPG, PNG, WEBP &nbsp;•&nbsp; Tamaño máximo: 10MB</div>
+                                        <div class="nov-file-name" id="novFileName"></div>
+                                    </span>
+                                </label>
+                            </div>
 
-                        <!-- Botón de Envío -->
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn-sena-lg">
-                                Registrar y Notificar Incidencia
-                            </button>
-                        </div>
-
-                    </form>
-
+                            <div class="nov-report-footer">
+                                <div class="nov-info-note">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Tu reporte será notificado al coordinador académico para su revisión y gestión.</span>
+                                </div>
+                                <button type="submit" class="nov-submit-btn">
+                                    <i class="fa-regular fa-paper-plane"></i>
+                                    <span>Registrar y Notificar Incidencia</span>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
                 </div>
+
+                <script>
+                    (function () {
+                        const descripcion = document.getElementById('nov_descripcion');
+                        const contador = document.getElementById('nov_desc_count');
+                        const evidencia = document.getElementById('nov_evidencia');
+                        const uploadZone = document.getElementById('novUploadZone');
+                        const fileName = document.getElementById('novFileName');
+                        const maxFileSize = 10 * 1024 * 1024;
+                        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+                        if (descripcion && contador) {
+                            const updateCount = () => {
+                                contador.textContent = descripcion.value.length;
+                            };
+                            descripcion.addEventListener('input', updateCount);
+                            updateCount();
+                        }
+
+                        function clearFile(message) {
+                            if (evidencia) evidencia.value = '';
+                            if (fileName) fileName.textContent = message || '';
+                        }
+
+                        if (evidencia && fileName) {
+                            evidencia.addEventListener('change', function () {
+                                const file = this.files && this.files[0] ? this.files[0] : null;
+                                if (!file) {
+                                    clearFile('');
+                                    return;
+                                }
+                                if (!allowedTypes.includes(file.type)) {
+                                    clearFile('Formato no permitido. Usa JPG, PNG o WEBP.');
+                                    return;
+                                }
+                                if (file.size > maxFileSize) {
+                                    clearFile('El archivo supera el tamaño máximo de 10MB.');
+                                    return;
+                                }
+                                fileName.textContent = file.name;
+                            });
+                        }
+
+                        if (uploadZone) {
+                            ['dragenter', 'dragover'].forEach(eventName => {
+                                uploadZone.addEventListener(eventName, function (event) {
+                                    event.preventDefault();
+                                    uploadZone.classList.add('is-dragover');
+                                });
+                            });
+                            ['dragleave', 'drop'].forEach(eventName => {
+                                uploadZone.addEventListener(eventName, function (event) {
+                                    event.preventDefault();
+                                    uploadZone.classList.remove('is-dragover');
+                                });
+                            });
+                        }
+                    })();
+                </script>
 
             </div>
 
@@ -5147,17 +5581,516 @@
 
     <?php else: ?>
         <!-- PORTAL DEL APRENDIZ -->
-        
-        <!-- 1. Hero Section -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
-            <div>
-                <h2 class="fw-bold text-dark mb-1" style="letter-spacing: -0.5px;">Portal del Aprendiz</h2>
-                <p class="text-secondary mb-0" style="font-size: 0.95rem;">Consulta tu ficha académica, mantente al día con tu horario formativo y realiza el seguimiento de tu asistencia.</p>
+
+        <?php
+        $aprProgramacion = $programacion ?? [];
+        $aprAsistenciasResumen = $asistencias ?? [];
+        $aprTotalClases = count($aprProgramacion);
+        $aprFichasUnicas = [];
+        $aprSesionesRealizadas = 0;
+        $aprTotalSesiones = 0;
+        $aprProximaClase = null;
+        $aprHoy = date('Y-m-d');
+
+        foreach ($aprProgramacion as $prog) {
+            if (!empty($prog->numero_ficha)) {
+                $aprFichasUnicas[(string) $prog->numero_ficha] = true;
+            }
+
+            $aprSesionesRealizadas += (int) ($prog->sesiones_realizadas ?? 0);
+            $aprTotalSesiones += (int) ($prog->total_sesiones ?? 0);
+
+            $fechaProg = $prog->fecha_inicio ?? null;
+            if ($fechaProg && $fechaProg >= $aprHoy) {
+                $horaProg = $prog->hora_inicio ?? '00:00:00';
+                $fechaHoraProg = $fechaProg . ' ' . $horaProg;
+                $fechaHoraActual = $aprProximaClase
+                    ? (($aprProximaClase->fecha_inicio ?? '9999-12-31') . ' ' . ($aprProximaClase->hora_inicio ?? '23:59:59'))
+                    : null;
+
+                if ($aprProximaClase === null || $fechaHoraProg < $fechaHoraActual) {
+                    $aprProximaClase = $prog;
+                }
+            }
+        }
+
+        if ($aprProximaClase === null && !empty($aprProgramacion)) {
+            $aprProximaClase = $aprProgramacion[0];
+        }
+
+        $aprFichasKeys = array_keys($aprFichasUnicas);
+        $aprTotalFichas = count($aprFichasKeys);
+        $aprFichaPrincipal = $aprFichasKeys[0] ?? 'Sin ficha';
+        $aprProgramaPrincipal = $aprProximaClase
+            ? ($programas_fichas[$aprProximaClase->numero_ficha] ?? 'Programa de Formación')
+            : 'Programa de Formación';
+        $aprTotalRegistros = count($aprAsistenciasResumen);
+        $aprAsistidas = 0;
+        $aprFallas = 0;
+
+        foreach ($aprAsistenciasResumen as $asistResumen) {
+            if ((int) ($asistResumen->asistio ?? 0) === 1) {
+                $aprAsistidas++;
+            } else {
+                $aprFallas++;
+            }
+        }
+
+        $aprTasaAsistencia = $aprTotalRegistros > 0 ? round(($aprAsistidas / $aprTotalRegistros) * 100) : 0;
+        $aprCumplimientoSesiones = $aprTotalSesiones > 0 ? round(($aprSesionesRealizadas / $aprTotalSesiones) * 100) : 0;
+        $aprPrimerNombre = htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Aprendiz')[0]);
+        $aprNombreCompleto = htmlspecialchars(trim(($_SESSION['user_name'] ?? 'Aprendiz') . ' ' . ($_SESSION['user_lastname'] ?? '')));
+        $aprCorreo = htmlspecialchars($usuario->correo ?? 'aprendiz@sena.edu.co');
+        $aprAvatarUrl = $avatarUrl ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop';
+        ?>
+
+        <style>
+        .apr-overview .banner-welcome {
+            margin-bottom: 1.5rem;
+        }
+        .apr-overview .banner-welcome p {
+            max-width: 760px;
+        }
+        .apr-kpi-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: 100%;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .apr-kpi-title {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #9ca3af;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .apr-kpi-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .apr-kpi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #111827;
+            line-height: 1;
+            margin-bottom: 0.8rem;
+        }
+        .apr-kpi-subtitle {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .apr-agenda-panel,
+        .apr-cal-panel {
+            background-color: #ffffff;
+            border-radius: 24px;
+            padding: 2rem;
+            height: 100%;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .apr-agenda-sup {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #059669;
+            text-transform: uppercase;
+        }
+        .apr-agenda-badge {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .apr-agenda-card {
+            border: 1px solid #f3f4f6;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        .apr-agenda-card:hover {
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+            border-color: #d1fae5;
+        }
+        .apr-agenda-ficha {
+            background-color: #e6f6f1;
+            color: #10b981;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .apr-agenda-time {
+            color: #6b7280;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .apr-btn-detail {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .apr-btn-detail:hover {
+            background-color: #059669;
+            color: white;
+        }
+        .apr-cal-grid-header,
+        .apr-cal-grid-body {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .apr-cal-grid-header {
+            font-weight: 700;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .apr-cal-grid-body {
+            gap: 5px;
+        }
+        .apr-cal-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .apr-cal-cell:hover {
+            background-color: #f3f4f6;
+        }
+        .apr-cal-cell.active {
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        .apr-cal-cell.muted {
+            color: #d1d5db;
+            cursor: default;
+        }
+        .apr-cal-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            margin-top: 4px;
+            background-color: #10b981;
+        }
+        .apr-cal-cell.active .apr-cal-dot {
+            background-color: white;
+        }
+        .apr-dot-legend {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+        }
+        .apr-dot-legend.grey {
+            background-color: #e5e7eb;
+            border: 1px solid #d1d5db;
+        }
+        @media (max-width: 767px) {
+            .apr-agenda-panel,
+            .apr-cal-panel {
+                padding: 1.25rem;
+                border-radius: 18px;
+            }
+            .apr-agenda-card {
+                padding: 1.1rem;
+            }
+            .apr-overview .banner-welcome p {
+                max-width: 100%;
+            }
+        }
+        </style>
+
+        <section class="apr-overview">
+            <div class="banner-welcome d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                <div>
+                    <div class="badge-active">Portal de Consulta Formativa Activo</div>
+                    <h3>¡Hola, Aprendiz <?= $aprPrimerNombre; ?>!</h3>
+                    <p>Consulta tu programación de clases, revisa tu calendario mensual y mantente al día con tu ficha, tus instructores y tu seguimiento de asistencia.</p>
+                </div>
+                <a href="<?= URLROOT; ?>/index.php?route=perfil/index" class="banner-user-card shadow-sm mt-3 mt-md-0 ms-md-4 text-decoration-none">
+                    <img class="banner-welcome-avatar-img" src="<?= htmlspecialchars($aprAvatarUrl, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
+                    <span>
+                        <small>APRENDIZ SENA</small>
+                        <strong><?= $aprNombreCompleto; ?></strong>
+                        <div class="user-email"><i class="fa-regular fa-envelope me-1"></i> <?= $aprCorreo; ?></div>
+                    </span>
+                </a>
             </div>
-            <div class="active-badge shadow-sm">
-                <span>Ficha: 2721345</span>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="apr-kpi-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="apr-kpi-title">Mis clases</span>
+                            <div class="apr-kpi-icon text-success bg-success-subtle"><i class="fa-regular fa-calendar"></i></div>
+                        </div>
+                        <div class="apr-kpi-value"><?= $aprTotalClases; ?></div>
+                        <div class="apr-kpi-subtitle text-success"><i class="fa-solid fa-book-open me-1"></i> Sesiones programadas</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="apr-kpi-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="apr-kpi-title">Ficha activa</span>
+                            <div class="apr-kpi-icon text-success bg-success-subtle"><i class="fa-solid fa-user-group"></i></div>
+                        </div>
+                        <div class="apr-kpi-value"><?= $aprTotalFichas; ?></div>
+                        <div class="apr-kpi-subtitle text-success"><i class="fa-solid fa-layer-group me-1"></i> Ficha #<?= htmlspecialchars($aprFichaPrincipal); ?></div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="apr-kpi-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="apr-kpi-title">Fallas</span>
+                            <div class="apr-kpi-icon text-danger bg-danger-subtle"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        </div>
+                        <div class="apr-kpi-value"><?= $aprFallas; ?></div>
+                        <div class="apr-kpi-subtitle text-danger"><i class="fa-solid fa-thumbtack me-1"></i> Registros de inasistencia</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="apr-kpi-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="apr-kpi-title">Cumplimiento</span>
+                            <div class="apr-kpi-icon text-success bg-success-subtle"><i class="fa-regular fa-circle-check"></i></div>
+                        </div>
+                        <div class="apr-kpi-value"><?= $aprCumplimientoSesiones; ?>%</div>
+                        <div class="apr-kpi-subtitle text-secondary"><i class="fa-regular fa-clock me-1"></i> <?= $aprSesionesRealizadas; ?> de <?= $aprTotalSesiones; ?> sesiones</div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-lg-7">
+                    <div class="apr-agenda-panel shadow-sm d-flex flex-column">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 pb-2 border-bottom border-light-subtle gap-3">
+                            <div>
+                                <span class="apr-agenda-sup">Agenda para el día seleccionado</span>
+                                <h4 class="fw-bold mb-0 mt-1 text-dark" id="apr-agenda-fecha">Seleccione un día</h4>
+                            </div>
+                            <div class="apr-agenda-badge" id="apr-agenda-count">0 Clases Asignadas</div>
+                        </div>
+
+                        <div id="apr-agenda-container" class="flex-grow-1" style="overflow-y:auto; max-height:480px; padding-right:.5rem;">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-calendar-check fa-3x mb-3 text-secondary"></i>
+                                <p class="fw-bold mb-0">Seleccione un día del calendario</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-5">
+                    <div class="apr-cal-panel shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
+                            <h6 class="fw-bold mb-0 text-dark" style="font-size:0.95rem;"><i class="fa-regular fa-calendar me-2 text-success"></i> MI CALENDARIO</h6>
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" onclick="navegarMesAprResumen(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span class="text-secondary fw-bold text-capitalize" style="font-size:0.85rem;" id="apr-cal-mes-anio"></span>
+                                <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button" onclick="navegarMesAprResumen(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="apr-cal-grid-header">
+                            <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+                        </div>
+                        <div class="apr-cal-grid-body" id="apr-cal-body"></div>
+
+                        <div class="d-flex justify-content-center gap-4 mt-4 pt-4 border-top border-light-subtle">
+                            <div class="d-flex align-items-center gap-2 text-secondary" style="font-size:0.75rem;font-weight:600;"><div class="apr-dot-legend"></div> Con clases</div>
+                            <div class="d-flex align-items-center gap-2 text-secondary" style="font-size:0.75rem;font-weight:600;"><div class="apr-dot-legend grey"></div> Sin clases</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+        const programacionAprResumen = <?= json_encode($aprProgramacion ?? []) ?>;
+        const programasNombresAprResumen = <?= json_encode($programas_fichas ?? []) ?>;
+        let fechaActualAprResumen = new Date();
+        let currentMesAprResumen = fechaActualAprResumen.getMonth() + 1;
+        let currentAnioAprResumen = fechaActualAprResumen.getFullYear();
+        const mesesNombresAprResumen = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const diasSemanaAprResumen = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        function renderizarCalendarioAprResumen(mes, anio) {
+            const calBody = document.getElementById('apr-cal-body');
+            const labelMesAnio = document.getElementById('apr-cal-mes-anio');
+            if (!calBody || !labelMesAnio) return;
+
+            labelMesAnio.innerText = mesesNombresAprResumen[mes] + ' ' + anio;
+            calBody.innerHTML = '';
+
+            const primerDiaObj = new Date(`${anio}-${String(mes).padStart(2, '0')}-01T00:00:00`);
+            const offset = primerDiaObj.getDay() === 0 ? 6 : primerDiaObj.getDay() - 1;
+            const diasMes = new Date(anio, mes, 0).getDate();
+            const strMes = String(mes).padStart(2, '0');
+            const diasConClase = new Set();
+
+            programacionAprResumen.forEach(p => {
+                if (p.fecha_inicio && p.fecha_inicio.startsWith(`${anio}-${strMes}`)) {
+                    diasConClase.add(parseInt(p.fecha_inicio.split('-')[2], 10));
+                }
+            });
+
+            let html = '';
+            for (let i = 0; i < offset; i++) {
+                html += '<div class="apr-cal-cell muted"></div>';
+            }
+
+            for (let d = 1; d <= diasMes; d++) {
+                const dotHtml = diasConClase.has(d) ? '<div class="apr-cal-dot"></div>' : '<div class="apr-cal-dot" style="background:transparent;"></div>';
+                html += `<div class="apr-cal-cell" id="apr-cal-cell-${d}" onclick="seleccionarDiaAprResumen(${d}, this)">${d}${dotHtml}</div>`;
+            }
+
+            calBody.innerHTML = html;
+
+            const hoy = new Date();
+            const esMesActual = hoy.getMonth() + 1 === mes && hoy.getFullYear() === anio;
+            if (esMesActual) {
+                const hoyCell = document.getElementById(`apr-cal-cell-${hoy.getDate()}`);
+                if (hoyCell) {
+                    hoyCell.click();
+                    return;
+                }
+            }
+
+            if (diasConClase.size > 0) {
+                const primerDiaClase = Math.min(...Array.from(diasConClase));
+                const cell = document.getElementById(`apr-cal-cell-${primerDiaClase}`);
+                if (cell) cell.click();
+            } else {
+                const firstCell = document.getElementById('apr-cal-cell-1');
+                if (firstCell) firstCell.click();
+            }
+        }
+
+        function seleccionarDiaAprResumen(dia, element) {
+            document.querySelectorAll('#apr-cal-body .apr-cal-cell').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            verAgendaDiaAprResumen(dia, currentMesAprResumen, currentAnioAprResumen);
+        }
+
+        function verAgendaDiaAprResumen(dia, mes, anio) {
+            const strMes = String(mes).padStart(2, '0');
+            const strDia = String(dia).padStart(2, '0');
+            const dateStr = `${anio}-${strMes}-${strDia}`;
+            const fechaObj = new Date(`${dateStr}T00:00:00`);
+            const nombreDia = diasSemanaAprResumen[fechaObj.getDay()];
+            const agendaFecha = document.getElementById('apr-agenda-fecha');
+            const agendaCount = document.getElementById('apr-agenda-count');
+            const container = document.getElementById('apr-agenda-container');
+            if (!agendaFecha || !agendaCount || !container) return;
+
+            agendaFecha.innerText = `${nombreDia}, ${dia} de ${mesesNombresAprResumen[mes].toLowerCase()} de ${anio}`;
+
+            const sesionesDia = programacionAprResumen
+                .filter(p => p.fecha_inicio === dateStr)
+                .sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''));
+
+            agendaCount.innerText = `${sesionesDia.length} Clase${sesionesDia.length !== 1 ? 's' : ''} Asignada${sesionesDia.length !== 1 ? 's' : ''}`;
+
+            if (sesionesDia.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <div style="background-color:#f9fafb;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem auto;">
+                            <i class="fa-regular fa-calendar-xmark text-secondary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">Sin clases programadas</h6>
+                        <p class="small mb-0">No tienes sesiones asignadas para este día.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sesionesDia.map(s => {
+                const horaInicio = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '';
+                const horaFin = s.hora_fin ? s.hora_fin.substring(0, 5) : '';
+                const tituloPrograma = programasNombresAprResumen[s.numero_ficha] || 'Programa de Formación';
+                const instructor = `${s.instructor_nombre || ''} ${s.instructor_apellido || ''}`.trim() || 'Instructor asignado';
+                const ambiente = s.ambiente_nombre || 'No asignado';
+                const sesionesRealizadas = s.sesiones_realizadas || 0;
+                const totalSesiones = s.total_sesiones || 0;
+
+                return `
+                    <div class="apr-agenda-card shadow-sm bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <span class="apr-agenda-ficha">FICHA #${s.numero_ficha || 'N/A'}</span>
+                                <span class="apr-agenda-time"><i class="fa-regular fa-clock me-1"></i> ${horaInicio} - ${horaFin}</span>
+                            </div>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">${tituloPrograma}</h5>
+                        <p class="small text-secondary mb-3" style="line-height:1.4;"><strong>RA:</strong> ${s.ra_descripcion || 'Resultado de aprendizaje asignado'}</p>
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mt-3 pt-3 border-top border-light-subtle gap-3">
+                            <div class="d-flex flex-column flex-md-row gap-3 gap-md-4">
+                                <div class="small text-secondary fw-medium"><i class="fa-solid fa-location-dot me-1 text-muted"></i> Ambiente: <strong class="text-dark">${ambiente}</strong></div>
+                                <div class="small text-secondary fw-medium"><i class="fa-solid fa-user-tie me-1 text-muted"></i> Instructor: <strong class="text-dark">${instructor}</strong></div>
+                                <div class="small text-secondary fw-medium">Sesiones: <strong class="text-dark">${sesionesRealizadas}/${totalSesiones}</strong></div>
+                            </div>
+                            <button class="apr-btn-detail" type="button" onclick="document.getElementById('pills-apr-horario-tab')?.click(); window.location.hash = '#pills-apr-horario';">
+                                <i class="fa-solid fa-eye me-2"></i> Ver detalle
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function navegarMesAprResumen(dir) {
+            currentMesAprResumen += dir;
+            if (currentMesAprResumen > 12) {
+                currentMesAprResumen = 1;
+                currentAnioAprResumen++;
+            } else if (currentMesAprResumen < 1) {
+                currentMesAprResumen = 12;
+                currentAnioAprResumen--;
+            }
+            renderizarCalendarioAprResumen(currentMesAprResumen, currentAnioAprResumen);
+        }
+
+        function sincronizarVistaAprendizResumen() {
+            const detalleHashes = ['#pills-apr-ficha', '#pills-apr-horario', '#pills-apr-asist'];
+            const mostrandoDetalle = detalleHashes.includes(window.location.hash);
+            const resumen = document.querySelector('.apr-overview');
+            const detalle = document.getElementById('pills-tabContentApr');
+
+            if (resumen) resumen.classList.toggle('d-none', mostrandoDetalle);
+            if (detalle) detalle.classList.toggle('d-none', !mostrandoDetalle);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderizarCalendarioAprResumen(currentMesAprResumen, currentAnioAprResumen);
+            sincronizarVistaAprendizResumen();
+        });
+        window.addEventListener('hashchange', sincronizarVistaAprendizResumen);
+        </script>
 
         <!-- Pestañas Aprendiz -->
         <ul class="nav sga-nav-pills mb-5 gap-3 d-none" id="pills-tab-apr" role="tablist">
@@ -5179,102 +6112,458 @@
         </ul>
 
         <!-- Contenido de las Pestañas Aprendiz -->
-        <div class="tab-content" id="pills-tabContentApr">
+        <div class="tab-content d-none" id="pills-tabContentApr">
             
             <!-- PESTAÑA 1: MI FICHA Y AVANCE -->
             <div class="tab-pane fade show active" id="pills-apr-ficha" role="tabpanel" aria-labelledby="pills-apr-ficha-tab">
-                
-                <!-- Gran Tarjeta Blanca de la Ficha -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5" style="border: 1px solid rgba(0,0,0,0.06);">
-                    
-                    <!-- Encabezado Interno -->
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-5 gap-4">
-                        <div>
-                            <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">PROGRAMA DE FORMACIÓN TITULADA</div>
-                            <h2 class="fw-bold text-dark mb-2" style="letter-spacing: -0.5px;">Análisis y Desarrollo de Software</h2>
-                            <div class="text-secondary font-monospace small">Código de Programa: 228106 • Versión V1 • Vigencia: 2024-2026</div>
-                        </div>
-                        <div class="bg-success-subtle text-success-emphasis px-4 py-3 rounded-4 text-center shadow-sm">
-                            <div class="small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">JORNADA</div>
-                            <div class="fs-5 fw-bold mt-1">Tarde</div>
-                        </div>
-                    </div>
+                <?php
+                $aprProgramaFicha = (!empty($aprProgramaPrincipal) && $aprProgramaPrincipal !== 'Programa de Formación')
+                    ? $aprProgramaPrincipal
+                    : 'Análisis y Desarrollo de Software';
+                $aprInstructorLider = $aprProximaClase
+                    ? trim(($aprProximaClase->instructor_nombre ?? '') . ' ' . ($aprProximaClase->instructor_apellido ?? ''))
+                    : '';
+                $aprInstructorLider = $aprInstructorLider !== '' ? $aprInstructorLider : 'Darwin Cordero';
+                $aprJornadaFicha = $aprProximaClase->jornada ?? 'Tarde';
+                $aprCompetenciasFicha = [];
 
-                    <!-- 3 Recuadros Informativos Internos -->
-                    <div class="row g-4 mb-5">
-                        <div class="col-12 col-md-4">
-                            <div class="bg-light rounded-4 p-4 border border-light-subtle d-flex align-items-center gap-4 h-100">
-                                <div class="box-icon-sena"><i class="fa-regular fa-user"></i></div>
-                                <div>
-                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">INSTRUCTOR LÍDER</div>
-                                    <div class="fw-bold text-dark fs-6">Darwin Cordero</div>
-                                    <div class="text-secondary small mt-1" style="font-size: 0.8rem;">Soporte y Orientación Ficha</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <div class="bg-light rounded-4 p-4 border border-light-subtle d-flex align-items-center gap-4 h-100">
-                                <div class="box-icon-sena"><i class="fa-regular fa-clock"></i></div>
-                                <div>
-                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">DURACIÓN FORMACIÓN</div>
-                                    <div class="fw-bold text-dark fs-6">18 meses Lectiva</div>
-                                    <div class="text-secondary small mt-1" style="font-size: 0.8rem;">+6 meses Etapa Práctica</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <div class="bg-light rounded-4 p-4 border border-light-subtle d-flex align-items-center gap-4 h-100">
-                                <div class="box-icon-sena"><i class="fa-regular fa-file-lines"></i></div>
-                                <div>
-                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">ESTADO ACADÉMICO</div>
-                                    <div class="fw-bold text-success fs-6">En Etapa Lectiva</div>
-                                    <div class="text-secondary small mt-1" style="font-size: 0.8rem;">Ficha activa para clases</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                if (!empty($competencias)) {
+                    foreach ($competencias as $comp) {
+                        $programaComp = trim((string) ($comp->programa_nombre ?? ''));
+                        if ($programaComp === '' || strtolower($programaComp) === strtolower($aprProgramaFicha)) {
+                            $aprCompetenciasFicha[] = $comp;
+                        }
+                    }
+                }
 
-                    <!-- Barra Inferior de Fechas -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between text-secondary small pt-4 border-top border-light-subtle" style="font-size: 0.85rem;">
-                        <span class="mb-2 mb-sm-0">Fecha de Inicio: <strong class="text-dark">2024-04-15</strong></span>
-                        <span class="mb-2 mb-sm-0">Ingreso a Prácticas: <strong class="text-dark">2025-10-15</strong></span>
-                        <span>Fecha de Cierre: <strong class="text-dark">2026-04-15</strong></span>
-                    </div>
+                if (empty($aprCompetenciasFicha) && !empty($competencias)) {
+                    $aprCompetenciasFicha = $competencias;
+                }
 
+                $aprModuloIconos = ['fa-laptop', 'fa-code', 'fa-database', 'fa-gears', 'fa-network-wired'];
+                $aprModuloDescripciones = [
+                    'Desarrolla soluciones de software de acuerdo con los requisitos y especificaciones técnicas establecidas.',
+                    'Implementa soluciones de software siguiendo estándares de calidad y modelos de referencia.',
+                    'Integra conocimientos técnicos y procedimentales para fortalecer tu ruta formativa.',
+                    'Aplica actividades prácticas orientadas al cumplimiento de los resultados de aprendizaje.'
+                ];
+                ?>
+
+                <style>
+                .apr-ficha-breadcrumb {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.65rem;
+                    color: #64748b;
+                    font-size: 0.84rem;
+                    font-weight: 700;
+                    margin-bottom: 1.35rem;
+                }
+                .apr-ficha-breadcrumb .active {
+                    color: #0f9f4f;
+                }
+                .apr-ficha-card {
+                    background: #ffffff;
+                    border: 1px solid rgba(15, 23, 42, 0.07);
+                    border-radius: 12px;
+                    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.05);
+                    padding: 2rem;
+                    margin-bottom: 1.5rem;
+                }
+                .apr-ficha-head {
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr) auto;
+                    align-items: center;
+                    gap: 1.6rem;
+                    margin-bottom: 1.8rem;
+                }
+                .apr-ficha-main-icon,
+                .apr-ficha-info-icon,
+                .apr-module-icon {
+                    background: #edf9f0;
+                    color: #0f9f4f;
+                    display: grid;
+                    place-items: center;
+                    flex-shrink: 0;
+                }
+                .apr-ficha-main-icon {
+                    width: 88px;
+                    height: 88px;
+                    border-radius: 12px;
+                    font-size: 2.25rem;
+                }
+                .apr-ficha-kicker {
+                    color: #0f9f4f;
+                    font-size: 0.72rem;
+                    font-weight: 900;
+                    letter-spacing: 0.6px;
+                    text-transform: uppercase;
+                    margin-bottom: 0.45rem;
+                }
+                .apr-ficha-title {
+                    font-size: clamp(1.65rem, 2.5vw, 2.35rem);
+                    line-height: 1.08;
+                    font-weight: 900;
+                    color: #111827;
+                    margin: 0 0 0.55rem;
+                    letter-spacing: 0;
+                }
+                .apr-ficha-meta {
+                    color: #6b7280;
+                    font-size: 0.92rem;
+                    font-weight: 700;
+                }
+                .apr-ficha-jornada {
+                    min-width: 138px;
+                    min-height: 86px;
+                    border-radius: 12px;
+                    background: #dff3e9;
+                    color: #064e3b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.85rem;
+                    padding: 1rem 1.2rem;
+                    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+                }
+                .apr-ficha-jornada i {
+                    color: #0f9f4f;
+                    font-size: 1.3rem;
+                }
+                .apr-ficha-jornada span {
+                    display: block;
+                    color: #334155;
+                    font-size: 0.68rem;
+                    font-weight: 900;
+                    letter-spacing: 0.8px;
+                    text-transform: uppercase;
+                }
+                .apr-ficha-jornada strong {
+                    display: block;
+                    font-size: 1.25rem;
+                    font-weight: 900;
+                    color: #064e3b;
+                    line-height: 1.1;
+                }
+                .apr-ficha-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 1rem;
+                    margin-bottom: 1.45rem;
+                }
+                .apr-ficha-info-card {
+                    border: 1px solid #e8edf2;
+                    border-radius: 10px;
+                    padding: 1.15rem 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    min-height: 118px;
+                    background: #fff;
+                }
+                .apr-ficha-info-icon {
+                    width: 58px;
+                    height: 58px;
+                    border-radius: 50%;
+                    font-size: 1.35rem;
+                }
+                .apr-ficha-info-card span {
+                    color: #64748b;
+                    display: block;
+                    font-size: 0.69rem;
+                    font-weight: 900;
+                    letter-spacing: 0.7px;
+                    text-transform: uppercase;
+                    margin-bottom: 0.35rem;
+                }
+                .apr-ficha-info-card strong {
+                    display: block;
+                    color: #111827;
+                    font-size: 0.98rem;
+                    font-weight: 900;
+                    line-height: 1.25;
+                }
+                .apr-ficha-info-card small {
+                    display: block;
+                    color: #64748b;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    margin-top: 0.25rem;
+                }
+                .apr-ficha-info-card .is-success {
+                    color: #0f9f4f;
+                }
+                .apr-ficha-dates {
+                    border-top: 1px solid #e8edf2;
+                    padding-top: 1.1rem;
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 1rem;
+                    color: #64748b;
+                    font-size: 0.86rem;
+                    font-weight: 700;
+                }
+                .apr-ficha-date-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    flex-wrap: wrap;
+                    min-width: 0;
+                }
+                .apr-ficha-date-item i {
+                    color: #64748b;
+                }
+                .apr-ficha-date-item strong {
+                    color: #111827;
+                    font-weight: 900;
+                }
+                .apr-modules-card {
+                    background: #ffffff;
+                    border: 1px solid rgba(15, 23, 42, 0.07);
+                    border-radius: 12px;
+                    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.04);
+                    padding: 1.8rem;
+                }
+                .apr-modules-title {
+                    color: #111827;
+                    font-size: 1.18rem;
+                    font-weight: 900;
+                    margin: 0 0 0.35rem;
+                }
+                .apr-modules-subtitle {
+                    color: #64748b;
+                    font-size: 0.83rem;
+                    font-weight: 600;
+                    margin-bottom: 1.2rem;
+                }
+                .apr-module-row {
+                    border: 1px solid #e8edf2;
+                    border-radius: 10px;
+                    padding: 1rem;
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr) auto auto;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-bottom: 0.85rem;
+                    background: #fff;
+                }
+                .apr-module-row:last-child {
+                    margin-bottom: 0;
+                }
+                .apr-module-icon {
+                    width: 68px;
+                    height: 68px;
+                    border-radius: 10px;
+                    font-size: 1.55rem;
+                }
+                .apr-module-code {
+                    color: #0f7a42;
+                    font-size: 0.65rem;
+                    font-weight: 900;
+                    letter-spacing: 0.7px;
+                    text-transform: uppercase;
+                    margin-bottom: 0.32rem;
+                }
+                .apr-module-name {
+                    color: #111827;
+                    font-size: 0.95rem;
+                    font-weight: 900;
+                    line-height: 1.35;
+                    margin: 0;
+                }
+                .apr-module-desc {
+                    color: #64748b;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    line-height: 1.35;
+                    margin: 0.45rem 0 0;
+                }
+                .apr-module-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    border-radius: 999px;
+                    background: #e4f8e9;
+                    color: #0f9f4f;
+                    font-size: 0.65rem;
+                    font-weight: 900;
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
+                    padding: 0.35rem 0.65rem;
+                    margin-left: 0.65rem;
+                    vertical-align: middle;
+                    white-space: nowrap;
+                }
+                .apr-module-hours {
+                    min-width: 128px;
+                    text-align: center;
+                }
+                .apr-module-hours strong {
+                    display: block;
+                    color: #111827;
+                    font-size: 1.45rem;
+                    font-weight: 900;
+                    line-height: 1;
+                }
+                .apr-module-hours span {
+                    display: block;
+                    color: #111827;
+                    font-size: 0.78rem;
+                    font-weight: 800;
+                    margin-top: 0.2rem;
+                }
+                .apr-module-hours small {
+                    display: block;
+                    color: #64748b;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    margin-top: 0.2rem;
+                }
+                .apr-module-arrow {
+                    width: 38px;
+                    height: 38px;
+                    border: none;
+                    border-radius: 50%;
+                    background: #e4f8e9;
+                    color: #0f9f4f;
+                    display: grid;
+                    place-items: center;
+                    flex-shrink: 0;
+                }
+                @media (max-width: 992px) {
+                    .apr-ficha-head,
+                    .apr-module-row {
+                        grid-template-columns: 1fr;
+                    }
+                    .apr-ficha-main-icon {
+                        width: 72px;
+                        height: 72px;
+                        font-size: 1.8rem;
+                    }
+                    .apr-ficha-jornada,
+                    .apr-module-hours {
+                        justify-content: flex-start;
+                        text-align: left;
+                    }
+                    .apr-module-arrow {
+                        display: none;
+                    }
+                }
+                @media (max-width: 768px) {
+                    .apr-ficha-card,
+                    .apr-modules-card {
+                        padding: 1.2rem;
+                    }
+                    .apr-ficha-info-grid,
+                    .apr-ficha-dates {
+                        grid-template-columns: 1fr;
+                    }
+                    .apr-ficha-info-card {
+                        min-height: auto;
+                    }
+                }
+                </style>
+
+                <div class="apr-ficha-breadcrumb">
+                    <i class="fa-solid fa-house"></i>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem;"></i>
+                    <span>Inicio</span>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem;"></i>
+                    <span class="active">Mi ficha académica</span>
                 </div>
 
-                <!-- Segundo Contenedor: Competencias y Módulos de Formación -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <h5 class="fw-bold text-dark mb-4 pb-3 border-bottom border-light-subtle">Competencias y Módulos de Formación</h5>
-                    
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center py-3 border-bottom border-light-subtle gap-3">
-                        <div>
-                            <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">CÓDIGO 220501095</div>
-                            <div class="fw-bold text-dark fs-6">Diseño de soluciones de software de acuerdo con requisitos técnicos</div>
+                <section class="apr-ficha-card">
+                    <div class="apr-ficha-head">
+                        <div class="apr-ficha-main-icon">
+                            <i class="fa-solid fa-graduation-cap"></i>
                         </div>
-                        <div class="text-sm-end">
-                            <div class="fw-bold text-dark fs-6">340 Horas Totales</div>
-                            <div class="text-secondary small mt-1" style="font-size: 0.8rem;">60 sesiones</div>
+                        <div>
+                            <div class="apr-ficha-kicker">Programa de formación titulada</div>
+                            <h2 class="apr-ficha-title"><?= htmlspecialchars($aprProgramaFicha); ?></h2>
+                            <div class="apr-ficha-meta">Código de Programa: 228106&nbsp;&nbsp;•&nbsp;&nbsp;Versión V1&nbsp;&nbsp;•&nbsp;&nbsp;Vigencia: 2024-2026</div>
+                        </div>
+                        <div class="apr-ficha-jornada">
+                            <i class="fa-regular fa-calendar"></i>
+                            <div>
+                                <span>Jornada</span>
+                                <strong><?= htmlspecialchars($aprJornadaFicha); ?></strong>
+                            </div>
                         </div>
                     </div>
 
-                    <?php if (!empty($competencias)): ?>
-                        <?php foreach ($competencias as $comp): ?>
-                            <?php if ($comp->codigo != '220501095'): ?>
-                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center py-3 border-bottom border-light-subtle gap-3">
-                                    <div>
-                                        <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">CÓDIGO <?= $comp->codigo; ?></div>
-                                        <div class="fw-bold text-dark fs-6"><?= $comp->nombre; ?></div>
-                                    </div>
-                                    <div class="text-sm-end">
-                                        <div class="fw-bold text-dark fs-6">240 Horas Totales</div>
-                                        <div class="text-secondary small mt-1" style="font-size: 0.8rem;">48 sesiones</div>
-                                    </div>
+                    <div class="apr-ficha-info-grid">
+                        <div class="apr-ficha-info-card">
+                            <div class="apr-ficha-info-icon"><i class="fa-regular fa-user"></i></div>
+                            <div>
+                                <span>Instructor Líder</span>
+                                <strong><?= htmlspecialchars($aprInstructorLider); ?></strong>
+                                <small>Soporte y Orientación Ficha</small>
+                            </div>
+                        </div>
+                        <div class="apr-ficha-info-card">
+                            <div class="apr-ficha-info-icon"><i class="fa-regular fa-clock"></i></div>
+                            <div>
+                                <span>Duración Formación</span>
+                                <strong>18 meses Lectiva</strong>
+                                <small>+6 meses Etapa Práctica</small>
+                            </div>
+                        </div>
+                        <div class="apr-ficha-info-card">
+                            <div class="apr-ficha-info-icon"><i class="fa-regular fa-file-lines"></i></div>
+                            <div>
+                                <span>Estado Académico</span>
+                                <strong class="is-success">En Etapa Lectiva</strong>
+                                <small>Ficha activa para clases</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="apr-ficha-dates">
+                        <div class="apr-ficha-date-item"><i class="fa-regular fa-calendar"></i> Fecha de Inicio: <strong>2024-04-15</strong></div>
+                        <div class="apr-ficha-date-item"><i class="fa-regular fa-calendar-check"></i> Ingreso a Prácticas: <strong>2025-10-15</strong></div>
+                        <div class="apr-ficha-date-item"><i class="fa-regular fa-flag"></i> Fecha de Cierre: <strong>2026-04-15</strong></div>
+                    </div>
+                </section>
+
+                <section class="apr-modules-card">
+                    <h3 class="apr-modules-title">Competencias y Módulos de Formación</h3>
+                    <div class="apr-modules-subtitle">Consulta las competencias y módulos que componen tu programa de formación.</div>
+
+                    <?php if (empty($aprCompetenciasFicha)): ?>
+                        <div class="text-center text-muted py-4">
+                            <i class="fa-regular fa-folder-open fa-2x mb-2"></i>
+                            <p class="fw-bold mb-0">No hay competencias registradas para esta ficha.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($aprCompetenciasFicha as $idx => $comp): ?>
+                            <?php
+                            $moduloNumero = $idx + 1;
+                            $horasModulo = (int) ($comp->horas_totales ?? ($idx === 0 ? 340 : 240));
+                            $sesionesModulo = (int) ($comp->total_sesiones ?? ($idx === 0 ? 60 : 48));
+                            $iconoModulo = $aprModuloIconos[$idx % count($aprModuloIconos)];
+                            $descripcionModulo = $aprModuloDescripciones[$idx % count($aprModuloDescripciones)];
+                            ?>
+                            <div class="apr-module-row">
+                                <div class="apr-module-icon"><i class="fa-solid <?= $iconoModulo; ?>"></i></div>
+                                <div>
+                                    <div class="apr-module-code">Código <?= htmlspecialchars($comp->codigo ?? 'N/A'); ?></div>
+                                    <p class="apr-module-name">
+                                        <?= htmlspecialchars($comp->nombre ?? 'Competencia de formación'); ?>
+                                        <span class="apr-module-badge">Módulo <?= $moduloNumero; ?></span>
+                                    </p>
+                                    <p class="apr-module-desc"><?= htmlspecialchars($descripcionModulo); ?></p>
                                 </div>
-                            <?php endif; ?>
+                                <div class="apr-module-hours">
+                                    <strong><?= $horasModulo; ?></strong>
+                                    <span>Horas Totales</span>
+                                    <small><?= $sesionesModulo; ?> sesiones</small>
+                                </div>
+                                <button type="button" class="apr-module-arrow" aria-label="Ver módulo <?= $moduloNumero; ?>">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
-                </div>
+                </section>
 
             </div>
 
@@ -5360,124 +6649,400 @@
             <!-- PESTAÑA 3: SEGUIMIENTO DE ASISTENCIA -->
             <div class="tab-pane fade" id="pills-apr-asist" role="tabpanel" aria-labelledby="pills-apr-asist-tab">
                 <?php
-                $total_asistencias = count($asistencias);
-                $firmadas = $total_asistencias > 0 ? $total_asistencias : 3;
+                $total_asistencias = count($asistencias ?? []);
                 $asistidas = 0;
                 $fallas = 0;
                 if ($total_asistencias > 0) {
                     foreach ($asistencias as $a) {
-                        if ($a->asistio == 1) $asistidas++;
-                        else $fallas++;
+                        if ((int) $a->asistio === 1) {
+                            $asistidas++;
+                        } else {
+                            $fallas++;
+                        }
                     }
-                    $tasa = round(($asistidas / $firmadas) * 100);
-                } else {
-                    $asistidas = 3; $fallas = 0; $tasa = 100;
                 }
+                $tasa = $total_asistencias > 0 ? round(($asistidas / $total_asistencias) * 100) : 0;
+                $mesesAsistencia = [
+                    1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril',
+                    5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto',
+                    9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'
+                ];
                 ?>
-                <div class="row g-4 mb-5">
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                            <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">TASA DE ASISTENCIA</div>
-                            <div class="fw-bold text-success mb-3" style="font-size: 2.8rem; line-height: 1;"><?= $tasa; ?>%</div>
-                            <p class="text-secondary small mb-0 mt-auto" style="font-size: 0.8rem;">Debes mantener un porcentaje superior al 85% para evitar sanciones.</p>
+
+                <style>
+                .apr-asist-breadcrumb {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.65rem;
+                    color: #64748b;
+                    font-size: 0.84rem;
+                    font-weight: 700;
+                    margin-bottom: 1.35rem;
+                }
+                .apr-asist-breadcrumb .active {
+                    color: #0f9f4f;
+                }
+                .apr-asist-kpis {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+                .apr-asist-kpi {
+                    background: #fff;
+                    border: 1px solid rgba(15, 23, 42, 0.07);
+                    border-radius: 12px;
+                    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.05);
+                    padding: 1.55rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1.25rem;
+                    min-height: 160px;
+                }
+                .apr-asist-kpi-icon {
+                    width: 86px;
+                    height: 86px;
+                    border-radius: 50%;
+                    display: grid;
+                    place-items: center;
+                    flex-shrink: 0;
+                    font-size: 2rem;
+                    background: #edf9f0;
+                    color: #0f9f4f;
+                }
+                .apr-asist-kpi-icon.danger {
+                    background: #fde8eb;
+                    color: #dc3545;
+                }
+                .apr-asist-kpi-label {
+                    color: #334155;
+                    font-size: 0.72rem;
+                    font-weight: 900;
+                    letter-spacing: 0.6px;
+                    text-transform: uppercase;
+                    margin-bottom: 0.55rem;
+                }
+                .apr-asist-kpi-value {
+                    color: #0f9f4f;
+                    font-size: 2.3rem;
+                    font-weight: 900;
+                    line-height: 1;
+                    margin-bottom: 0.75rem;
+                }
+                .apr-asist-kpi-value.danger {
+                    color: #dc3545;
+                }
+                .apr-asist-kpi-value span {
+                    font-size: 1.12rem;
+                    font-weight: 900;
+                }
+                .apr-asist-kpi-desc {
+                    color: #64748b;
+                    font-size: 0.84rem;
+                    font-weight: 600;
+                    line-height: 1.55;
+                    margin: 0;
+                }
+                .apr-asist-panel {
+                    background: #fff;
+                    border: 1px solid rgba(15, 23, 42, 0.07);
+                    border-radius: 12px;
+                    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.04);
+                    padding: 1.65rem;
+                }
+                .apr-asist-panel-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+                .apr-asist-panel-title {
+                    color: #111827;
+                    font-size: 1.18rem;
+                    font-weight: 900;
+                    margin: 0 0 0.35rem;
+                }
+                .apr-asist-panel-subtitle {
+                    color: #64748b;
+                    font-size: 0.84rem;
+                    font-weight: 600;
+                    margin: 0;
+                }
+                .apr-asist-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                }
+                .apr-asist-search {
+                    position: relative;
+                    min-width: 280px;
+                }
+                .apr-asist-search i {
+                    position: absolute;
+                    left: 1rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #64748b;
+                }
+                .apr-asist-search input {
+                    width: 100%;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+                    min-height: 48px;
+                    padding: 0 1rem 0 2.8rem;
+                    color: #111827;
+                    font-weight: 600;
+                    outline: none;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                }
+                .apr-asist-search input:focus {
+                    border-color: #39a900;
+                    box-shadow: 0 0 0 4px rgba(57, 169, 0, 0.12);
+                }
+                .apr-asist-filter {
+                    border: none;
+                    border-radius: 10px;
+                    min-height: 48px;
+                    padding: 0 1rem;
+                    background: #f0f8f2;
+                    color: #0f7a42;
+                    font-weight: 900;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.55rem;
+                }
+                .apr-asist-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+                .apr-asist-item {
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+                    padding: 1.25rem;
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr) auto auto;
+                    align-items: center;
+                    gap: 1rem;
+                    background: #fff;
+                }
+                .apr-asist-item-icon {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    display: grid;
+                    place-items: center;
+                    font-size: 1.35rem;
+                    background: #edf9f0;
+                    color: #0f9f4f;
+                    flex-shrink: 0;
+                }
+                .apr-asist-item-icon.danger {
+                    background: #fde8eb;
+                    color: #dc3545;
+                }
+                .apr-asist-row-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    flex-wrap: wrap;
+                    margin-bottom: 0.35rem;
+                }
+                .apr-asist-row-title strong {
+                    color: #111827;
+                    font-size: 0.98rem;
+                    font-weight: 900;
+                }
+                .apr-asist-date-badge {
+                    border-radius: 999px;
+                    background: #e4f8e9;
+                    color: #0f7a42;
+                    font-size: 0.72rem;
+                    font-weight: 900;
+                    padding: 0.28rem 0.6rem;
+                }
+                .apr-asist-date-badge.danger {
+                    background: #fde8eb;
+                    color: #dc3545;
+                }
+                .apr-asist-module {
+                    color: #334155;
+                    font-size: 0.86rem;
+                    font-weight: 700;
+                    margin-bottom: 0.8rem;
+                }
+                .apr-asist-meta {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 0.85rem;
+                    color: #64748b;
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                }
+                .apr-asist-meta span {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.45rem;
+                }
+                .apr-asist-note {
+                    color: #64748b;
+                    font-size: 0.86rem;
+                    font-style: italic;
+                    font-weight: 600;
+                    text-align: right;
+                    max-width: 280px;
+                }
+                .apr-asist-chevron {
+                    color: #64748b;
+                    font-size: 1.05rem;
+                }
+                @media (max-width: 1100px) {
+                    .apr-asist-kpis {
+                        grid-template-columns: 1fr;
+                    }
+                    .apr-asist-item {
+                        grid-template-columns: auto minmax(0, 1fr);
+                    }
+                    .apr-asist-note {
+                        grid-column: 2;
+                        text-align: left;
+                        max-width: none;
+                    }
+                    .apr-asist-chevron {
+                        display: none;
+                    }
+                }
+                @media (max-width: 768px) {
+                    .apr-asist-panel,
+                    .apr-asist-kpi {
+                        padding: 1.15rem;
+                    }
+                    .apr-asist-panel-head,
+                    .apr-asist-actions {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+                    .apr-asist-search {
+                        min-width: 0;
+                    }
+                    .apr-asist-item {
+                        grid-template-columns: 1fr;
+                    }
+                    .apr-asist-note {
+                        grid-column: auto;
+                    }
+                }
+                </style>
+
+                <div class="apr-asist-breadcrumb">
+                    <i class="fa-solid fa-house"></i>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem;"></i>
+                    <span>Inicio</span>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem;"></i>
+                    <span class="active">Mi asistencia</span>
+                </div>
+
+                <div class="apr-asist-kpis">
+                    <div class="apr-asist-kpi">
+                        <div class="apr-asist-kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div>
+                            <div class="apr-asist-kpi-label">Tasa de asistencia</div>
+                            <div class="apr-asist-kpi-value"><?= $tasa; ?>%</div>
+                            <p class="apr-asist-kpi-desc">Debes mantener un porcentaje superior al 85% para evitar sanciones.</p>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                            <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">SESIONES REGISTRADAS</div>
-                            <div class="fw-bold text-dark mb-3" style="font-size: 2.8rem; line-height: 1;"><?= $firmadas; ?> <span class="fs-5 fw-bold text-secondary">firmadas</span></div>
-                            <p class="text-secondary small mb-0 mt-auto" style="font-size: 0.8rem;">Total de clases donde el instructor ha cerrado la planilla.</p>
+                    <div class="apr-asist-kpi">
+                        <div class="apr-asist-kpi-icon"><i class="fa-regular fa-circle-check"></i></div>
+                        <div>
+                            <div class="apr-asist-kpi-label">Asistencias confirmadas</div>
+                            <div class="apr-asist-kpi-value"><?= $asistidas; ?> <span>asistió</span></div>
+                            <p class="apr-asist-kpi-desc">Sesiones formativas donde estuviste presente.</p>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                            <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">ASISTENCIAS CONFIRMADAS</div>
-                            <div class="fw-bold text-success mb-3" style="font-size: 2.8rem; line-height: 1;"><?= $asistidas; ?> <span class="fs-5 fw-bold text-success">asistió</span></div>
-                            <p class="text-secondary small mb-0 mt-auto" style="font-size: 0.8rem;">Sesiones formativas donde estuviste presente.</p>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100" style="border: 1px solid rgba(0,0,0,0.06);">
-                            <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">FALLAS REGISTRADAS</div>
-                            <div class="fw-bold text-danger mb-3" style="font-size: 2.8rem; line-height: 1;"><?= $fallas; ?> <span class="fs-5 fw-bold text-danger">fallas</span></div>
-                            <p class="text-secondary small mb-0 mt-auto" style="font-size: 0.8rem;">Fallas sin justificación o incapacidades reportadas.</p>
+                    <div class="apr-asist-kpi">
+                        <div class="apr-asist-kpi-icon danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div>
+                            <div class="apr-asist-kpi-label">Fallas registradas</div>
+                            <div class="apr-asist-kpi-value danger"><?= $fallas; ?> <span>fallas</span></div>
+                            <p class="apr-asist-kpi-desc">Fallas sin justificación o incapacidades reportadas.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 pb-3 border-bottom border-light-subtle gap-3">
-                        <h5 class="fw-bold text-dark mb-0">Registro Detallado de Asistencia</h5>
-                        <div class="position-relative">
-                            <input type="text" class="search-asist" id="inputSearchAsist" placeholder="Buscar por fecha o RAP...">
+                <section class="apr-asist-panel">
+                    <div class="apr-asist-panel-head">
+                        <div>
+                            <h3 class="apr-asist-panel-title">Registro Detallado de Asistencia</h3>
+                            <p class="apr-asist-panel-subtitle">Consulta el historial de tus asistencias registradas.</p>
+                        </div>
+                        <div class="apr-asist-actions">
+                            <div class="apr-asist-search">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="inputSearchAsist" placeholder="Buscar por fecha o RAP...">
+                            </div>
+                            <button type="button" class="apr-asist-filter" onclick="document.getElementById('inputSearchAsist')?.focus();">
+                                <i class="fa-solid fa-filter"></i> Filtrar
+                            </button>
                         </div>
                     </div>
-                    <div class="list-group list-group-flush" id="listaAsistencias">
+
+                    <div class="apr-asist-list" id="listaAsistencias">
                         <?php if (empty($asistencias)): ?>
-                            <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3 item-asistencia">
-                                <div class="d-flex align-items-start gap-4">
-                                    <div class="icon-circle-check"><i class="fa-solid fa-check"></i></div>
-                                    <div>
-                                        <div class="d-flex align-items-center gap-3 mb-1">
-                                            <span class="fw-bold text-dark fs-6">Asistencia Confirmada</span>
-                                            <span class="badge bg-light text-secondary border px-2 py-1">2026-06-22</span>
-                                        </div>
-                                        <div class="text-muted small filter-text" style="font-size: 0.85rem;">Módulo: Elaborar la arquitectura del software aplicando patrones de diseño de acuerdo con el informe de requerimientos.</div>
+                            <div class="apr-asist-item item-asistencia">
+                                <div class="apr-asist-item-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
+                                <div>
+                                    <div class="apr-asist-row-title">
+                                        <strong>Sin registros de asistencia</strong>
                                     </div>
+                                    <div class="apr-asist-module filter-text">Cuando el instructor cierre una planilla, tus registros aparecerán aquí.</div>
                                 </div>
-                                <div class="text-secondary small fst-italic text-md-end">"Llegó puntual."</div>
-                            </div>
-                            <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3 item-asistencia">
-                                <div class="d-flex align-items-start gap-4">
-                                    <div class="icon-circle-check"><i class="fa-solid fa-check"></i></div>
-                                    <div>
-                                        <div class="d-flex align-items-center gap-3 mb-1">
-                                            <span class="fw-bold text-dark fs-6">Asistencia Confirmada</span>
-                                            <span class="badge bg-light text-secondary border px-2 py-1">2026-06-24</span>
-                                        </div>
-                                        <div class="text-muted small filter-text" style="font-size: 0.85rem;">Módulo: Validar el modelo de datos de la solución informática aplicando reglas de normalización y estándares técnicos.</div>
-                                    </div>
-                                </div>
-                                <div class="text-secondary small fst-italic text-md-end">"Excelente desempeño."</div>
-                            </div>
-                            <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3 item-asistencia">
-                                <div class="d-flex align-items-start gap-4">
-                                    <div class="icon-circle-check"><i class="fa-solid fa-check"></i></div>
-                                    <div>
-                                        <div class="d-flex align-items-center gap-3 mb-1">
-                                            <span class="fw-bold text-dark fs-6">Asistencia Confirmada</span>
-                                            <span class="badge bg-light text-secondary border px-2 py-1">2026-06-26</span>
-                                        </div>
-                                        <div class="text-muted small filter-text" style="font-size: 0.85rem;">Módulo: Codificar los módulos del sistema de información utilizando lenguajes de programación.</div>
-                                    </div>
-                                </div>
-                                <div class="text-secondary small fst-italic text-md-end">"Excelente participación en la entrega."</div>
+                                <div class="apr-asist-note">"Sin observaciones."</div>
+                                <i class="fa-solid fa-chevron-right apr-asist-chevron"></i>
                             </div>
                         <?php else: ?>
                             <?php foreach ($asistencias as $asist): ?>
-                                <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3 item-asistencia">
-                                    <div class="d-flex align-items-start gap-4">
-                                        <?php if ($asist->asistio == 1): ?>
-                                            <div class="icon-circle-check"><i class="fa-solid fa-check"></i></div>
-                                        <?php else: ?>
-                                            <div class="icon-circle-xmark"><i class="fa-solid fa-xmark"></i></div>
-                                        <?php endif; ?>
-                                        <div>
-                                            <div class="d-flex align-items-center gap-3 mb-1">
-                                                <span class="fw-bold text-dark fs-6"><?= ($asist->asistio == 1) ? 'Asistencia Confirmada' : 'Falla Registrada'; ?></span>
-                                                <span class="badge bg-light text-secondary border px-2 py-1"><?= $asist->fecha_asistencia; ?></span>
-                                            </div>
-                                            <div class="text-muted small filter-text" style="font-size: 0.85rem;">Módulo: <?= $asist->programa_nombre ?? 'Análisis y Desarrollo de Software'; ?> (Ficha <?= $asist->numero_ficha; ?>)</div>
+                                <?php
+                                $asistioRegistro = (int) ($asist->asistio ?? 0) === 1;
+                                $fechaRegistro = $asist->fecha_asistencia ?? $asist->fecha_inicio ?? date('Y-m-d');
+                                $timestampRegistro = strtotime($fechaRegistro);
+                                $fechaLarga = $timestampRegistro
+                                    ? date('d', $timestampRegistro) . ' de ' . $mesesAsistencia[(int) date('n', $timestampRegistro)] . ' de ' . date('Y', $timestampRegistro)
+                                    : htmlspecialchars($fechaRegistro);
+                                $horaInicioRegistro = !empty($asist->hora_inicio) ? date('h:i A', strtotime($asist->hora_inicio)) : '--:--';
+                                $horaFinRegistro = !empty($asist->hora_fin) ? date('h:i A', strtotime($asist->hora_fin)) : '--:--';
+                                $instructorRegistro = trim(($asist->instructor_nombre ?? '') . ' ' . ($asist->instructor_apellido ?? ''));
+                                $instructorRegistro = $instructorRegistro !== '' ? $instructorRegistro : 'Instructor asignado';
+                                $ambienteRegistro = $asist->ambiente_nombre ?? 'Ambiente asignado';
+                                $programaRegistro = $asist->programa_nombre ?? $asist->competencia_nombre ?? 'Programa de Formación';
+                                $observacionRegistro = !empty($asist->observacion) ? $asist->observacion : 'Sin observaciones del instructor.';
+                                ?>
+                                <div class="apr-asist-item item-asistencia">
+                                    <div class="apr-asist-item-icon <?= $asistioRegistro ? '' : 'danger'; ?>">
+                                        <i class="fa-solid <?= $asistioRegistro ? 'fa-chart-line' : 'fa-triangle-exclamation'; ?>"></i>
+                                    </div>
+                                    <div>
+                                        <div class="apr-asist-row-title">
+                                            <strong><?= $asistioRegistro ? 'Asistencia Confirmada' : 'Falla Registrada'; ?></strong>
+                                            <span class="apr-asist-date-badge <?= $asistioRegistro ? '' : 'danger'; ?>"><?= htmlspecialchars($fechaLarga); ?></span>
+                                        </div>
+                                        <div class="apr-asist-module filter-text">Módulo: <?= htmlspecialchars($programaRegistro); ?> (Ficha <?= htmlspecialchars($asist->numero_ficha ?? 'N/A'); ?>)</div>
+                                        <div class="apr-asist-meta">
+                                            <span><i class="fa-regular fa-clock"></i> <?= htmlspecialchars($horaInicioRegistro . ' - ' . $horaFinRegistro); ?></span>
+                                            <span><i class="fa-regular fa-user"></i> Instructor: <?= htmlspecialchars($instructorRegistro); ?></span>
+                                            <span><i class="fa-regular fa-building"></i> Ambiente: <?= htmlspecialchars($ambienteRegistro); ?></span>
                                         </div>
                                     </div>
-                                    <div class="text-secondary small fst-italic text-md-end">
-                                        "<?= !empty($asist->observacion) ? $asist->observacion : 'Sin observaciones del instructor.'; ?>"
+                                    <div class="apr-asist-note">
+                                        "<?= htmlspecialchars($observacionRegistro); ?>"
                                     </div>
+                                    <i class="fa-solid fa-chevron-right apr-asist-chevron"></i>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
-                </div>
+                </section>
             </div>
 
         </div>
@@ -6539,8 +8104,31 @@
 // Función automatizada para conmutar el estado de asistencia entre PRESENTE y FALLA
 function toggleEstadoAsistencia(btn, inputId) {
     const hiddenInput = document.getElementById(inputId);
+    if (!hiddenInput) return;
+
+    if (btn.classList.contains('asi-btn-estado')) {
+        if (hiddenInput.value === '') {
+            hiddenInput.value = '1';
+            btn.className = 'asi-btn-estado presente shadow-sm';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else if (hiddenInput.value === '1') {
+            hiddenInput.value = '0';
+            btn.className = 'asi-btn-estado ausente shadow-sm';
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        } else {
+            hiddenInput.value = '';
+            btn.className = 'asi-btn-estado pendiente shadow-sm';
+            btn.innerHTML = '–';
+        }
+
+        if (typeof renderizarKPIs === 'function') {
+            renderizarKPIs();
+        }
+        return;
+    }
+
     const container = btn.closest('.list-group-item');
-    const label = container.querySelector('.lbl-estado');
+    const label = container ? container.querySelector('.lbl-estado') : null;
 
     if (btn.classList.contains('presente')) {
         // Conmutar a FALLA
@@ -6549,9 +8137,11 @@ function toggleEstadoAsistencia(btn, inputId) {
         btn.innerHTML = 'F';
         hiddenInput.value = '0';
         
-        label.classList.remove('text-success');
-        label.classList.add('text-danger');
-        label.textContent = 'INASISTENCIA (FALLA)';
+        if (label) {
+            label.classList.remove('text-success');
+            label.classList.add('text-danger');
+            label.textContent = 'INASISTENCIA (FALLA)';
+        }
     } else {
         // Conmutar a PRESENTE
         btn.classList.remove('falla');
@@ -6559,9 +8149,11 @@ function toggleEstadoAsistencia(btn, inputId) {
         btn.innerHTML = '<i class="fa-solid fa-check"></i>';
         hiddenInput.value = '1';
         
-        label.classList.remove('text-danger');
-        label.classList.add('text-success');
-        label.textContent = 'ASISTE (PRESENTE)';
+        if (label) {
+            label.classList.remove('text-danger');
+            label.classList.add('text-success');
+            label.textContent = 'ASISTE (PRESENTE)';
+        }
     }
 
     const bulkStatus = document.getElementById('estadoAsistenciaMasiva');
@@ -7830,7 +9422,7 @@ function liberarAmbiente(idProgramacion, fecha, idAmbiente, event) {
                     if (modal) modal.hide();
 
                     // Forzar actualización
-                    fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax`)
+                    fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax&role=${encodeURIComponent(currentRole)}`)
                     .then(r => r.json())
                     .then(r => {
                         window.programacionDataGlobal = r.data;
@@ -8291,7 +9883,7 @@ function renderizarLista() {
 
 function iniciarMonitoreoProgramacion() {
     setInterval(() => {
-        fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax`)
+        fetch(`${urlRoot}/index.php?route=programacion/get_programacion_ajax&role=${encodeURIComponent(currentRole)}`)
             .then(res => res.json())
             .then(res => {
                 if (res.success) {

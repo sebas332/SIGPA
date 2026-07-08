@@ -5,6 +5,7 @@
  */
 class Usuario {
     private $db;
+    private $resetColumnsChecked = false;
 
     public function __construct() {
         $this->db = Database::getInstance();
@@ -232,6 +233,31 @@ class Usuario {
     }
 
     /**
+     * Garantiza que la tabla usuarios tenga las columnas requeridas para recuperar contraseña.
+     */
+    private function ensurePasswordResetColumns() {
+        if ($this->resetColumnsChecked) {
+            return;
+        }
+
+        $pdo = $this->db->getConnection();
+        $requiredColumns = [
+            'reset_token' => "ALTER TABLE usuarios ADD COLUMN reset_token VARCHAR(255) NULL AFTER `contraseña`",
+            'reset_expira' => "ALTER TABLE usuarios ADD COLUMN reset_expira DATETIME NULL AFTER reset_token"
+        ];
+
+        foreach ($requiredColumns as $column => $alterSql) {
+            $stmt = $pdo->prepare("SHOW COLUMNS FROM usuarios LIKE :column_name");
+            $stmt->execute([':column_name' => $column]);
+            if (!$stmt->fetch()) {
+                $pdo->exec($alterSql);
+            }
+        }
+
+        $this->resetColumnsChecked = true;
+    }
+
+    /**
      * Guardar el token de restablecimiento de contraseña y su expiración.
      * @param int $userId
      * @param string $token
@@ -239,6 +265,7 @@ class Usuario {
      * @return bool
      */
     public function saveResetToken($userId, $token, $expiry) {
+        $this->ensurePasswordResetColumns();
         $this->db->query("UPDATE usuarios SET reset_token = :token, reset_expira = :expiry WHERE id_usuario = :id");
         $this->db->bind(':token', $token);
         $this->db->bind(':expiry', $expiry);
@@ -252,6 +279,7 @@ class Usuario {
      * @return object|false
      */
     public function findByResetToken($token) {
+        $this->ensurePasswordResetColumns();
         $this->db->query("SELECT * FROM usuarios WHERE reset_token = :token AND reset_expira > NOW() LIMIT 1");
         $this->db->bind(':token', $token);
         return $this->db->single();
@@ -264,6 +292,7 @@ class Usuario {
      * @return bool
      */
     public function updatePasswordAndClearToken($userId, $hashedPassword) {
+        $this->ensurePasswordResetColumns();
         $this->db->query("UPDATE usuarios SET `contraseña` = :pass, reset_token = NULL, reset_expira = NULL WHERE id_usuario = :id");
         $this->db->bind(':pass', $hashedPassword);
         $this->db->bind(':id', (int) $userId);

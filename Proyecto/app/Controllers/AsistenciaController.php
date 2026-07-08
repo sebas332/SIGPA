@@ -106,8 +106,8 @@ class AsistenciaController extends BaseController {
         $this->requireRol('Instructor');
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $id_programacion = $_POST['id_programacion'] ?? 0;
-            $fecha = $_POST['fecha_asistencia'] ?? date('Y-m-d');
+            $id_programacion = (int) ($_POST['id_programacion'] ?? 0);
+            $fecha = trim($_POST['fecha_asistencia'] ?? date('Y-m-d'));
             $asistencias = $_POST['asistencia'] ?? [];
 
             if (empty($id_programacion) || empty($asistencias)) {
@@ -116,10 +116,57 @@ class AsistenciaController extends BaseController {
                 return;
             }
 
+            $programacion = $this->programacionModel->find($id_programacion);
+            if (!$programacion || (int) $programacion->id_usuario !== (int) $_SESSION['user_id']) {
+                $_SESSION['flash_error'] = 'No tienes permiso para guardar asistencia en esta programación.';
+                $this->redirect('dashboard/index#pills-inst-asistencia');
+                return;
+            }
+
+            if ($fecha !== $programacion->fecha_inicio) {
+                $_SESSION['flash_error'] = 'La fecha de asistencia debe coincidir con la fecha programada de la sesión (' . $programacion->fecha_inicio . ').';
+                $this->redirect('dashboard/index#pills-inst-asistencia');
+                return;
+            }
+
+            $aprendicesFicha = $this->fichaAprendizModel->getAprendicesPorFicha($programacion->numero_ficha);
+            $aprendicesPermitidos = [];
+            foreach ($aprendicesFicha as $aprendiz) {
+                $aprendicesPermitidos[(int) $aprendiz->id_usuario_aprendiz] = true;
+            }
+
+            if (empty($aprendicesPermitidos)) {
+                $_SESSION['flash_error'] = 'La ficha de esta sesión no tiene aprendices matriculados.';
+                $this->redirect('dashboard/index#pills-inst-asistencia');
+                return;
+            }
+
+            if (!$this->asistenciaModel->existePlanillaParaFecha($id_programacion, $fecha)) {
+                $sesionesRealizadas = $this->asistenciaModel->contarSesionesRealizadasPorResultado(
+                    $programacion->numero_ficha,
+                    $programacion->id_resultado_aprendizaje
+                );
+                $totalSesiones = (int) ($programacion->total_sesiones ?? 0);
+
+                if ($totalSesiones > 0 && $sesionesRealizadas >= $totalSesiones) {
+                    $_SESSION['flash_error'] = 'No se puede guardar la planilla: este resultado de aprendizaje ya completó sus ' . $totalSesiones . ' sesiones.';
+                    $this->redirect('dashboard/index#pills-inst-asistencia');
+                    return;
+                }
+            }
+
             $exito = true;
             $errores_db = [];
             foreach ($asistencias as $id_aprendiz => $dataAsistencia) {
-                $asistio = $dataAsistencia['estado'] ?? 0;
+                $id_aprendiz = (int) $id_aprendiz;
+                if (!isset($aprendicesPermitidos[$id_aprendiz])) {
+                    $exito = false;
+                    $errores_db[] = 'Se recibió un aprendiz que no pertenece a la ficha.';
+                    continue;
+                }
+
+                $estado = $dataAsistencia['estado'] ?? '0';
+                $asistio = ($estado === '1' || $estado === 1) ? 1 : 0;
                 $obs = trim($dataAsistencia['observacion'] ?? '');
                 
                 try {
@@ -131,8 +178,12 @@ class AsistenciaController extends BaseController {
             }
 
             if ($exito) {
-                $_SESSION['flash_success'] = '¡Planilla Digital de Asistencia guardada y notificada con éxito!';
-                AuditLogger::log('Registro de Asistencia', 'asistencia', $id_programacion, 'Guardó planilla de asistencia para la fecha: ' . $fecha);
+                $sesionesActualizadas = $this->asistenciaModel->contarSesionesRealizadasPorResultado(
+                    $programacion->numero_ficha,
+                    $programacion->id_resultado_aprendizaje
+                );
+                $_SESSION['flash_success'] = '¡Planilla guardada! Sesiones vistas actualizadas: ' . $sesionesActualizadas . ' / ' . (int) $programacion->total_sesiones . '.';
+                AuditLogger::log('Registro de Asistencia', 'asistencia', $id_programacion, 'Guardó planilla de asistencia para la fecha: ' . $fecha . ', sesiones vistas: ' . $sesionesActualizadas . '/' . (int) $programacion->total_sesiones);
             } else {
                 $error_str = implode(" | ", array_unique($errores_db));
                 $_SESSION['flash_error'] = 'Ocurrieron errores al registrar: ' . $error_str;

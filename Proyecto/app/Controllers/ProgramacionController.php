@@ -269,7 +269,11 @@ class ProgramacionController extends BaseController {
             exit;
         }
 
+        $requested_role = $_GET['role'] ?? '';
         $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
+        if ($requested_role !== '' && isset($_SESSION['user_roles']) && in_array($requested_role, $_SESSION['user_roles'])) {
+            $current_role = $requested_role;
+        }
         $user_id = $_SESSION['user_id'];
 
         if ($current_role === 'Coordinador') {

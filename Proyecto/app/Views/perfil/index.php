@@ -1,111 +1,84 @@
 <div class="profile-page mx-auto">
-    <!-- Page Title & Breadcrumbs -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-        <div>
-            <span class="text-success fw-bold small text-uppercase" style="color: #00A356 !important; font-size: 0.72rem; letter-spacing: 0.5px;">Cuenta personal</span>
-            <h2 class="fw-bold text-dark mb-1" style="font-size: 1.85rem;">Mi perfil</h2>
-            <p class="text-muted mb-0" style="font-size: 0.88rem;">Consulta y actualiza tu información dentro del sistema.</p>
-        </div>
-        <!-- Breadcrumbs -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0" style="font-size: 0.85rem; font-weight: 500;">
-                <li class="breadcrumb-item">
-                    <a href="<?= URLROOT; ?>/index.php?route=dashboard/index" class="text-muted text-decoration-none d-inline-flex align-items-center gap-1">
-                        <i class="fa-solid fa-house" style="font-size: 0.8rem;"></i> Inicio
-                    </a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page" style="color: #00A356;">Mi perfil</li>
-            </ol>
-        </nav>
-    </div>
+    <nav class="profile-breadcrumb-row" aria-label="breadcrumb">
+        <a href="<?= URLROOT; ?>/index.php?route=dashboard/index" class="profile-breadcrumb-home">
+            <i class="fa-solid fa-house"></i>
+            <span>Inicio</span>
+        </a>
+        <span class="profile-breadcrumb-separator">/</span>
+        <span class="profile-breadcrumb-current">Mi perfil</span>
+    </nav>
 
-    <!-- Main Profile Card Wrapper -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5 bg-white position-relative" style="border: 1px solid rgba(0,0,0,0.03) !important;">
-        <!-- Profile Cover Banner -->
-        <div class="profile-cover p-4 d-flex align-items-end position-relative">
-            <!-- Geometric Pattern Overlay -->
-            <div class="cover-pattern"></div>
-            
-            <div class="w-100 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 z-1">
-                <!-- Avatar & Name Area (inside cover) -->
-                <div class="d-flex align-items-center gap-4">
-                    <!-- Avatar Container -->
-                    <div class="profile-photo-container">
-                        <div class="position-relative w-100 h-100">
-                            <?php if ($fotoPerfil): ?>
-                                <img id="profilePreview" src="<?= htmlspecialchars($fotoPerfil); ?>" alt="Fotografía de perfil">
-                            <?php else: ?>
-                                <img id="profilePreview" src="https://ui-avatars.com/api/?name=<?= urlencode($usuario->nombre . ' ' . $usuario->apellido); ?>&background=39A900&color=fff&size=256" alt="Fotografía de perfil">
-                            <?php endif; ?>
-                            <!-- Camera trigger icon -->
-                            <button type="button" class="profile-photo-action border-0" onclick="document.getElementById('foto').click()" title="Cambiar fotografía">
-                                <i class="fa-solid fa-camera"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="profile-title-area">
-                        <div class="d-flex align-items-center gap-2">
-                            <h3 class="fw-bold mb-0 text-white" style="font-size: 1.8rem;"><?= htmlspecialchars($usuario->nombre . ' ' . $usuario->apellido); ?></h3>
-                            <span class="badge text-white rounded-pill px-3 py-1 fw-bold text-uppercase d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; letter-spacing: 0.5px; background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);">
-                                <i class="fa-solid fa-crown" style="font-size: 0.65rem;"></i> <?= htmlspecialchars($current_role); ?>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Institutional Info Overlay (Right Side) -->
-                <div class="institutional-info text-md-end text-start d-flex gap-4">
-                    <div>
-                        <span class="info-label">ROL INSTITUCIONAL</span>
-                        <span class="info-value"><?= htmlspecialchars($current_role); ?></span>
-                    </div>
-                    <div class="border-start border-white-20 ps-4">
-                        <span class="info-label">ID USUARIO</span>
-                        <span class="info-value">#<?= htmlspecialchars($usuario->id_usuario); ?></span>
-                    </div>
+    <section class="profile-cover">
+        <div class="cover-pattern"></div>
+
+        <div class="profile-identity">
+            <div class="profile-photo-container">
+                <div class="position-relative w-100 h-100">
+                    <?php if ($fotoPerfil): ?>
+                        <img id="profilePreview" src="<?= htmlspecialchars($fotoPerfil); ?>" alt="Fotografía de perfil">
+                    <?php else: ?>
+                        <img id="profilePreview" src="https://ui-avatars.com/api/?name=<?= urlencode($usuario->nombre . ' ' . $usuario->apellido); ?>&background=065F46&color=fff&size=256&bold=true" alt="Fotografía de perfil">
+                    <?php endif; ?>
+                    <button type="button" class="profile-photo-action border-0" onclick="document.getElementById('foto').click()" title="Cambiar fotografía">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-        
-        <!-- Under Banner Info Area -->
-        <div class="under-banner-body card-body px-4 py-3 bg-white">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div class="d-flex flex-wrap gap-4 text-muted" style="font-size: 0.88rem; font-weight: 500;">
-                    <span class="d-inline-flex align-items-center gap-2">
-                        <i class="fa-regular fa-envelope" style="color: #64748b; font-size: 0.95rem;"></i> <?= htmlspecialchars($usuario->correo); ?>
+
+            <div class="profile-title-area">
+                <div class="profile-name-row">
+                    <h3><?= htmlspecialchars($usuario->nombre . ' ' . $usuario->apellido); ?></h3>
+                    <span class="profile-role-chip">
+                        <i class="fa-solid fa-crown"></i>
+                        <?= htmlspecialchars($current_role); ?>
                     </span>
+                </div>
+                <div class="profile-meta-line">
+                    <span><i class="fa-regular fa-envelope"></i><?= htmlspecialchars($usuario->correo); ?></span>
                     <?php if ($usuario->titulacion): ?>
-                        <span class="d-inline-flex align-items-center gap-2">
-                            <i class="fa-solid fa-id-card-clip" style="color: #64748b; font-size: 0.95rem;"></i> <?= htmlspecialchars($usuario->titulacion); ?>
-                        </span>
+                        <span><i class="fa-solid fa-briefcase"></i><?= htmlspecialchars($usuario->titulacion); ?></span>
                     <?php endif; ?>
                 </div>
-                
-                <div>
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-2 border shadow-sm fw-semibold d-inline-flex align-items-center gap-2" onclick="document.getElementById('foto').click()" style="background-color: #ffffff; color: #495057; border: 1px solid rgba(0,0,0,0.1) !important; font-size: 0.85rem; height: 38px;">
-                        <i class="fa-solid fa-upload"></i> Subir foto
-                    </button>
-                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Navigation Pills / Tabs Container -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white" style="border: 1px solid rgba(0,0,0,0.03) !important;">
-        <div class="card-body p-2">
-            <ul class="nav nav-pills custom-profile-tabs gap-2" id="profileTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="personal-tab" data-bs-toggle="pill" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">
-                        <i class="fa-regular fa-user me-2" style="font-size: 0.95rem;"></i>Información Personal
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="security-tab" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
-                        <i class="fa-solid fa-shield-halved me-2" style="font-size: 0.95rem;"></i>Seguridad y Acceso
-                    </button>
-                </li>
-            </ul>
+        <div class="profile-hero-side">
+            <div class="institutional-info">
+                <div class="profile-stat">
+                    <span class="profile-stat-icon"><i class="fa-regular fa-building"></i></span>
+                    <span>
+                        <span class="info-label">ROL INSTITUCIONAL</span>
+                        <span class="info-value"><?= htmlspecialchars($current_role); ?></span>
+                    </span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-stat-icon"><i class="fa-regular fa-user"></i></span>
+                    <span>
+                        <span class="info-label">ID USUARIO</span>
+                        <span class="info-value">#<?= htmlspecialchars($usuario->id_usuario); ?></span>
+                    </span>
+                </div>
+            </div>
+            <button type="button" class="profile-upload-btn" onclick="document.getElementById('foto').click()">
+                <i class="fa-solid fa-upload"></i>
+                Subir foto
+            </button>
         </div>
+    </section>
+
+    <div class="profile-tabs-wrap">
+        <ul class="nav nav-pills custom-profile-tabs gap-2" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="personal-tab" data-bs-toggle="pill" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">
+                    <i class="fa-regular fa-user"></i>Información Personal
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="security-tab" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
+                    <i class="fa-solid fa-shield-halved"></i>Seguridad y Acceso
+                </button>
+            </li>
+        </ul>
     </div>
 
     <!-- Forms Container (Single Form for absolute compatibility) -->
@@ -117,18 +90,23 @@
         <div class="tab-content" id="profileTabsContent">
             <!-- TAB 1: Información Personal -->
             <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white" style="border: 1px solid rgba(0,0,0,0.04) !important;">
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <div class="card-header-icon-box">
-                            <i class="fa-regular fa-id-card"></i>
+                <div class="profile-form-card">
+                    <div class="profile-section-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="card-header-icon-box">
+                                <i class="fa-regular fa-id-card"></i>
+                            </div>
+                            <div>
+                                <h4>Datos identificativos e institucionales</h4>
+                                <p>Modifica tu información registrada en la base de datos de gestión académica del centro.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="fw-bold text-dark mb-1" style="font-size: 1.15rem; letter-spacing: 0.2px;">Datos identificativos e institucionales</h4>
-                            <p class="text-muted mb-0" style="font-size: 0.88rem;">Modifica tu información registrada en la base de datos de gestión académica del centro.</p>
-                        </div>
+                        <button type="submit" id="btnSavePersonal" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
+                            <i class="fa-regular fa-floppy-disk" style="font-size: 0.95rem;"></i> Guardar Cambios Académicos
+                        </button>
                     </div>
 
-                    <div class="row g-4">
+                    <div class="row g-4 profile-field-grid">
                         <div class="col-md-6">
                             <label class="form-label-custom">NOMBRES</label>
                             <div class="input-group-custom">
@@ -189,12 +167,6 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-5 mb-4">
-                        <button type="submit" id="btnSavePersonal" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
-                            <i class="fa-regular fa-floppy-disk" style="font-size: 0.95rem;"></i> Guardar Cambios Académicos
-                        </button>
-                    </div>
-
                     <!-- Ley 1581 Info Panel -->
                     <div class="data-protection-panel d-flex align-items-center justify-content-between p-3 mt-4">
                         <div class="d-flex align-items-center gap-3">
@@ -215,15 +187,20 @@
 
             <!-- TAB 2: Seguridad y Acceso -->
             <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
-                <div class="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white" style="border: 1px solid rgba(0,0,0,0.04) !important;">
-                    <div class="d-flex align-items-center gap-3 mb-4">
-                        <div class="card-header-icon-box">
-                            <i class="fa-solid fa-shield-halved"></i>
+                <div class="profile-form-card">
+                    <div class="profile-section-header">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="card-header-icon-box">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h4>Actualizar credencial de acceso</h4>
+                                <p>Configura una contraseña segura y robusta para tu cuenta de SIGPA.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="fw-bold text-dark mb-1" style="font-size: 1.15rem; letter-spacing: 0.2px;">Actualizar credencial de acceso</h4>
-                            <p class="text-muted mb-0" style="font-size: 0.88rem;">Configura una contraseña segura y robusta para tu cuenta de SIGPA.</p>
-                        </div>
+                        <button type="submit" id="btnSaveSecurity" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
+                            <i class="fa-solid fa-lock" style="font-size: 0.95rem;"></i> Cambiar Contraseña Segura
+                        </button>
                     </div>
 
                     <div class="row g-4">
@@ -256,12 +233,6 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-5 mb-4">
-                        <button type="submit" id="btnSaveSecurity" class="btn btn-save-custom d-inline-flex align-items-center gap-2">
-                            <i class="fa-solid fa-lock" style="font-size: 0.95rem;"></i> Cambiar Contraseña Segura
-                        </button>
-                    </div>
-
                     <!-- Ley 1581 Info Panel -->
                     <div class="data-protection-panel d-flex align-items-center justify-content-between p-3 mt-4">
                         <div class="d-flex align-items-center gap-3">
@@ -285,78 +256,105 @@
 
 <style>
 .profile-page {
-    max-width: 1180px;
+    max-width: 1220px;
+    padding: 1.4rem;
     padding-bottom: 2rem;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
 }
 
-/* 1. Header Banner Styling */
+.profile-breadcrumb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.2rem 0.65rem 1.35rem;
+    color: #6b7280;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.profile-breadcrumb-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: #4b5563;
+    text-decoration: none;
+}
+
+.profile-breadcrumb-home:hover {
+    color: #008747;
+}
+
+.profile-breadcrumb-separator {
+    color: #9ca3af;
+}
+
+.profile-breadcrumb-current {
+    color: #008747;
+    font-weight: 800;
+}
+
 .profile-cover {
-    height: 140px;
-    background: linear-gradient(135deg, #006B3F 0%, #0E8A45 50%, #39A900 100%);
+    min-height: 178px;
+    background:
+        radial-gradient(circle at 64% 50%, rgba(57, 169, 0, 0.22), transparent 35%),
+        linear-gradient(135deg, #064e3b 0%, #065f46 100%);
     position: relative;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 1.85rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    color: #ffffff;
+    box-shadow: 0 14px 36px rgba(6, 78, 59, 0.18);
 }
 
 .cover-pattern {
     position: absolute;
     inset: 0;
-    opacity: 0.06;
-    background-image: 
-        radial-gradient(circle at 20% 30%, #ffffff 10%, transparent 10.5%),
-        radial-gradient(circle at 80% 70%, #ffffff 15%, transparent 15.5%),
-        linear-gradient(45deg, transparent 48%, #ffffff 49%, #ffffff 51%, transparent 52%),
-        linear-gradient(-45deg, transparent 48%, #ffffff 49%, #ffffff 51%, transparent 52%);
-    background-size: 40px 40px, 60px 60px, 80px 80px, 80px 80px;
+    opacity: 0.12;
+    background-image:
+        radial-gradient(circle at 78% 25%, rgba(255,255,255,0.35) 1px, transparent 1px),
+        repeating-radial-gradient(circle at 58% 52%, transparent 0 10px, rgba(255,255,255,0.08) 11px 12px);
+    background-size: 18px 18px, 760px 500px;
     pointer-events: none;
 }
 
-.z-1 {
+.profile-cover > *:not(.cover-pattern) {
+    position: relative;
     z-index: 1;
 }
 
-.border-white-20 {
-    border-color: rgba(255, 255, 255, 0.2) !important;
+.profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    min-width: 0;
 }
 
-.info-label {
-    display: block;
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 700;
-}
-
-.info-value {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: 1px;
-    display: block;
-}
-
-/* 2. Avatar Overlap & Styling */
 .profile-photo-container {
-    width: 130px;
-    height: 130px;
-    position: absolute;
-    bottom: -55px;
-    left: 30px;
-    z-index: 10;
+    width: 118px;
+    height: 118px;
+    flex: 0 0 auto;
 }
 
 .profile-photo-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border: 5px solid #ffffff;
+    border: 4px solid #ffffff;
     border-radius: 50%;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
 }
 
 .profile-photo-action {
     position: absolute;
-    right: 2px;
-    bottom: 2px;
+    right: -2px;
+    bottom: 10px;
     display: grid;
     width: 34px;
     height: 34px;
@@ -366,7 +364,7 @@
     color: #ffffff;
     font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 163, 86, 0.3);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
     transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
@@ -376,59 +374,206 @@
 }
 
 .profile-title-area {
-    margin-bottom: 2px;
+    min-width: 0;
 }
 
-/* 3. Under Banner Info Container */
-.under-banner-body {
-    padding-top: 1.5rem !important;
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.35rem;
 }
 
-@media (min-width: 768px) {
-    .under-banner-body {
-        padding-left: 185px !important;
-    }
+.profile-name-row h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(1.55rem, 2.8vw, 2.15rem);
+    font-weight: 850;
+    letter-spacing: 0;
 }
 
-/* 4. Navigation Pills / Tabs */
-.custom-profile-tabs {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+.profile-role-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 28px;
+    padding: 0.25rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(0, 163, 86, 0.72);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+}
+
+.profile-meta-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.3rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.profile-meta-line span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.profile-hero-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1.45rem;
+    min-width: 350px;
+}
+
+.institutional-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.4rem;
+}
+
+.profile-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding-left: 1.4rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.profile-stat:first-child {
+    border-left: 0;
+    padding-left: 0;
+}
+
+.profile-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.13);
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.info-label {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.7px;
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 850;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-top: 0.2rem;
+    display: block;
+}
+
+.profile-upload-btn {
+    border: 0;
+    min-height: 42px;
+    padding: 0 1.3rem;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #07823d;
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-weight: 800;
+    font-size: 0.86rem;
+}
+
+.profile-upload-btn:hover {
+    background: #ecfdf3;
+}
+
+.profile-tabs-wrap {
+    margin-top: 1.4rem;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .custom-profile-tabs .nav-link {
-    background: transparent;
-    color: #64748b;
+    background: #ffffff;
+    color: #536179;
     font-size: 0.92rem;
-    font-weight: 600;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    border: none;
-    transition: all 0.2s ease;
+    font-weight: 750;
+    padding: 0.9rem 1.55rem;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.65rem;
     position: relative;
 }
 
 .custom-profile-tabs .nav-link:hover {
-    color: #1e293b;
+    color: #008747;
     background-color: #f8fafc;
 }
 
 .custom-profile-tabs .nav-link.active {
-    color: #00A356 !important;
-    background-color: rgba(0, 163, 86, 0.08) !important;
+    color: #008747 !important;
+    background-color: #ffffff !important;
+    border-color: #e5e7eb;
 }
 
 .custom-profile-tabs .nav-link.active::after {
     content: "";
     position: absolute;
     bottom: -1px;
-    left: 15%;
-    right: 15%;
+    left: 1.25rem;
+    right: 1.25rem;
     height: 3px;
     background-color: #00A356;
-    border-radius: 3px 3px 0 0;
+    border-radius: 999px 999px 0 0;
+}
+
+.profile-form-card {
+    margin-top: 1.7rem;
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    padding: 1.9rem;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+.profile-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.9rem;
+}
+
+.profile-section-header h4 {
+    margin: 0 0 0.35rem;
+    color: #111827;
+    font-size: 1.12rem;
+    font-weight: 850;
+    letter-spacing: 0;
+}
+
+.profile-section-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.profile-field-grid {
+    margin-top: 0.3rem;
 }
 
 /* 5. Header Icons in Form Cards */
@@ -570,41 +715,89 @@
 
 /* Responsive tweaks */
 @media (max-width: 767px) {
+    .profile-page {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .profile-breadcrumb-row {
+        padding-inline: 0.25rem;
+    }
+
     .profile-cover {
-        height: auto;
-        padding-bottom: 3.5rem !important;
+        min-height: 0;
+        padding: 1.35rem;
+        align-items: flex-start;
+        flex-direction: column;
     }
-    
+
+    .profile-identity {
+        align-items: flex-start;
+        gap: 1rem;
+        flex-direction: column;
+    }
+
     .profile-photo-container {
-        width: 110px;
-        height: 110px;
-        position: relative;
-        bottom: auto;
-        left: auto;
-        margin: 1rem auto 0;
+        width: 100px;
+        height: 100px;
     }
-    
-    .under-banner-body {
-        padding-top: 1.5rem !important;
-        text-align: center;
+
+    .profile-title-area,
+    .profile-name-row {
+        width: 100%;
     }
-    
-    .under-banner-body .d-flex {
-        justify-content: center !important;
+
+    .profile-meta-line {
+        gap: 0.8rem;
+        flex-direction: column;
+        align-items: flex-start;
     }
-    
+
+    .profile-hero-side {
+        align-items: stretch;
+        min-width: 0;
+        width: 100%;
+    }
+
     .institutional-info {
+        justify-content: flex-start;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .profile-stat,
+    .profile-stat:first-child {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .profile-upload-btn {
         justify-content: center;
         width: 100%;
-        margin-top: 1.5rem;
     }
-    
-    .profile-cover .w-100 {
-        align-items: center !important;
+
+    .profile-section-header {
+        flex-direction: column;
     }
-    
-    .profile-title-area {
-        text-align: center;
+
+    .profile-section-header .btn-save-custom {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-form-card {
+        padding: 1.25rem;
+    }
+
+    .custom-profile-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0;
+    }
+
+    .custom-profile-tabs .nav-link {
+        white-space: nowrap;
     }
 }
 </style>
