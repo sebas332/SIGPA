@@ -50,13 +50,13 @@ class Ambiente {
         $this->db->bind(':nombre', $data['nombre']);
         $this->db->bind(':tipo', $data['tipo']);
         $this->db->bind(':capacidad', $data['capacidad']);
-        $this->db->bind(':aire', isset($data['aire']) ? 1 : 0);
-        $this->db->bind(':ventilador', isset($data['ventilador']) ? 1 : 0);
-        $this->db->bind(':tablero', isset($data['tablero']) ? 1 : 0);
-        $this->db->bind(':tv', isset($data['tv']) ? 1 : 0);
+        $this->db->bind(':aire', !empty($data['aire']) ? 1 : 0);
+        $this->db->bind(':ventilador', !empty($data['ventilador']) ? 1 : 0);
+        $this->db->bind(':tablero', !empty($data['tablero']) ? 1 : 0);
+        $this->db->bind(':tv', !empty($data['tv']) ? 1 : 0);
         $this->db->bind(':computadores', $data['computadores']);
         $this->db->bind(':especialidad_ambiente', $data['especialidad_ambiente']);
-        $this->db->bind(':disponibilidad', isset($data['disponibilidad']) ? 1 : 0);
+        $this->db->bind(':disponibilidad', !empty($data['disponibilidad']) ? 1 : 0);
         return $this->db->execute();
     }
 
@@ -74,13 +74,13 @@ class Ambiente {
         $this->db->bind(':nombre', $data['nombre']);
         $this->db->bind(':tipo', $data['tipo']);
         $this->db->bind(':capacidad', $data['capacidad']);
-        $this->db->bind(':aire', isset($data['aire']) ? 1 : 0);
-        $this->db->bind(':ventilador', isset($data['ventilador']) ? 1 : 0);
-        $this->db->bind(':tablero', isset($data['tablero']) ? 1 : 0);
-        $this->db->bind(':tv', isset($data['tv']) ? 1 : 0);
+        $this->db->bind(':aire', !empty($data['aire']) ? 1 : 0);
+        $this->db->bind(':ventilador', !empty($data['ventilador']) ? 1 : 0);
+        $this->db->bind(':tablero', !empty($data['tablero']) ? 1 : 0);
+        $this->db->bind(':tv', !empty($data['tv']) ? 1 : 0);
         $this->db->bind(':computadores', $data['computadores']);
         $this->db->bind(':especialidad_ambiente', $data['especialidad_ambiente']);
-        $this->db->bind(':disponibilidad', isset($data['disponibilidad']) ? 1 : 0);
+        $this->db->bind(':disponibilidad', !empty($data['disponibilidad']) ? 1 : 0);
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
