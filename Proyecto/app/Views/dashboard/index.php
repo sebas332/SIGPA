@@ -752,225 +752,1233 @@
                     </div>
                 </div>
 
-                <!-- Acciones Rápidas -->
-                <div class="mb-5">
-                    <span class="text-secondary fw-bold small" style="letter-spacing: 0.5px; font-size: 0.68rem; text-transform: uppercase;">Acciones Rápidas</span>
-                    <div class="row g-3 mt-1">
-                        <div class="col-12 col-md-3">
-                            <div class="action-card" data-bs-toggle="modal" data-bs-target="#modalCrearFicha">
-                                <div class="action-icon green">
-                                    <i class="fa-solid fa-plus"></i>
+
+                <!-- Novedades visuales de Dashboard (UI request) -->
+                <?php
+                // Lógica para Visión General
+                $hoyStr = date('Y-m-d');
+                $mesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                $diaSemanaNumeros = ['Sunday' => 'Domingo', 'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles', 'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado'];
+                $diaSemanaActual = $diaSemanaNumeros[date('l')];
+                $mesActual = date('n'); // 1-12
+                $anioActual = date('Y');
+                
+                // 1. Agenda de Hoy
+                $proximaSesion = null;
+                $sesionesHoy = [];
+                $hoyStr = date('Y-m-d');
+                if (isset($programacion) && is_array($programacion)) {
+                    $sesionesHoy = array_filter($programacion, function($p) use ($hoyStr) {
+                        return !empty($p->fecha_inicio) && $p->fecha_inicio === $hoyStr;
+                    });
+                    usort($sesionesHoy, function($a, $b) {
+                        return strtotime($a->hora_inicio) - strtotime($b->hora_inicio);
+                    });
+                    $horaActual = date('H:i');
+                    foreach ($sesionesHoy as $sesion) {
+                        if (substr($sesion->hora_fin, 0, 5) > $horaActual) {
+                            $proximaSesion = $sesion;
+                            break;
+                        }
+                    }
+                    if (!$proximaSesion && count($sesionesHoy) > 0) {
+                        $proximaSesion = $sesionesHoy[count($sesionesHoy) - 1]; // Última
+                    }
+                }
+                
+                // 2. Disponibilidad (Calendario)
+                $diasProgramados = []; // dia_mes => 'ocupado' o 'reservado'
+                $maxVolumen = 1;
+                $filtroAmb = $_GET['filtro_ambiente'] ?? '';
+                if (isset($programacion) && is_array($programacion)) {
+                    foreach ($programacion as $p) {
+                        if ($filtroAmb !== '' && trim($p->ambiente_nombre ?? '') !== $filtroAmb) continue;
+                        
+                        if (!empty($p->fecha_inicio)) {
+                            $progTime = strtotime($p->fecha_inicio);
+                            $progMes = (int)date('m', $progTime);
+                            $progAnio = (int)date('Y', $progTime);
+                            
+                            if ($progMes === (int)$mesActual && $progAnio === (int)$anioActual) {
+                                $d = (int)date('d', $progTime);
+                                if (!isset($diasProgramados[$d])) $diasProgramados[$d] = 0;
+                                $diasProgramados[$d]++;
+                                if ($diasProgramados[$d] > $maxVolumen) $maxVolumen = $diasProgramados[$d];
+                            }
+                        }
+                    }
+                }
+                
+                // 3. Ambientes por Estado
+                $ambActivos = 0; $ambMantenimiento = 0; $ambInactivos = 0;
+                $totalAmbientes = count($ambientes ?? []);
+                if (isset($ambientes) && is_array($ambientes)) {
+                    foreach ($ambientes as $amb) {
+                        if (isset($amb->disponibilidad) && $amb->disponibilidad == 1) {
+                            $ambActivos++;
+                        } else {
+                            $ambInactivos++;
+                        }
+                    }
+                }
+                $pctActivos = $totalAmbientes > 0 ? round(($ambActivos / $totalAmbientes) * 100) : 0;
+                $pctMantenimiento = $totalAmbientes > 0 ? round(($ambMantenimiento / $totalAmbientes) * 100) : 0;
+                $pctInactivos = $totalAmbientes > 0 ? round(($ambInactivos / $totalAmbientes) * 100) : 0;
+                
+                // 4. Programación por Jornada
+                $turnos = ['Lunes' => ['M'=>0, 'T'=>0, 'N'=>0], 'Martes' => ['M'=>0, 'T'=>0, 'N'=>0], 'Miércoles' => ['M'=>0, 'T'=>0, 'N'=>0], 'Jueves' => ['M'=>0, 'T'=>0, 'N'=>0], 'Viernes' => ['M'=>0, 'T'=>0, 'N'=>0], 'Sábado' => ['M'=>0, 'T'=>0, 'N'=>0]];
+                $maxTurno = 1;
+                $mapaDias = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+                if (isset($programacion) && is_array($programacion)) {
+                    foreach ($programacion as $p) {
+                        if (empty($p->fecha_inicio)) continue;
+                        $diaNum = date('N', strtotime($p->fecha_inicio));
+                        $dia = $mapaDias[$diaNum] ?? 'Lunes';
+                        
+                        $jornadaStr = strtoupper(trim($p->jornada_nombre ?? ''));
+                        if (empty($jornadaStr)) {
+                            $hora = (int) substr($p->hora_inicio ?? '00:00', 0, 2);
+                            if ($hora < 13) $jornada = 'M';
+                            elseif ($hora < 18) $jornada = 'T';
+                            else $jornada = 'N';
+                        } else {
+                            $jornada = substr($jornadaStr, 0, 1);
+                        }
+                        if (isset($turnos[$dia]) && in_array($jornada, ['M', 'T', 'N'])) {
+                            $turnos[$dia][$jornada]++;
+                            if ($turnos[$dia][$jornada] > $maxTurno) $maxTurno = $turnos[$dia][$jornada];
+                        }
+                    }
+                }
+                $turnosToPct = function($val) use ($maxTurno) { return $maxTurno > 0 ? round(($val / $maxTurno) * 100) : 0; };
+                
+                // 5. Novedades Recientes
+                $novRecientes = isset($novedades) ? array_slice($novedades, 0, 2) : [];
+                ?>
+                <style>
+                /* Dashboard Visual Redesign */
+                .vg-card {
+                    background-color: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 32px;
+                    padding: 1.8rem;
+                    box-shadow: 0 4px 20px -2px rgba(0,0,0,0.02);
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .vg-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 1.5rem;
+                }
+                .vg-header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                }
+                .vg-icon-wrapper {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.1rem;
+                }
+                .vg-icon-green { background-color: #e6f6f1; color: #10b981; }
+                .vg-icon-red { background-color: #fef2f2; color: #ef4444; }
+                .vg-icon-blue { background-color: #eff6ff; color: #3b82f6; }
+                
+                .vg-title-group {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .vg-title {
+                    font-weight: 800;
+                    font-size: 1.05rem;
+                    color: #111827;
+                    margin: 0 0 0.2rem 0;
+                }
+                .vg-subtitle {
+                    font-size: 0.75rem;
+                    color: #9ca3af;
+                    margin: 0;
+                }
+                
+                .vg-btn-outline {
+                    border: 1.5px solid #e5e7eb;
+                    border-radius: 20px;
+                    padding: 0.4rem 1rem;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    color: #4b5563;
+                    background: transparent;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    transition: all 0.2s;
+                }
+                .vg-btn-outline:hover {
+                    background-color: #f9fafb;
+                    border-color: #d1d5db;
+                }
+                
+                /* Agenda */
+                .vg-agenda-container {
+                    position: relative;
+                    padding-left: 5rem;
+                    margin-top: 1rem;
+                    max-height: 360px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    padding-right: 0.5rem;
+                }
+                
+                /* Custom scrollbar for agenda */
+                .vg-agenda-container::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .vg-agenda-container::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .vg-agenda-container::-webkit-scrollbar-thumb {
+                    background-color: #d1d5db;
+                    border-radius: 20px;
+                }
+                .vg-agenda-line {
+                    position: absolute;
+                    left: 4.2rem;
+                    top: 10px;
+                    bottom: 0;
+                    width: 2px;
+                    background-color: #f3f4f6;
+                    z-index: 1;
+                }
+                .vg-agenda-time {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    border: 1.5px solid #4b5563;
+                    border-radius: 12px;
+                    padding: 0.4rem 0.8rem;
+                    text-align: center;
+                    background: white;
+                    z-index: 2;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .vg-agenda-time span {
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: #111827;
+                    line-height: 1.2;
+                }
+                .vg-agenda-time span:last-child {
+                    color: #6b7280;
+                }
+                .vg-agenda-dot {
+                    position: absolute;
+                    left: 4.05rem;
+                    top: 15px;
+                    width: 8px;
+                    height: 8px;
+                    border: 2px solid #d1d5db;
+                    border-radius: 50%;
+                    background: white;
+                    z-index: 3;
+                }
+                .vg-agenda-card {
+                    border: 1.5px solid #e5e7eb;
+                    border-radius: 20px;
+                    padding: 1.2rem;
+                    background: white;
+                    margin-bottom: 1rem;
+                    position: relative;
+                    z-index: 4;
+                }
+                .vg-agenda-card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 0.5rem;
+                }
+                .vg-agenda-ficha {
+                    color: #10b981;
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
+                }
+                .vg-badge-orange {
+                    background-color: #fff7ed;
+                    color: #f59e0b;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: 12px;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                }
+                .vg-badge-orange::before {
+                    content: '';
+                    width: 6px;
+                    height: 6px;
+                    background-color: #f59e0b;
+                    border-radius: 50%;
+                }
+                .vg-agenda-course {
+                    font-weight: 800;
+                    font-size: 1.1rem;
+                    color: #111827;
+                    margin-bottom: 1rem;
+                }
+                .vg-agenda-details {
+                    display: flex;
+                    gap: 2rem;
+                    font-size: 0.8rem;
+                    color: #4b5563;
+                    font-weight: 600;
+                }
+                .vg-agenda-details i {
+                    color: #9ca3af;
+                    margin-right: 0.4rem;
+                }
+                
+                /* Calendar */
+                .vg-cal-grid {
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 0.5rem;
+                    text-align: center;
+                    margin-top: 0.5rem;
+                }
+                .vg-cal-day-name {
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                    color: #9ca3af;
+                    margin-bottom: 0.5rem;
+                }
+                .vg-cal-cell {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 0.3rem;
+                    padding: 0.4rem 0;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    color: #111827;
+                    border-radius: 12px;
+                }
+                .vg-cal-cell.muted {
+                    color: #d1d5db;
+                }
+                .vg-cal-cell.active {
+                    background-color: #10b981;
+                    color: white;
+                }
+                .vg-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                }
+                .vg-dot.green { background-color: #10b981; }
+                .vg-dot.yellow { background-color: #f59e0b; }
+                .vg-dot.red { background-color: #ef4444; }
+                .vg-cal-cell.active .vg-dot.green { background-color: white; }
+                
+                .vg-cal-legend {
+                    display: flex;
+                    justify-content: center;
+                    gap: 1.5rem;
+                    margin-top: auto;
+                    padding-top: 1.5rem;
+                }
+                .vg-cal-legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    color: #6b7280;
+                }
+                
+                /* Donut Chart */
+                .vg-donut-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 2rem;
+                    margin-top: 1rem;
+                }
+                .vg-donut {
+                    width: 110px;
+                    height: 110px;
+                    border-radius: 50%;
+                    background: conic-gradient(
+                        #10b981 0% <?= $pctActivos ?>%,
+                        #f59e0b <?= $pctActivos ?>% <?= $pctActivos + $pctMantenimiento ?>%,
+                        #ef4444 <?= $pctActivos + $pctMantenimiento ?>% 100%
+                    );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .vg-donut-inner {
+                    width: 80px;
+                    height: 80px;
+                    background: white;
+                    border-radius: 50%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .vg-donut-inner strong {
+                    font-size: 1.2rem;
+                    font-weight: 800;
+                    color: #111827;
+                }
+                .vg-donut-inner span {
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    color: #6b7280;
+                    letter-spacing: 0.5px;
+                }
+                .vg-donut-legend {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.8rem;
+                }
+                .vg-donut-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    color: #4b5563;
+                }
+                .vg-donut-item-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                }
+                .vg-info-box {
+                    background-color: #f9fafb;
+                    border-radius: 16px;
+                    padding: 1rem;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 0.8rem;
+                    margin-top: auto;
+                }
+                .vg-info-box i {
+                    color: #10b981;
+                    margin-top: 0.2rem;
+                }
+                .vg-info-box p {
+                    margin: 0;
+                    font-size: 0.75rem;
+                    color: #6b7280;
+                    font-weight: 600;
+                }
+                
+                /* Bar Chart */
+                .vg-bar-container {
+                    height: 140px;
+                    display: flex;
+                    align-items: flex-end;
+                    gap: 1rem;
+                    margin-top: 1rem;
+                    border-bottom: 1px solid #f3f4f6;
+                    padding-bottom: 0.5rem;
+                    position: relative;
+                    padding-left: 1.5rem;
+                }
+                .vg-bar-y-axis {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    font-size: 0.65rem;
+                    font-weight: 700;
+                    color: #9ca3af;
+                    padding-bottom: 0.5rem;
+                }
+                .vg-bar-group {
+                    flex: 1;
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-end;
+                    gap: 4px;
+                    height: 100%;
+                }
+                .vg-bar {
+                    width: 6px;
+                    border-radius: 4px;
+                }
+                .vg-bar.green { background-color: #10b981; }
+                .vg-bar.yellow { background-color: #f59e0b; }
+                .vg-bar.blue { background-color: #6366f1; }
+                .vg-bar-labels {
+                    display: flex;
+                    padding-left: 1.5rem;
+                    margin-top: 0.5rem;
+                }
+                .vg-bar-label {
+                    flex: 1;
+                    text-align: center;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    color: #6b7280;
+                }
+                .vg-bar-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-top: auto;
+                    padding-top: 1rem;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                }
+                .vg-bar-footer .left { color: #9ca3af; }
+                .vg-bar-footer .right { color: #10b981; cursor: pointer; text-decoration: none; }
+                
+                /* Novedades */
+                .vg-nov-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                    margin-top: 0.5rem;
+                }
+                .vg-nov-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-bottom: 1rem;
+                    border-bottom: 1px solid #f3f4f6;
+                }
+                .vg-nov-item:last-child {
+                    border-bottom: none;
+                    padding-bottom: 0;
+                }
+                .vg-nov-left {
+                    display: flex;
+                    gap: 1rem;
+                    align-items: flex-start;
+                }
+                .vg-nov-icon {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.9rem;
+                }
+                .vg-nov-icon.blue { background-color: #eff6ff; color: #3b82f6; }
+                .vg-nov-icon.green { background-color: #e6f6f1; color: #10b981; }
+                .vg-nov-text h4 {
+                    margin: 0 0 0.2rem 0;
+                    font-size: 0.85rem;
+                    font-weight: 800;
+                    color: #111827;
+                }
+                .vg-nov-text p {
+                    margin: 0;
+                    font-size: 0.7rem;
+                    color: #9ca3af;
+                    font-weight: 600;
+                }
+                .vg-badge {
+                    padding: 0.3rem 0.6rem;
+                    border-radius: 12px;
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                }
+                .vg-badge.blue { background-color: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+                .vg-badge.green { background-color: #e6f6f1; color: #10b981; border: 1px solid #a7f3d0; }
+                
+                .vg-btn-solid {
+                    background-color: #10b981;
+                    color: white;
+                    border: none;
+                    border-radius: 20px;
+                    padding: 0.8rem;
+                    width: 100%;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    margin-top: auto;
+                    transition: all 0.2s;
+                }
+                .vg-btn-solid:hover {
+                    background-color: #059669;
+                }
+                
+                /* INSTRUCTOR REDESIGN CSS */
+                .inst-hero-banner {
+                    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+                    border-radius: 24px;
+                    padding: 2.5rem 3rem;
+                    color: white;
+                }
+                .inst-badge-active {
+                    background-color: rgba(255,255,255,0.1);
+                    color: #a7f3d0;
+                    padding: 0.4rem 1rem;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    display: inline-block;
+                    letter-spacing: 0.5px;
+                }
+                .inst-profile-card {
+                    background-color: rgba(255,255,255,0.08);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 16px;
+                    padding: 1.2rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 1.2rem;
+                    min-width: 320px;
+                }
+                .inst-profile-card img {
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 2px solid #34d399;
+                }
+                .inst-kpi-card {
+                    background-color: #ffffff;
+                    border-radius: 20px;
+                    padding: 1.5rem;
+                    height: 100%;
+                }
+                .inst-kpi-title {
+                    font-size: 0.7rem;
+                    font-weight: 800;
+                    color: #9ca3af;
+                    letter-spacing: 1px;
+                }
+                .inst-kpi-icon {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1rem;
+                }
+                .inst-kpi-value {
+                    font-size: 2.2rem;
+                    font-weight: 800;
+                    color: #111827;
+                    line-height: 1;
+                    margin-bottom: 0.8rem;
+                }
+                .inst-kpi-subtitle {
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+                
+                /* Layout */
+                .inst-agenda-panel, .inst-cal-panel {
+                    background-color: #ffffff;
+                    border-radius: 24px;
+                    padding: 2rem;
+                    height: 100%;
+                }
+                .inst-agenda-sup {
+                    font-size: 0.7rem;
+                    font-weight: 800;
+                    letter-spacing: 1px;
+                }
+                .inst-agenda-badge {
+                    background-color: #f3f4f6;
+                    color: #6b7280;
+                    padding: 0.4rem 1rem;
+                    border-radius: 20px;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                }
+                .inst-agenda-card {
+                    border: 1px solid #f3f4f6;
+                    border-radius: 16px;
+                    padding: 1.5rem;
+                    margin-bottom: 1rem;
+                    transition: all 0.2s;
+                }
+                .inst-agenda-card:hover {
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    border-color: #e5e7eb;
+                }
+                .inst-agenda-ficha {
+                    background-color: #e6f6f1;
+                    color: #10b981;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: 12px;
+                    font-size: 0.65rem;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                }
+                .inst-agenda-time {
+                    color: #6b7280;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                }
+                .inst-btn-call {
+                    background-color: #10b981;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 0.6rem 1.2rem;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    transition: all 0.2s;
+                }
+                .inst-btn-call:hover {
+                    background-color: #059669;
+                }
+                
+                /* Calendar */
+                .inst-cal-grid-header {
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    text-align: center;
+                    font-weight: 700;
+                    color: #9ca3af;
+                    font-size: 0.75rem;
+                    margin-bottom: 1rem;
+                }
+                .inst-cal-grid-body {
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 5px;
+                }
+                .inst-cal-cell {
+                    aspect-ratio: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 12px;
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                    color: #374151;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+                .inst-cal-cell:hover {
+                    background-color: #f3f4f6;
+                }
+                .inst-cal-cell.active {
+                    background-color: #10b981;
+                    color: white;
+                    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+                }
+                .inst-cal-cell.muted {
+                    color: #d1d5db;
+                }
+                .inst-cal-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    margin-top: 4px;
+                }
+                .inst-cal-dot.green { background-color: #10b981; }
+                .inst-cal-cell.active .inst-cal-dot.green { background-color: white; }
+                .inst-dot-legend {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                }
+                .inst-dot-legend.green { background-color: #10b981; }
+                .inst-dot-legend.grey { background-color: #e5e7eb; border: 1px solid #d1d5db; }
+                </style>
+                
+                <div class="row g-4 mb-4">
+                    <!-- Fila 1 -->
+                    <div class="col-12 col-lg-7">
+                        <div class="vg-card">
+                            <div class="vg-header">
+                                <div class="vg-header-left">
+                                    <div class="vg-icon-wrapper vg-icon-green">
+                                        <i class="fa-regular fa-clock"></i>
+                                    </div>
+                                    <div class="vg-title-group">
+                                        <h3 class="vg-title">Agenda de Hoy</h3>
+                                        <p class="vg-subtitle" id="vg-agenda-date"><?= $diaSemanaActual ?>, <?= date('d') ?> De <?= $mesNombres[$mesActual] ?> De <?= $anioActual ?></p>
+                                    </div>
                                 </div>
-                                <div class="action-details">
-                                    <span class="action-title">Nueva Ficha</span>
-                                    <span class="action-desc">Crear ficha académica</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-right"></i>
+                                <a href="#pills-programacion" class="vg-btn-solid" style="width: auto; padding: 0.4rem 1rem; margin-top: 0; text-decoration: none;" onclick="window.location.hash = '#pills-programacion'; return false;">
+                                    <i class="fa-regular fa-calendar"></i> Ver Calendario Completo
+                                </a>
+                            </div>
+                            
+                            <div class="vg-agenda-container">
+                                <?php if (count($sesionesHoy) > 0): ?>
+                                    <div class="vg-agenda-line"></div>
+                                    <?php foreach ($sesionesHoy as $sesion): ?>
+                                    <div style="position: relative; margin-bottom: 1.5rem;">
+                                        <div class="vg-agenda-dot" style="left: -0.95rem;"></div>
+                                        <div class="vg-agenda-time" style="left: -5rem;">
+                                            <span><?= substr($sesion->hora_inicio, 0, 5) ?></span>
+                                            <span><?= substr($sesion->hora_fin, 0, 5) ?></span>
+                                        </div>
+                                        
+                                        <div class="vg-agenda-card shadow-sm" style="margin-bottom: 0;">
+                                            <div class="vg-agenda-card-header">
+                                                <span class="vg-agenda-ficha">FICHA #<?= htmlspecialchars($sesion->numero_ficha ?? 'N/A') ?></span>
+                                                <?php if ($sesion === $proximaSesion): ?>
+                                                    <span class="vg-badge-orange">Próxima</span>
+                                                <?php else: ?>
+                                                    <span class="vg-badge-blue" style="background-color:#eff6ff;color:#3b82f6;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.7rem;font-weight:700;">Programada</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <h4 class="vg-agenda-course"><?= htmlspecialchars($sesion->programa_nombre ?? 'Programa Formativo') ?></h4>
+                                            <div class="vg-agenda-details">
+                                                <span><i class="fa-solid fa-location-dot"></i> Ambiente: <strong><?= htmlspecialchars($sesion->ambiente_nombre ?? 'N/A') ?></strong></span>
+                                                <span><i class="fa-regular fa-user"></i> Instructor: <strong><?= htmlspecialchars(($sesion->instructor_nombre ?? '').' '.($sesion->instructor_apellido ?? '')) ?></strong></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center py-4 text-muted" style="margin-top: 2rem;">
+                                        <div style="background-color: #f9fafb; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+                                            <i class="fa-regular fa-calendar" style="font-size: 1.5rem; color: #9ca3af;"></i>
+                                        </div>
+                                        <h4 style="font-weight: 800; font-size: 1rem; color: #4b5563; margin-bottom: 0.5rem;">No hay clases programadas</h4>
+                                        <p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 0;">No se encontraron bloques académicos registrados para<br>este día de la semana.</p>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
-                        
-                        <div class="col-12 col-md-3">
-                            <div class="action-card" onclick="document.getElementById('pills-programacion-tab').click(); window.location.hash = '#pills-programacion';">
-                                <div class="action-icon blue">
-                                    <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    
+                    <div class="col-12 col-lg-5">
+                        <div class="vg-card">
+                            <div class="vg-header">
+                                <div class="vg-header-left">
+                                    <div class="vg-icon-wrapper vg-icon-green">
+                                        <i class="fa-regular fa-calendar"></i>
+                                    </div>
+                                    <div class="vg-title-group">
+                                        <h3 class="vg-title">Calendario de Ambientes</h3>
+                                        <p class="vg-subtitle">Calendario mensual</p>
+                                    </div>
                                 </div>
-                                <div class="action-details">
-                                    <span class="action-title">Programar Ambiente</span>
-                                    <span class="action-desc">Asignar espacio y horario</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-right"></i>
+                                <form method="GET" action="" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;" onsubmit="return false;">
+                                    <span style="font-size: 0.75rem; color: #4b5563; font-weight: 700;">Ambiente:</span>
+                                    <div class="vg-btn-outline" style="padding: 0 1.5rem 0 0.8rem; position: relative; background: white; margin: 0;">
+                                        <i class="fa-solid fa-building" style="color: #10b981; margin-right: 0.3rem;"></i>
+                                        <select name="filtro_ambiente" id="filtro_ambiente_select" onchange="filtrarCalendarioLocal()" style="appearance: none; border: none; background: transparent; font-size: 0.75rem; font-weight: 700; color: #4b5563; padding: 0.4rem 0; outline: none; cursor: pointer; max-width: 150px;">
+                                            <option value="">Todos</option>
+                                            <?php 
+                                            // Extraer ambientes únicos de la programación
+                                            $ambientesDisponibles = [];
+                                            if (isset($programacion) && is_array($programacion)) {
+                                                foreach($programacion as $p) {
+                                                    if (!empty($p->ambiente_nombre)) {
+                                                        $ambientesDisponibles[trim($p->ambiente_nombre)] = trim($p->ambiente_nombre);
+                                                    }
+                                                }
+                                                asort($ambientesDisponibles);
+                                                foreach($ambientesDisponibles as $amb) {
+                                                    $sel = ($filtroAmb === $amb) ? 'selected' : '';
+                                                    echo "<option value='" . htmlspecialchars($amb) . "' {$sel}>" . htmlspecialchars($amb) . "</option>";
+                                                }
+                                            }
+                                            ?>
+                                        </select>
+                                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; color: #9ca3af; position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+                                    </div>
+                                </form>
                             </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-3">
-                            <div class="action-card" onclick="document.getElementById('pills-novedades-tab').click(); window.location.hash = '#pills-novedades';">
-                                <div class="action-icon orange">
-                                    <i class="fa-solid fa-triangle-exclamation"></i>
-                                </div>
-                                <div class="action-details">
-                                    <span class="action-title">Registrar Novedad</span>
-                                    <span class="action-desc">Reporte de infraestructura</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-right"></i>
+                            
+                            <div class="vg-cal-grid">
+                                <div class="vg-cal-day-name">LUN</div>
+                                <div class="vg-cal-day-name">MAR</div>
+                                <div class="vg-cal-day-name">MIE</div>
+                                <div class="vg-cal-day-name">JUE</div>
+                                <div class="vg-cal-day-name">VIE</div>
+                                <div class="vg-cal-day-name">SAB</div>
+                                <div class="vg-cal-day-name">DOM</div>
+                                
+                                <?php
+                                $primerDiaMes = date('w', mktime(0, 0, 0, $mesActual, 1, $anioActual));
+                                $primerDiaMes = $primerDiaMes == 0 ? 7 : $primerDiaMes; // 1 = Lunes
+                                
+                                $diasMesAnterior = date('t', mktime(0, 0, 0, $mesActual - 1, 1, $anioActual));
+                                
+                                // Días del mes anterior para rellenar
+                                for ($i = 1; $i < $primerDiaMes; $i++) {
+                                    $diaMostrar = $diasMesAnterior - ($primerDiaMes - $i) + 1;
+                                    echo '<div class="vg-cal-cell muted">'.$diaMostrar.' <div class="vg-dot yellow"></div></div>';
+                                }
+                                
+                                // Días del mes actual
+                                $diasTotal = cal_days_in_month(CAL_GREGORIAN, $mesActual, $anioActual);
+                                $hoy = date('j');
+                                for ($d = 1; $d <= $diasTotal; $d++) {
+                                    $activeClass = ($d == $hoy) ? 'active' : '';
+                                    
+                                    // Lógica de puntos (volumen de programación)
+                                    $volumen = $diasProgramados[$d] ?? 0;
+                                    $dotClass = 'green'; // Disponible por defecto
+                                    if ($volumen > 0) {
+                                        if ($maxVolumen > 0 && $volumen > ($maxVolumen * 0.66)) {
+                                            $dotClass = 'red'; // Ocupado (Alta demanda)
+                                        } else {
+                                            $dotClass = 'yellow'; // Reservado (Media demanda)
+                                        }
+                                    }
+                                    
+                                    echo '<div class="vg-cal-cell '.$activeClass.'" style="cursor: pointer;" onclick="verAgendaDia('.$d.', '.$mesActual.', '.$anioActual.', this)">'.$d.' <div class="vg-dot '.$dotClass.'"></div></div>';
+                                }
+                                
+                                // Días del mes siguiente para completar la cuadrícula (hasta 42 celdas)
+                                $celdasUsadas = ($primerDiaMes - 1) + $diasTotal;
+                                $diasSiguiente = 1;
+                                while ($celdasUsadas < 42) {
+                                    echo '<div class="vg-cal-cell muted">'.$diasSiguiente.' <div class="vg-dot green"></div></div>';
+                                    $diasSiguiente++;
+                                    $celdasUsadas++;
+                                    if ($celdasUsadas % 7 == 0 && $celdasUsadas >= 35) break; // Terminar en fila de 5 o 6
+                                }
+                                ?>
                             </div>
-                        </div>
-                        
-                        <div class="col-12 col-md-3">
-                            <div class="action-card" onclick="location.href = '<?= URLROOT; ?>/index.php?route=reportes/index';">
-                                <div class="action-icon purple">
-                                    <i class="fa-solid fa-chart-bar"></i>
-                                </div>
-                                <div class="action-details">
-                                    <span class="action-title">Ver Reportes</span>
-                                    <span class="action-desc">Acceder a estadísticas</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-right"></i>
+                            
+                            <div class="vg-cal-legend">
+                                <div class="vg-cal-legend-item"><div class="vg-dot green"></div> Disponible</div>
+                                <div class="vg-cal-legend-item"><div class="vg-dot yellow"></div> Reservado</div>
+                                <div class="vg-cal-legend-item"><div class="vg-dot red"></div> Ocupado</div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
+                <script>
+                const programacionDataVg = <?= json_encode($programacion ?? []) ?>;
+                const nombresDiasVg = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                const mesesNombresVg = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                
+                const currentMesVg = <?= (int)$mesActual ?>;
+                const currentAnioVg = <?= (int)$anioActual ?>;
 
-                <!-- Disposición en Columnas (Fichas recientes, Alertas de Novedades y Horarios) -->
-                <div class="row g-4 text-start">
-                    <!-- Columna 1: Fichas en Lectiva Recientes -->
-                    <div class="col-12 col-md-4">
-                        <div class="card p-4 h-100 bg-white border-0 shadow-sm d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="fw-bold text-dark m-0" style="font-size: 0.95rem;">Fichas en Lectiva Recientes</h5>
-                                <a href="javascript:void(0)" onclick="document.getElementById('pills-fichas-tab').click(); window.location.hash = '#pills-fichas';" class="text-primary text-decoration-none small fw-semibold" style="font-size: 0.78rem;">Ver todas</a>
+                function filtrarCalendarioLocal() {
+                    const selectAmbiente = document.getElementById('filtro_ambiente_select');
+                    const filtroAmbiente = selectAmbiente ? selectAmbiente.value.trim() : '';
+
+                    let maxVol = 1;
+                    let diasProgramados = {};
+
+                    programacionDataVg.forEach(p => {
+                        if (filtroAmbiente !== '' && (!p.ambiente_nombre || p.ambiente_nombre.trim() !== filtroAmbiente)) return;
+                        if (p.fecha_inicio) {
+                            const parts = p.fecha_inicio.split('-');
+                            if (parts.length === 3) {
+                                const y = parseInt(parts[0]);
+                                const m = parseInt(parts[1]);
+                                const d = parseInt(parts[2]);
+                                
+                                if (m === currentMesVg && y === currentAnioVg) {
+                                    if (!diasProgramados[d]) diasProgramados[d] = 0;
+                                    diasProgramados[d]++;
+                                    if (diasProgramados[d] > maxVol) maxVol = diasProgramados[d];
+                                }
+                            }
+                        }
+                    });
+
+                    document.querySelectorAll('.vg-cal-cell:not(.muted)').forEach(cell => {
+                        const text = cell.textContent || cell.innerText;
+                        const d = parseInt(text.trim());
+                        
+                        let dot = cell.querySelector('.vg-dot');
+                        if (!dot) return;
+                        
+                        dot.className = 'vg-dot green'; 
+                        const vol = diasProgramados[d] || 0;
+                        
+                        if (vol > 0) {
+                            if (maxVol > 0 && vol > (maxVol * 0.66)) {
+                                dot.className = 'vg-dot red';
+                            } else {
+                                dot.className = 'vg-dot yellow';
+                            }
+                        }
+                    });
+
+                    const activeCell = document.querySelector('.vg-cal-cell.active');
+                    if (activeCell) {
+                        activeCell.click();
+                    } else {
+                        // Si no hay ninguna activa, forzamos actualizar la vista de hoy para reflejar el filtro
+                        verAgendaDia(new Date().getDate(), currentMesVg, currentAnioVg, null);
+                    }
+                }
+
+                function verAgendaDia(dia, mes, anio, elementoDia) {
+                    document.querySelectorAll('.vg-cal-cell').forEach(el => el.classList.remove('active'));
+                    if (elementoDia) elementoDia.classList.add('active');
+
+                    const fechaObj = new Date(anio, mes - 1, dia);
+                    const diaSemanaNombre = nombresDiasVg[fechaObj.getDay()];
+
+                    const yyyy = anio;
+                    const mm = String(mes).padStart(2, '0');
+                    const dd = String(dia).padStart(2, '0');
+                    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                    const selectAmbiente = document.querySelector('select[name="filtro_ambiente"]');
+                    let filtroAmbiente = selectAmbiente ? selectAmbiente.value.trim() : '';
+                    
+                    let sesiones = programacionDataVg.filter(p => {
+                        let coincideAmbiente = filtroAmbiente === '' || (p.ambiente_nombre && p.ambiente_nombre.trim() === filtroAmbiente);
+                        let coincideFecha = p.fecha_inicio === dateStr;
+                        return coincideFecha && coincideAmbiente;
+                    });
+
+                    sesiones.sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''));
+                    
+                    const hoy = new Date();
+
+                    const agendaContainer = document.querySelector('.vg-agenda-container');
+                    const tituloFecha = document.getElementById('vg-agenda-date');
+                    if (tituloFecha) {
+                        tituloFecha.innerHTML = `${diaSemanaNombre}, ${dia} De ${mesesNombresVg[mes]} De ${anio}`;
+                        const tituloH3 = tituloFecha.previousElementSibling;
+                        if (hoy.getDate() === dia && hoy.getMonth() + 1 === mes && hoy.getFullYear() === anio) {
+                            tituloH3.textContent = 'Agenda de Hoy';
+                        } else {
+                            tituloH3.textContent = 'Agenda del Día';
+                        }
+                    }
+
+                    if (sesiones.length > 0) {
+                        let htmlStr = '<div class="vg-agenda-line"></div>';
+                        
+                        let horaActual = hoy.getHours().toString().padStart(2, '0') + ':' + hoy.getMinutes().toString().padStart(2, '0');
+                        let esHoy = (hoy.getDate() === dia && hoy.getMonth() + 1 === mes && hoy.getFullYear() === anio);
+                        
+                        let proximaRef = null;
+                        if (esHoy) {
+                            for (let s of sesiones) {
+                                if (s.hora_fin && s.hora_fin.substring(0,5) > horaActual) {
+                                    proximaRef = s;
+                                    break;
+                                }
+                            }
+                            if (!proximaRef && sesiones.length > 0) proximaRef = sesiones[sesiones.length - 1];
+                        }
+
+                        sesiones.forEach(s => {
+                            let ficha = s.numero_ficha || 'N/A';
+                            let programa = s.programa_nombre || 'Programa Formativo';
+                            let ambiente = s.ambiente_nombre || 'N/A';
+                            let instr_nombre = s.instructor_nombre || '';
+                            let instr_apellido = s.instructor_apellido || '';
+                            let instructor = `${instr_nombre} ${instr_apellido}`.trim();
+                            if (!instructor) instructor = 'N/A';
+                            
+                            let inicio = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '';
+                            let fin = s.hora_fin ? s.hora_fin.substring(0, 5) : '';
+                            
+                            let badgeHtml = '<span class="vg-badge-blue" style="background-color:#eff6ff;color:#3b82f6;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.7rem;font-weight:700;">Programada</span>';
+                            if (esHoy && s === proximaRef) {
+                                badgeHtml = '<span class="vg-badge-orange">Próxima</span>';
+                            }
+
+                            htmlStr += `
+                                <div style="position: relative; margin-bottom: 1.5rem;">
+                                    <div class="vg-agenda-dot" style="left: -0.95rem;"></div>
+                                    <div class="vg-agenda-time" style="left: -5rem;">
+                                        <span>${inicio}</span>
+                                        <span>${fin}</span>
+                                    </div>
+                                    
+                                    <div class="vg-agenda-card shadow-sm" style="margin-bottom: 0;">
+                                        <div class="vg-agenda-card-header">
+                                            <span class="vg-agenda-ficha">FICHA #${ficha}</span>
+                                            ${badgeHtml}
+                                        </div>
+                                        <h4 class="vg-agenda-course">${programa}</h4>
+                                        <div class="vg-agenda-details">
+                                            <span><i class="fa-solid fa-location-dot"></i> Ambiente: <strong>${ambiente}</strong></span>
+                                            <span><i class="fa-regular fa-user"></i> Instructor: <strong>${instructor}</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        agendaContainer.innerHTML = htmlStr;
+                    } else {
+                        agendaContainer.innerHTML = `
+                            <div class="text-center py-4 text-muted" style="margin-top: 2rem;">
+                                <div style="background-color: #f9fafb; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+                                    <i class="fa-regular fa-calendar" style="font-size: 1.5rem; color: #9ca3af;"></i>
+                                </div>
+                                <h4 style="font-weight: 800; font-size: 1rem; color: #4b5563; margin-bottom: 0.5rem;">No hay clases programadas</h4>
+                                <p style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 0;">No se encontraron bloques académicos registrados para<br>este día de la semana.</p>
+                            </div>
+                        `;
+                    }
+                }
+                </script>
+                
+                <div class="row g-4 mb-5">
+                    <!-- Fila 2 -->
+                    <div class="col-12 col-lg-4">
+                        <div class="vg-card">
+                            <div class="vg-header">
+                                <div class="vg-header-left">
+                                    <div class="vg-icon-wrapper vg-icon-green">
+                                        <i class="fa-solid fa-house"></i>
+                                    </div>
+                                    <div class="vg-title-group">
+                                        <h3 class="vg-title">Ambientes por Estado</h3>
+                                        <p class="vg-subtitle">Inventario e infraestructura</p>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <div class="d-flex flex-column gap-3 mb-4">
-                                <?php 
-                                $fichasRecientes = array_slice($fichas, 0, 3);
-                                if (empty($fichasRecientes)): ?>
-                                    <div class="text-center py-4 text-muted small">No hay fichas registradas.</div>
-                                <?php else: ?>
-                                    <?php foreach ($fichasRecientes as $fr): ?>
-                                        <div class="p-3 border rounded-3 bg-light-subtle d-flex flex-column gap-1 position-relative" style="border-color: var(--sga-border) !important;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="fw-bold text-dark" style="font-size: 0.85rem;"><span class="text-success">•</span> #<?= htmlspecialchars($fr->numero_ficha); ?></span>
-                                                <span class="badge bg-success-subtle text-success small fw-semibold" style="font-size: 0.68rem;"><?= htmlspecialchars($fr->cantidad_estudiantes); ?> Aprendices</span>
+                            <div class="vg-donut-container">
+                                <div class="vg-donut">
+                                    <div class="vg-donut-inner">
+                                        <strong><?= $totalAmbientes ?></strong>
+                                        <span>TOTAL</span>
+                                    </div>
+                                </div>
+                                <div class="vg-donut-legend">
+                                    <div class="vg-donut-item">
+                                        <div class="vg-donut-item-left"><div class="vg-dot green"></div> Activos</div>
+                                        <span><?= $ambActivos ?> (<?= $pctActivos ?>%)</span>
+                                    </div>
+                                    <div class="vg-donut-item">
+                                        <div class="vg-donut-item-left"><div class="vg-dot yellow"></div> Mantenimiento</div>
+                                        <span><?= $ambMantenimiento ?> (<?= $pctMantenimiento ?>%)</span>
+                                    </div>
+                                    <div class="vg-donut-item">
+                                        <div class="vg-donut-item-left"><div class="vg-dot red"></div> Inactivos</div>
+                                        <span><?= $ambInactivos ?> (<?= $pctInactivos ?>%)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="vg-info-box">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <p>Para cambiar estados de ambientes, asigne novedades o configure su disponibilidad.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-lg-4">
+                        <div class="vg-card">
+                            <div class="vg-header mb-2">
+                                <div class="vg-header-left">
+                                    <div class="vg-icon-wrapper vg-icon-green">
+                                        <i class="fa-solid fa-chart-line"></i>
+                                    </div>
+                                    <div class="vg-title-group">
+                                        <h3 class="vg-title">Programación por Jornada</h3>
+                                        <p class="vg-subtitle">Schedules académicos</p>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap: 0.5rem; font-size: 0.6rem; font-weight: 800; color: #9ca3af; align-items:center;">
+                                    <span style="display:flex;align-items:center;gap:2px;"><div class="vg-dot green"></div> M</span>
+                                    <span style="display:flex;align-items:center;gap:2px;"><div class="vg-dot yellow"></div> T</span>
+                                    <span style="display:flex;align-items:center;gap:2px;"><div class="vg-dot blue"></div> N</span>
+                                </div>
+                            </div>
+                            
+                            <div class="vg-bar-container">
+                                <div class="vg-bar-y-axis">
+                                    <span><?= $maxTurno ?></span>
+                                    <span><?= round($maxTurno * 0.66) ?></span>
+                                    <span><?= round($maxTurno * 0.33) ?></span>
+                                    <span>0</span>
+                                </div>
+                                
+                                <?php foreach (['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as $dia): ?>
+                                <div class="vg-bar-group">
+                                    <div class="vg-bar green" style="height: <?= $turnosToPct($turnos[$dia]['M']) ?>%" title="Mañana: <?= $turnos[$dia]['M'] ?>"></div>
+                                    <div class="vg-bar yellow" style="height: <?= $turnosToPct($turnos[$dia]['T']) ?>%" title="Tarde: <?= $turnos[$dia]['T'] ?>"></div>
+                                    <div class="vg-bar blue" style="height: <?= $turnosToPct($turnos[$dia]['N']) ?>%" title="Noche: <?= $turnos[$dia]['N'] ?>"></div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <div class="vg-bar-labels">
+                                <div class="vg-bar-label">Lun</div>
+                                <div class="vg-bar-label">Mar</div>
+                                <div class="vg-bar-label">Mié</div>
+                                <div class="vg-bar-label">Jue</div>
+                                <div class="vg-bar-label">Vie</div>
+                                <div class="vg-bar-label">Sáb</div>
+                            </div>
+                            
+                            <div class="vg-bar-footer">
+                                <span class="left">Distribución por turnos</span>
+                                <a href="#" class="right" onclick="cambiarVista('calendario'); document.getElementById('pills-programacion-tab').click(); return false;">Ver Bloques &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-lg-4">
+                        <div class="vg-card">
+                            <div class="vg-header mb-4">
+                                <div class="vg-header-left">
+                                    <div class="vg-icon-wrapper vg-icon-red">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div class="vg-title-group">
+                                        <h3 class="vg-title">Novedades Recientes</h3>
+                                        <p class="vg-subtitle">Infraestructura y aulas</p>
+                                    </div>
+                                </div>
+                                <a href="#" style="color: #10b981; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-decoration: none;" onclick="document.getElementById('pills-novedades-tab').click(); return false;">VER TODAS</a>
+                            </div>
+                            
+                            <div class="vg-nov-list">
+                                <?php if (!empty($novRecientes)): ?>
+                                    <?php foreach ($novRecientes as $nov): ?>
+                                        <?php 
+                                        $esResuelta = (strtolower(trim($nov->estado ?? '')) === 'resuelta');
+                                        $iconClass = $esResuelta ? 'green' : 'blue';
+                                        $iconName = $esResuelta ? 'fa-check-circle' : 'fa-triangle-exclamation';
+                                        ?>
+                                        <div class="vg-nov-item">
+                                            <div class="vg-nov-left">
+                                                <div class="vg-nov-icon <?= $iconClass ?>"><i class="fa-solid <?= $iconName ?>"></i></div>
+                                                <div class="vg-nov-text">
+                                                    <h4><?= htmlspecialchars(mb_strimwidth($nov->descripcion ?? 'Novedad sin descripción', 0, 35, '...')) ?></h4>
+                                                    <p><?= htmlspecialchars($nov->fecha_reporte ?? date('Y-m-d')) ?></p>
+                                                </div>
                                             </div>
-                                            <div class="text-dark fw-medium mt-1" style="font-size: 0.78rem;"><?= htmlspecialchars($fr->programa_nombre); ?></div>
-                                            <div class="text-secondary" style="font-size: 0.7rem;">Líder: <?= htmlspecialchars($fr->instructor_nombre . ' ' . $fr->instructor_apellido); ?></div>
-                                            <div class="d-flex gap-2 text-secondary mt-2 pt-2 border-top" style="font-size: 0.65rem; border-color: rgba(0,0,0,0.03) !important;">
-                                                <span>Inicio: <?= htmlspecialchars($fr->fecha_inicio ?? 'N/A'); ?></span>
-                                                <span>Fin: <?= htmlspecialchars($fr->fecha_fin ?? 'N/A'); ?></span>
+                                            <div class="vg-badge <?= $iconClass ?>" <?= !$esResuelta ? 'style="display:flex;align-items:center;gap:0.3rem;"' : '' ?>>
+                                                <?= htmlspecialchars(ucfirst($nov->estado ?? 'Pendiente')) ?>
+                                                <?php if (!$esResuelta): ?><i class="fa-solid fa-clock" style="font-size:0.6rem;"></i><?php endif; ?>
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-center text-muted small py-3">
+                                        No hay novedades recientes.
+                                    </div>
                                 <?php endif; ?>
                             </div>
                             
-                            <button type="button" class="btn btn-outline-secondary w-100 mt-auto py-2 small fw-semibold border-0 text-secondary bg-light-subtle" onclick="document.getElementById('pills-fichas-tab').click(); window.location.hash = '#pills-fichas';" style="font-size: 0.78rem; transition: background 0.2s;">
-                                Ver todas las fichas <i class="fa-solid fa-arrow-right ms-1"></i>
+                            <button class="vg-btn-solid mt-auto" onclick="document.getElementById('pills-novedades-tab').click(); setTimeout(() => document.getElementById('btnNuevaNovedad').click(), 300);">
+                                <i class="fa-solid fa-plus me-1"></i> Registrar Novedad
                             </button>
-                        </div>
-                    </div>
-
-                    <!-- Columna 2: Alertas de Novedades de Infraestructura -->
-                    <div class="col-12 col-md-4">
-                        <div class="card p-4 h-100 bg-white border-0 shadow-sm d-flex flex-column">
-                            <h5 class="fw-bold text-dark mb-4" style="font-size: 0.95rem;">Alertas de Novedades de Infraestructura</h5>
-                            
-                            <div class="d-flex flex-column align-items-center justify-content-center my-auto text-center py-4">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 56px; height: 56px; background-color: var(--sga-primary-light); color: var(--sga-primary);">
-                                    <i class="fa-solid fa-circle-check fs-2"></i>
-                                </div>
-                                <h6 class="fw-bold text-dark mb-1" style="font-size: 0.88rem;">Sin novedades reportadas</h6>
-                                <p class="text-secondary small mb-4" style="font-size: 0.78rem; max-width: 220px;">Todos los ambientes se encuentran operativos.</p>
-                                
-                                <button type="button" class="btn btn-outline-secondary py-2 px-4 small fw-semibold" onclick="document.getElementById('pills-novedades-tab').click(); window.location.hash = '#pills-novedades';" style="font-size: 0.78rem; border-color: rgba(0,0,0,0.1) !important; color: #475569;">
-                                    Ver historial de novedades
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Columna 3: Horarios de Hoy + Actividad Reciente -->
-                    <div class="col-12 col-md-4">
-                        <div class="d-flex flex-column gap-4 h-100">
-                            <!-- Horarios de Hoy -->
-                            <div class="card p-4 bg-white border-0 shadow-sm flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="fw-bold text-dark m-0" style="font-size: 0.95rem;">Horarios de Hoy</h5>
-                                    <a href="javascript:void(0)" onclick="document.getElementById('pills-programacion-tab').click(); window.location.hash = '#pills-programacion';" class="text-primary text-decoration-none small fw-semibold" style="font-size: 0.78rem;">Ver todos</a>
-                                </div>
-                                
-                                <div class="timeline-sga">
-                                    <?php 
-                                    $programacionesHoy = array_slice($programacion, 0, 3);
-                                    if (empty($programacionesHoy)): ?>
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker green"></div>
-                                            <div class="timeline-content">
-                                                <div class="timeline-time">07:00 - 09:00</div>
-                                                <div class="timeline-info">
-                                                    <span class="timeline-prog">Análisis y Desarrollo de Software</span>
-                                                    <span class="timeline-meta">Ambiente 101 • Carlos Ramírez</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker blue"></div>
-                                            <div class="timeline-content">
-                                                <div class="timeline-time">09:00 - 11:00</div>
-                                                <div class="timeline-info">
-                                                    <span class="timeline-prog">Seguridad y Salud en el Trabajo</span>
-                                                    <span class="timeline-meta">Ambiente 202 • Laura Gómez</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker blue"></div>
-                                            <div class="timeline-content">
-                                                <div class="timeline-time">13:00 - 15:00</div>
-                                                <div class="timeline-info">
-                                                    <span class="timeline-prog">Programación de Software</span>
-                                                    <span class="timeline-meta">Ambiente 303 • Pedro Martínez</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php else: ?>
-                                        <?php foreach ($programacionesHoy as $ph): ?>
-                                            <div class="timeline-item">
-                                                <div class="timeline-marker <?= (strpos($ph->dia_semana, 'Lunes') !== false || strpos($ph->dia_semana, 'Martes') !== false) ? 'green' : 'blue'; ?>"></div>
-                                                <div class="timeline-content">
-                                                    <div class="timeline-time"><?= htmlspecialchars($ph->hora_inicio); ?> - <?= htmlspecialchars($ph->hora_fin); ?></div>
-                                                    <div class="timeline-info">
-                                                        <span class="timeline-prog"><?= htmlspecialchars($ph->programa_nombre ?? 'Sesión Formativa'); ?></span>
-                                                        <span class="timeline-meta">Ambiente <?= htmlspecialchars($ph->numero_ambiente); ?> • <?= htmlspecialchars($ph->instructor_nombre . ' ' . $ph->instructor_apellido); ?></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            
-                            <!-- Actividad Reciente -->
-                            <div class="card p-4 bg-white border-0 shadow-sm flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="fw-bold text-dark m-0" style="font-size: 0.95rem;">Actividad Reciente</h5>
-                                    <a href="javascript:void(0)" class="text-primary text-decoration-none small fw-semibold" style="font-size: 0.78rem;">Ver todas</a>
-                                </div>
-                                
-                                <div class="recent-activity-list">
-                                    <div class="activity-item">
-                                        <div class="activity-icon-box green">
-                                            <i class="fa-solid fa-circle-plus"></i>
-                                        </div>
-                                        <div class="activity-body">
-                                            <span class="activity-title">Nueva ficha creada</span>
-                                            <span class="activity-meta">Ficha #2670003 registrada</span>
-                                        </div>
-                                        <span class="activity-time">Hace 25 min</span>
-                                    </div>
-                                    
-                                    <div class="activity-item">
-                                        <div class="activity-icon-box blue">
-                                            <i class="fa-solid fa-clock"></i>
-                                        </div>
-                                        <div class="activity-body">
-                                            <span class="activity-title">Programación actualizada</span>
-                                            <span class="activity-meta">Ambiente 101 • 07:00-09:00</span>
-                                        </div>
-                                        <span class="activity-time">Hace 1 hora</span>
-                                    </div>
-                                    
-                                    <div class="activity-item">
-                                        <div class="activity-icon-box orange">
-                                            <i class="fa-solid fa-triangle-exclamation"></i>
-                                        </div>
-                                        <div class="activity-body">
-                                            <span class="activity-title">Novedad registrada</span>
-                                            <span class="activity-meta">Ambiente 203 • Ventilación</span>
-                                        </div>
-                                        <span class="activity-time">Hace 2 horas</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -3037,295 +4045,1045 @@
 
         </div>
 
-    <?php elseif ($current_role === 'Instructor'): ?>
-        <!-- PANEL DE CONTROL DEL INSTRUCTOR LÍDER (Con Pestañas 2 y 3 Conmutables Automatizadas) -->
+    <?php elseif ($current_role === 'Instructor'): 
+        // Cálculos para KPIs
+        $total_clases = count($programacion ?? []);
+        $fichas_unicas = [];
+        if (!empty($programacion)) {
+            $fichas_unicas = array_unique(array_column($programacion, 'numero_ficha'));
+        }
+        $total_fichas = count($fichas_unicas);
+        $fallas_reportadas = 0; // Calculo omitido por ahora
+        $sesiones_realizadas = !empty($programacion) ? array_sum(array_column($programacion, 'sesiones_realizadas')) : 0;
+        $total_sesiones = !empty($programacion) ? array_sum(array_column($programacion, 'total_sesiones')) : 0;
+        $cumplimiento = $total_sesiones > 0 ? round(($sesiones_realizadas / $total_sesiones) * 100) : 0;
+    ?>
+        <style>
+        /* INSTRUCTOR REDESIGN CSS (Hero usará clases globales) */
+        .inst-kpi-card {
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: 100%;
+        }
+        .inst-kpi-title {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #9ca3af;
+            letter-spacing: 1px;
+        }
+        .inst-kpi-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .inst-kpi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #111827;
+            line-height: 1;
+            margin-bottom: 0.8rem;
+        }
+        .inst-kpi-subtitle {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
         
-        <!-- 1. Hero Section -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
-            <div>
-                <h2 class="fw-bold text-dark mb-1" style="letter-spacing: -0.5px;">Panel del Instructor Líder</h2>
-                <p class="text-secondary mb-0" style="font-size: 0.95rem;">Supervisa tus fichas asignadas, toma asistencia diaria y reporta novedades físicas de tus ambientes de aprendizaje.</p>
-            </div>
-            <div class="active-badge shadow-sm">
-                <i class="fa-solid fa-list-check me-1"></i>
-                <span>Clases Asignadas: <?= count($programacion) > 0 ? count($programacion) : 4; ?></span>
-            </div>
-        </div>
+        /* Layout */
+        .inst-agenda-panel, .inst-cal-panel {
+            background-color: #ffffff;
+            border-radius: 24px;
+            padding: 2rem;
+            height: 100%;
+        }
+        .inst-agenda-sup {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .inst-agenda-badge {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .inst-agenda-card {
+            border: 1px solid #f3f4f6;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        .inst-agenda-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border-color: #e5e7eb;
+        }
+        .inst-agenda-ficha {
+            background-color: #e6f6f1;
+            color: #10b981;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .inst-agenda-time {
+            color: #6b7280;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .inst-btn-call {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .inst-btn-call:hover {
+            background-color: #059669;
+        }
+        
+        /* Calendar */
+        .inst-cal-grid-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 700;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .inst-cal-grid-body {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .inst-cal-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .inst-cal-cell:hover {
+            background-color: #f3f4f6;
+        }
+        .inst-cal-cell.active {
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        .inst-cal-cell.muted {
+            color: #d1d5db;
+        }
+        .inst-cal-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+        .inst-cal-dot.green { background-color: #10b981; }
+        .inst-cal-cell.active .inst-cal-dot.green { background-color: white; }
+        .inst-dot-legend {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .inst-dot-legend.green { background-color: #10b981; }
+        .inst-dot-legend.grey { background-color: #e5e7eb; border: 1px solid #d1d5db; }
+        </style>
 
-        <!-- 2. Pestañas de Navegación Estilizadas -->
+        <!-- PANEL DE CONTROL DEL INSTRUCTOR LÍDER -->
+        
+        <!-- 3. Pestañas Ocultas (Lógica de Navegación) -->
         <ul class="nav sga-nav-pills mb-5 gap-3 d-none" id="pills-tab-inst" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-inst-horario-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-horario" type="button" role="tab" aria-controls="pills-inst-horario" aria-selected="true">
-                    <i class="fa-solid fa-calendar-days me-1"></i> Mi Horario y Sesiones
-                </button>
+                <button class="nav-link active" id="pills-vision-inst-tab" data-bs-toggle="pill" data-bs-target="#pills-vision-inst" type="button" role="tab" aria-controls="pills-vision-inst" aria-selected="true">Visión General</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-inst-asistencia-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-asistencia" type="button" role="tab" aria-controls="pills-inst-asistencia" aria-selected="false">
-                    <i class="fa-solid fa-clipboard-check me-1"></i> Registrar Asistencia
-                </button>
+                <button class="nav-link" id="pills-inst-horario-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-horario" type="button" role="tab" aria-controls="pills-inst-horario" aria-selected="false">Mi Horario</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-inst-novedad-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-novedad" type="button" role="tab" aria-controls="pills-inst-novedad" aria-selected="false">
-                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Reportar Novedad de Ambiente
-                </button>
+                <button class="nav-link" id="pills-inst-asistencia-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-asistencia" type="button" role="tab" aria-controls="pills-inst-asistencia" aria-selected="false">Registrar Asistencia</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-inst-novedad-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-novedad" type="button" role="tab" aria-controls="pills-inst-novedad" aria-selected="false">Reportar Novedad</button>
             </li>
         </ul>
 
-        <!-- 3. Contenido de las Pestañas -->
         <div class="tab-content" id="pills-tabContentInst">
             
-            <!-- PESTAÑA 1: MI HORARIO Y SESIONES -->
-            <div class="tab-pane fade show active" id="pills-inst-horario" role="tabpanel" aria-labelledby="pills-inst-horario-tab">
+            <!-- PESTAÑA 0: VISIÓN GENERAL (Rediseño) -->
+            <div class="tab-pane fade show active" id="pills-vision-inst" role="tabpanel" aria-labelledby="pills-vision-inst-tab">
+        <!-- 1. Hero Section Nuevo Diseño -->
+        <div class="banner-welcome d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+            <div>
+                <div class="badge-active"><i class="fa-solid fa-circle text-success me-2" style="font-size: 8px;"></i> Portal de Registro de Asistencia Docente Activo</div>
+                <h3>¡Hola, Instructor <?= htmlspecialchars(explode(' ', $_SESSION['user_name'] ?? 'Usuario')[0]); ?>!</h3>
+                <p>Explora el resumen de tus actividades formativas asignadas, consulta el calendario mensual de tus clases y mantén el control sobre tu cumplimiento académico.</p>
+            </div>
+            <a href="<?= URLROOT; ?>/index.php?route=perfil/index" class="banner-user-card shadow-sm mt-3 mt-md-0 ms-md-4 text-decoration-none" style="transition: all 0.25s ease;">
+                <img class="banner-welcome-avatar-img" src="<?= htmlspecialchars($avatarUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>" alt="Foto de perfil">
+                <span>
+                    <small>DOCENTE INSTRUCTOR</small>
+                    <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Usuario'); ?></strong>
+                    <div class="user-email"><i class="fa-regular fa-envelope me-1"></i> instructor@sena.edu.co</div>
+                </span>
+            </a>
+        </div>
 
-                <!-- Encabezado Limpio -->
-                <div class="mb-4 pb-1">
-                    <h5 class="fw-bold text-dark mb-1">Sesiones Formativas Bajo mi Cargo</h5>
-                    <p class="text-muted small mb-0">Horario de formación y cumplimiento de competencias asignadas por el coordinador.</p>
-                </div>
-
-                <!-- SELECTOR DE VISTA PARA INSTRUCTOR -->
-                <div class="d-flex justify-content-end mb-3">
-                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
-                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
-                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioInst" style="background-color: #39A900;" onclick="cambiarVistaInst('calendario')">
-                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
-                        </button>
-                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaInst" onclick="cambiarVistaInst('lista')">
-                            <i class="fa-solid fa-list me-1"></i> Mis Sesiones
-                        </button>
+        <!-- 2. KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="inst-kpi-card shadow-sm">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="inst-kpi-title">MIS BLOQUES</span>
+                        <div class="inst-kpi-icon text-success bg-success-subtle"><i class="fa-regular fa-calendar"></i></div>
                     </div>
-                </div>
-
-                <!-- Cabecera Mes/Año -->
-                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesInst">
-                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
-                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-
-                <!-- Contenedor del Calendario -->
-                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioInst" style="border: 1px solid rgba(0,0,0,0.06);">
-                    <div class="calendar-days-grid mb-2">
-                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
-                    </div>
-                    <div class="calendar-days-grid" id="gridDiasCalendario">
-                        <!-- Generado dinámicamente con JS -->
-                    </div>
-                </div>
-
-                <!-- Grid de Tarjetas de Sesiones -->
-                <div class="row g-4 d-none" id="cardListaCompletaInst">
-                    <?php if (empty($programacion)): ?>
-                        <div class="col-12 text-center py-5 text-muted">
-                            <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
-                            <h5 class="fw-bold">No tienes sesiones formativas asignadas</h5>
-                            <p class="small mb-0">El Coordinador Académico aún no ha agendado bloques de horario bajo tu liderazgo.</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($programacion as $prog): ?>
-                            <div class="col-12 col-md-6">
-                                <div class="card bg-white shadow-sm ficha-card p-4 h-100 d-flex flex-column">
-                                    
-                                    <!-- Header Tarjeta -->
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <span class="badge-ficha-id">Ficha #<?= $prog->numero_ficha; ?></span>
-                                        <span class="text-success fw-bold small"><i class="fa-regular fa-clock me-1"></i> <?= $prog->nombre_dia; ?> (<?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?>)</span>
-                                    </div>
-
-                                    <!-- Título Programa -->
-                                    <h5 class="fw-bold text-dark mb-4"><?= $programas_fichas[$prog->numero_ficha] ?? 'Análisis y Desarrollo de Software'; ?></h5>
-
-                                    <!-- Contenedor Gris RAP -->
-                                    <div class="bg-light rounded-4 p-4 mb-4 border border-light-subtle">
-                                        <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">RESULTADO DE APRENDIZAJE (RAP):</div>
-                                        <p class="text-dark small mb-0 fw-medium" style="line-height: 1.5;"><?= $prog->ra_descripcion; ?></p>
-                                    </div>
-
-                                    <!-- Ubicación -->
-                                    <div class="text-secondary small fw-medium mb-4">
-                                        <i class="fa-solid fa-location-dot me-2 text-muted"></i> Ubicación: <?= $prog->ambiente_nombre; ?>
-                                    </div>
-
-                                    <!-- Pie Tarjeta (Sesiones y Botón) -->
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light-subtle mt-auto">
-                                        <div>
-                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">SESIONES FORMATIVAS</div>
-                                            <div class="text-dark fw-bold small mt-1">Realizadas: <?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?></div>
-                                        </div>
-                                        <button type="button" class="btn-sena-sm" onclick="document.getElementById('pills-inst-asistencia-tab').click();">
-                                            Tomar Asistencia
-                                        </button>
-                                    </div>
-
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <div class="inst-kpi-value"><?= $total_clases ?></div>
+                    <div class="inst-kpi-subtitle text-success"><i class="fa-solid fa-arrow-trend-up me-1"></i> Clases semanales asignadas</div>
                 </div>
             </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="inst-kpi-card shadow-sm">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="inst-kpi-title">FICHAS ACTIVAS</span>
+                        <div class="inst-kpi-icon text-success bg-success-subtle"><i class="fa-solid fa-user-group"></i></div>
+                    </div>
+                    <div class="inst-kpi-value"><?= $total_fichas ?></div>
+                    <div class="inst-kpi-subtitle text-success"><i class="fa-solid fa-layer-group me-1"></i> Cohortes de formación</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="inst-kpi-card shadow-sm">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="inst-kpi-title">FALLAS REPORTADAS</span>
+                        <div class="inst-kpi-icon text-danger bg-danger-subtle"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    </div>
+                    <div class="inst-kpi-value"><?= $fallas_reportadas ?></div>
+                    <div class="inst-kpi-subtitle text-danger"><i class="fa-solid fa-thumbtack me-1"></i> Incidentes registrados</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="inst-kpi-card shadow-sm">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="inst-kpi-title">CUMPLIMIENTO</span>
+                        <div class="inst-kpi-icon text-success bg-success-subtle"><i class="fa-regular fa-circle-check"></i></div>
+                    </div>
+                    <div class="inst-kpi-value"><?= $cumplimiento ?>%</div>
+                    <div class="inst-kpi-subtitle text-secondary"><i class="fa-regular fa-clock me-1"></i> <?= $sesiones_realizadas ?> de <?= $total_sesiones ?> sesiones</div>
+                </div>
+            </div>
+        </div>
 
-            <!-- PESTAÑA 2: REGISTRAR ASISTENCIA (Planilla Digital Automatizada - Exactamente igual a las imágenes 1 y 2) -->
-            <div class="tab-pane fade" id="pills-inst-asistencia" role="tabpanel" aria-labelledby="pills-inst-asistencia-tab">
                 
-                <form action="<?= URLROOT; ?>/index.php?route=asistencias/guardarPlanilla" method="POST" id="formAsistenciaDigital">
-                    
-                    <!-- Tarjeta Superior: Planilla Digital -->
-                    <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4" style="border: 1px solid rgba(0,0,0,0.06);">
-                        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-4">
-                            <div>
-                                <h5 class="fw-bold text-dark mb-1">Planilla Digital de Asistencia</h5>
-                                <p class="text-muted small mb-0">Selecciona la sesión formativa, fecha y registra la novedad de asistencia de cada aprendiz.</p>
-                            </div>
-                            <div class="d-flex flex-column flex-sm-row gap-3">
+                <div class="row g-4 mb-4">
+                    <!-- Columna Izquierda: Agenda -->
+                    <div class="col-12 col-lg-7">
+                        <div class="inst-agenda-panel shadow-sm d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
                                 <div>
-                                    <label class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">SESIÓN PROGRAMADA</label>
-                                    <select name="id_programacion" id="id_programacion_select" class="select-sena form-select shadow-sm" required>
-                                        <option value="">Seleccione una sesión...</option>
-                                        <?php if (!empty($programacion)): ?>
-                                            <?php foreach ($programacion as $prog): ?>
-                                                <option value="<?= $prog->id_programacion; ?>">Ficha <?= $prog->numero_ficha; ?> (<?= $prog->nombre_dia; ?>)</option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
+                                    <span class="inst-agenda-sup text-success">AGENDA PARA EL DÍA SELECCIONADO</span>
+                                    <h4 class="fw-bold mb-0 mt-1 text-dark" id="inst-agenda-fecha">Seleccione un día</h4>
                                 </div>
-                                <div>
-                                    <label class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">FECHA DE SESIÓN</label>
-                                    <input type="date" name="fecha_asistencia" class="input-date-sena form-control shadow-sm" value="<?= date('Y-m-d'); ?>" required>
+                                <div class="inst-agenda-badge" id="inst-agenda-count">0 Clases Asignadas</div>
+                            </div>
+                            
+                            <div id="inst-agenda-container" class="flex-grow-1" style="overflow-y: auto; max-height: 480px; padding-right: 0.5rem;">
+                                <!-- Se llena dinámicamente con JS -->
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-calendar-check fa-3x mb-3 text-secondary"></i>
+                                    <p class="fw-bold mb-0">Seleccione un día del calendario</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tarjeta Inferior: Planilla de Aprendices con Conmutación Automatizada -->
-                    <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
+                    <!-- Columna Derecha: Calendario -->
+                    <div class="col-12 col-lg-5">
+                        <div class="inst-cal-panel shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
+                                <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;"><i class="fa-regular fa-calendar me-2 text-success"></i> MI CALENDARIO</h6>
+                                <div class="d-flex align-items-center gap-3">
+                                    <button class="btn btn-sm btn-light rounded-circle shadow-sm" onclick="navegarMesInst(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                                    <span class="text-secondary fw-bold text-capitalize" style="font-size: 0.85rem;" id="inst-cal-mes-anio"></span>
+                                    <button class="btn btn-sm btn-light rounded-circle shadow-sm" onclick="navegarMesInst(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="inst-cal-grid-header">
+                                <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+                            </div>
+                            <div class="inst-cal-grid-body" id="inst-cal-body">
+                                <!-- Generado por JS -->
+                            </div>
+                            
+                            <div class="d-flex justify-content-center gap-4 mt-4 pt-4 border-top border-light-subtle">
+                                <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.75rem; font-weight: 600;"><div class="inst-dot-legend green"></div> Con clases</div>
+                                <div class="d-flex align-items-center gap-2 text-secondary" style="font-size: 0.75rem; font-weight: 600;"><div class="inst-dot-legend grey"></div> Sin clases</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    const programacionInst = <?= json_encode($programacion ?? []) ?>;
+                    const programasNombresInst = <?= json_encode($programas_fichas ?? []) ?>;
+                    
+                    let fechaActualInst = new Date();
+                    let currentMesInst = fechaActualInst.getMonth() + 1;
+                    let currentAnioInst = fechaActualInst.getFullYear();
+                    
+                    const mesesNombresInst = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    const diasSemanaNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+                    function renderizarCalendarioInst(mes, anio) {
+                        const calBody = document.getElementById('inst-cal-body');
+                        const labelMesAnio = document.getElementById('inst-cal-mes-anio');
                         
-                        <!-- Encabezado de la Planilla -->
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 pb-3 border-bottom border-light-subtle gap-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="fa-solid fa-user-group text-secondary"></i>
-                                <h6 class="fw-bold text-dark mb-0">Planilla de Aprendices (<span id="countAprendices">0</span> registrados)</h6>
-                            </div>
-                            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                                <span id="estadoAsistenciaMasiva" class="text-secondary small fw-medium" aria-live="polite">Puedes marcar cada aprendiz individualmente</span>
-                                <button type="button" class="btn btn-success btn-sm rounded-pill px-3 py-2 shadow-sm" onclick="marcarTodosPresentes()">
-                                    <i class="fa-solid fa-check-double me-2"></i>Todos asistieron
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Listado Conmutable -->
-                        <div class="list-group list-group-flush" id="listaAprendicesContainer">
-                            <div class="text-center py-5 text-muted">
-                                <i class="fa-solid fa-hand-pointer fa-2x mb-3 text-secondary"></i>
-                                <p class="mb-0 fw-medium">Seleccione una Sesión Programada para cargar la planilla de aprendices.</p>
-                            </div>
-                        </div>
-
-                        <!-- Botón de Envío de Planilla -->
-                        <div class="mt-5 d-flex justify-content-end">
-                            <button type="submit" class="btn-sena-lg">
-                                Guardar Planilla de Asistencia
-                            </button>
-                        </div>
+                        if(!calBody) return;
                         
-                        <script>
-                            const aprendicesPorProgramacion = <?= isset($aprendicesPorProgramacion) ? $aprendicesPorProgramacion : '{}'; ?>;
-                            const listaContainer = document.getElementById('listaAprendicesContainer');
-                            const countAprendices = document.getElementById('countAprendices');
-                            const selectProgramacion = document.getElementById('id_programacion_select');
+                        labelMesAnio.innerText = mesesNombresInst[mes] + ' ' + anio;
+                        calBody.innerHTML = '';
 
-                            selectProgramacion.addEventListener('change', function() {
-                                const idProg = this.value;
-                                listaContainer.innerHTML = '';
-                                
-                                if (!idProg || !aprendicesPorProgramacion[idProg] || aprendicesPorProgramacion[idProg].length === 0) {
-                                    countAprendices.innerText = '0';
-                                    listaContainer.innerHTML = `
-                                        <div class="text-center py-5 text-muted">
-                                            <i class="fa-solid fa-users-slash fa-2x mb-3 text-secondary"></i>
-                                            <p class="mb-0 fw-medium">No hay aprendices registrados en la ficha correspondiente a esta sesión.</p>
+                        const primerDiaStr = `${anio}-${String(mes).padStart(2, '0')}-01T00:00:00`;
+                        const primerDiaObj = new Date(primerDiaStr);
+                        let diaSemanaInicio = primerDiaObj.getDay(); // 0 (Dom) a 6 (Sab)
+                        
+                        // Ajustar Lunes = 0 ... Domingo = 6
+                        const offset = diaSemanaInicio === 0 ? 6 : diaSemanaInicio - 1;
+                        const diasMes = new Date(anio, mes, 0).getDate();
+
+                        const strMes = String(mes).padStart(2, '0');
+                        let diasConClase = new Set();
+                        programacionInst.forEach(p => {
+                            if (p.fecha_inicio && p.fecha_inicio.startsWith(`${anio}-${strMes}`)) {
+                                const d = parseInt(p.fecha_inicio.split('-')[2], 10);
+                                diasConClase.add(d);
+                            }
+                        });
+
+                        const hoy = new Date();
+                        const esMesActual = (hoy.getMonth() + 1 === mes && hoy.getFullYear() === anio);
+                        const diaActual = hoy.getDate();
+
+                        let html = '';
+                        for (let i = 0; i < offset; i++) {
+                            html += `<div class="inst-cal-cell muted"></div>`;
+                        }
+
+                        for (let d = 1; d <= diasMes; d++) {
+                            const tieneClase = diasConClase.has(d);
+                            let dotHtml = tieneClase ? `<div class="inst-cal-dot green"></div>` : `<div class="inst-cal-dot" style="background:transparent;"></div>`;
+                            html += `<div class="inst-cal-cell" id="inst-cal-cell-${d}" onclick="seleccionarDiaInst(${d}, this)">
+                                        ${d} ${dotHtml}
+                                     </div>`;
+                        }
+                        
+                        calBody.innerHTML = html;
+                        
+                        // Autoseleccionar
+                        if (esMesActual) {
+                            const hoyCell = document.getElementById(`inst-cal-cell-${diaActual}`);
+                            if(hoyCell) hoyCell.click();
+                        } else if (diasConClase.size > 0) {
+                            const primerDiaClase = Math.min(...Array.from(diasConClase));
+                            const cell = document.getElementById(`inst-cal-cell-${primerDiaClase}`);
+                            if(cell) cell.click();
+                        } else {
+                            const firstCell = document.getElementById(`inst-cal-cell-1`);
+                            if(firstCell) firstCell.click();
+                        }
+                    }
+
+                    function seleccionarDiaInst(d, element) {
+                        document.querySelectorAll('.inst-cal-cell').forEach(el => el.classList.remove('active'));
+                        element.classList.add('active');
+                        verAgendaDiaInst(d, currentMesInst, currentAnioInst);
+                    }
+
+                    function verAgendaDiaInst(dia, mes, anio) {
+                        const strMes = String(mes).padStart(2, '0');
+                        const strDia = String(dia).padStart(2, '0');
+                        const dateStr = `${anio}-${strMes}-${strDia}`;
+                        
+                        const fechaObj = new Date(`${dateStr}T00:00:00`);
+                        const nombreDia = diasSemanaNombres[fechaObj.getDay()];
+                        
+                        document.getElementById('inst-agenda-fecha').innerText = `${nombreDia}, ${dia} de ${mesesNombresInst[mes].toLowerCase()} de ${anio}`;
+
+                        let sesionesDia = programacionInst.filter(p => p.fecha_inicio === dateStr);
+                        sesionesDia.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
+
+                        document.getElementById('inst-agenda-count').innerText = `${sesionesDia.length} Clase${sesionesDia.length !== 1 ? 's' : ''} Asignada${sesionesDia.length !== 1 ? 's' : ''}`;
+
+                        const container = document.getElementById('inst-agenda-container');
+                        
+                        if (sesionesDia.length === 0) {
+                            container.innerHTML = `
+                                <div class="text-center py-5 text-muted">
+                                    <div style="background-color: #f9fafb; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+                                        <i class="fa-regular fa-calendar-xmark text-secondary fs-4"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1">Sin clases programadas</h6>
+                                    <p class="small mb-0">No tienes asignaciones para este día.</p>
+                                </div>
+                            `;
+                            return;
+                        }
+
+                        let html = '';
+                        sesionesDia.forEach(s => {
+                            const horaFinStr = s.hora_fin ? s.hora_fin.substring(0,5) : '';
+                            const horaIniStr = s.hora_inicio ? s.hora_inicio.substring(0,5) : '';
+                            const tituloProg = programasNombresInst[s.numero_ficha] || 'Programa de Formación';
+                            
+                            html += `
+                                <div class="inst-agenda-card shadow-sm bg-white">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="inst-agenda-ficha">FICHA #${s.numero_ficha}</span>
+                                            <span class="inst-agenda-time"><i class="fa-regular fa-clock me-1"></i> ${horaIniStr} - ${horaFinStr}</span>
                                         </div>
-                                    `;
-                                    return;
-                                }
+                                    </div>
+                                    
+                                    <h5 class="fw-bold text-dark mb-1">${tituloProg}</h5>
+                                    <p class="small text-secondary mb-3" style="line-height: 1.4;"><strong>RA:</strong> ${s.ra_descripcion}</p>
+                                    
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mt-3 pt-3 border-top border-light-subtle gap-3">
+                                        <div class="d-flex gap-4">
+                                            <div class="small text-secondary fw-medium"><i class="fa-solid fa-location-dot me-1 text-muted"></i> Ambiente: <strong class="text-dark">${s.ambiente_nombre || 'No asignado'}</strong></div>
+                                            <div class="small text-secondary fw-medium">Sesiones: <strong class="text-dark">${s.sesiones_realizadas}/${s.total_sesiones}</strong></div>
+                                        </div>
+                                        <button class="inst-btn-call" onclick="window.location.hash = '#pills-inst-asistencia'; document.getElementById('id_programacion_select').value = '${s.id_programacion}'; const evt = new Event('change'); document.getElementById('id_programacion_select').dispatchEvent(evt); return false;">
+                                            <i class="fa-solid fa-clipboard-user me-2"></i> Llamar Asistencia
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        container.innerHTML = html;
+                    }
 
-                                const aprendices = aprendicesPorProgramacion[idProg];
-                                countAprendices.innerText = aprendices.length;
-                                
-                                let html = '';
-                                aprendices.forEach(apr => {
-                                    html += `
-                                        <div class="list-group-item px-0 py-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center border-light-subtle gap-3">
-                                            <div class="d-flex align-items-center gap-4">
-                                                <button type="button" class="btn-estado-toggle presente shadow-sm" onclick="toggleEstadoAsistencia(this, 'estado_apr_${apr.id_usuario}')">
-                                                    <i class="fa-solid fa-check"></i>
-                                                </button>
-                                                <input type="hidden" name="asistencia[${apr.id_usuario}][estado]" id="estado_apr_${apr.id_usuario}" value="1">
-                                                <input type="hidden" name="asistencia[${apr.id_usuario}][id_usuario]" value="${apr.id_usuario}">
-                                                <div>
-                                                    <div class="fw-bold text-dark fs-6 mb-1">${apr.nombre} ${apr.apellido}</div>
-                                                    <span class="lbl-estado text-success fw-bold small" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASISTE (PRESENTE)</span>
+                    function navegarMesInst(dir) {
+                        currentMesInst += dir;
+                        if (currentMesInst > 12) {
+                            currentMesInst = 1;
+                            currentAnioInst++;
+                        } else if (currentMesInst < 1) {
+                            currentMesInst = 12;
+                            currentAnioInst--;
+                        }
+                        renderizarCalendarioInst(currentMesInst, currentAnioInst);
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.getElementById('inst-cal-body')) {
+                            renderizarCalendarioInst(currentMesInst, currentAnioInst);
+                        }
+                    });
+                </script>
+            </div>
+
+            <!-- PESTAÑA 1: MI HORARIO Y SESIONES (Original) -->
+            <div class="tab-pane fade" id="pills-inst-horario" role="tabpanel" aria-labelledby="pills-inst-horario-tab">
+                <!-- Encabezado Limpio -->
+                                <div class="mb-4 pb-1">
+                                    <h5 class="fw-bold text-dark mb-1">Sesiones Formativas Bajo mi Cargo</h5>
+                                    <p class="text-muted small mb-0">Horario de formación y cumplimiento de competencias asignadas por el coordinador.</p>
+                                </div>
+                
+                                <!-- SELECTOR DE VISTA PARA INSTRUCTOR -->
+                                <div class="d-flex justify-content-end mb-3">
+                                    <div class="d-inline-flex align-items-center bg-white p-1 rounded-pill shadow-sm border" style="font-size: 0.88rem;">
+                                        <span class="text-secondary fw-bold px-3 py-1 text-uppercase me-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Vista:</span>
+                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-medium shadow-sm border-0 active" id="btnVistaCalendarioInst" style="background-color: #39A900;" onclick="cambiarVistaInst('calendario')">
+                                            <i class="fa-solid fa-calendar-days me-1"></i> Calendario Mensual
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-light text-secondary rounded-pill px-3 py-1.5 fw-medium border-0" id="btnVistaListaInst" onclick="cambiarVistaInst('lista')">
+                                            <i class="fa-solid fa-list me-1"></i> Mis Sesiones
+                                        </button>
+                                    </div>
+                                </div>
+                
+                                <!-- Cabecera Mes/Año -->
+                                <div class="d-flex justify-content-between align-items-center mb-4" id="seccionNavegacionMesInst">
+                                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(-1)">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <h4 class="fw-bold text-dark mb-0 text-capitalize" id="nombreMesAnio"></h4>
+                                    <button type="button" class="btn btn-outline-secondary rounded-circle shadow-sm" style="width: 45px; height: 45px;" onclick="navegarMes(1)">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                
+                                <!-- Contenedor del Calendario -->
+                                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendarioInst" style="border: 1px solid rgba(0,0,0,0.06);">
+                                    <div class="calendar-days-grid mb-2">
+                                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                                    </div>
+                                    <div class="calendar-days-grid" id="gridDiasCalendario">
+                                        <!-- Generado dinámicamente con JS -->
+                                    </div>
+                                </div>
+                
+                                <!-- Grid de Tarjetas de Sesiones -->
+                                <div class="row g-4 d-none" id="cardListaCompletaInst">
+                                    <?php if (empty($programacion)): ?>
+                                        <div class="col-12 text-center py-5 text-muted">
+                                            <i class="fa-solid fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
+                                            <h5 class="fw-bold">No tienes sesiones formativas asignadas</h5>
+                                            <p class="small mb-0">El Coordinador Académico aún no ha agendado bloques de horario bajo tu liderazgo.</p>
+                                        </div>
+                                    <?php else: ?>
+                                        <?php foreach ($programacion as $prog): ?>
+                                            <div class="col-12 col-md-6">
+                                                <div class="card bg-white shadow-sm ficha-card p-4 h-100 d-flex flex-column">
+                                                    
+                                                    <!-- Header Tarjeta -->
+                                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                                        <span class="badge-ficha-id">Ficha #<?= $prog->numero_ficha; ?></span>
+                                                        <span class="text-success fw-bold small"><i class="fa-regular fa-clock me-1"></i> <?= $prog->nombre_dia; ?> (<?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?>)</span>
+                                                    </div>
+                
+                                                    <!-- Título Programa -->
+                                                    <h5 class="fw-bold text-dark mb-4"><?= $programas_fichas[$prog->numero_ficha] ?? 'Análisis y Desarrollo de Software'; ?></h5>
+                
+                                                    <!-- Contenedor Gris RAP -->
+                                                    <div class="bg-light rounded-4 p-4 mb-4 border border-light-subtle">
+                                                        <div class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">RESULTADO DE APRENDIZAJE (RAP):</div>
+                                                        <p class="text-dark small mb-0 fw-medium" style="line-height: 1.5;"><?= $prog->ra_descripcion; ?></p>
+                                                    </div>
+                
+                                                    <!-- Ubicación -->
+                                                    <div class="text-secondary small fw-medium mb-4">
+                                                        <i class="fa-solid fa-location-dot me-2 text-muted"></i> Ubicación: <?= $prog->ambiente_nombre; ?>
+                                                    </div>
+                
+                                                    <!-- Pie Tarjeta (Sesiones y Botón) -->
+                                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light-subtle mt-auto">
+                                                        <div>
+                                                            <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">SESIONES FORMATIVAS</div>
+                                                            <div class="text-dark fw-bold small mt-1">Realizadas: <?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?></div>
+                                                        </div>
+                                                        <button type="button" class="btn-sena-sm" onclick="document.getElementById('pills-inst-asistencia-tab').click();">
+                                                            Tomar Asistencia
+                                                        </button>
+                                                    </div>
+                
                                                 </div>
                                             </div>
-                                            <div class="w-100 d-flex justify-content-md-end" style="max-width: 420px;">
-                                                <input type="text" name="asistencia[${apr.id_usuario}][observacion]" class="input-obs-sena" placeholder="Agregar observación, incapacidad o excusa médica...">
-                                            </div>
-                                        </div>
-                                    `;
-                                });
-                                listaContainer.innerHTML = html;
-                            });
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+            </div>
 
-                            // Funciones de conmutación de asistencia
-                            function toggleEstadoAsistencia(btn, hiddenId) {
-                                const hiddenInput = document.getElementById(hiddenId);
-                                const lblEstado = btn.parentElement.querySelector('.lbl-estado');
-                                
-                                if (hiddenInput.value === "1") {
-                                    hiddenInput.value = "0";
-                                    btn.className = "btn-estado-toggle falla shadow-sm";
-                                    btn.innerHTML = "F";
-                                    lblEstado.className = "lbl-estado text-danger fw-bold small";
-                                    lblEstado.innerText = "INASISTENCIA (FALLA)";
-                                } else {
-                                    hiddenInput.value = "1";
-                                    btn.className = "btn-estado-toggle presente shadow-sm";
-                                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                                    lblEstado.className = "lbl-estado text-success fw-bold small";
-                                    lblEstado.innerText = "ASISTE (PRESENTE)";
-                                }
-                            }
+            <!-- PESTAÑA 2: REGISTRAR ASISTENCIA (Rediseño) -->
+            <div class="tab-pane fade" id="pills-inst-asistencia" role="tabpanel" aria-labelledby="pills-inst-asistencia-tab">
 
-                            function marcarTodosPresentes() {
-                                const btns = listaContainer.querySelectorAll('.btn-estado-toggle');
-                                btns.forEach(btn => {
-                                    const hiddenInput = btn.nextElementSibling;
-                                    const lblEstado = btn.parentElement.querySelector('.lbl-estado');
-                                    hiddenInput.value = "1";
-                                    btn.className = "btn-estado-toggle presente shadow-sm";
-                                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-                                    lblEstado.className = "lbl-estado text-success fw-bold small";
-                                    lblEstado.innerText = "ASISTE (PRESENTE)";
-                                });
-                            }
-                        </script>
+                <style>
+                    /* === PLANILLA DIGITAL DE ASISTENCIA — PREMIUM REDESIGN === */
+                    .asi-hero {
+                        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+                        border-radius: 20px;
+                        padding: 1.75rem 2rem;
+                        color: #fff;
+                        margin-bottom: 1.5rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        gap: 1.5rem;
+                        flex-wrap: wrap;
+                        box-shadow: 0 8px 24px rgba(6,78,59,.18);
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .asi-hero::before {
+                        content: "";
+                        position: absolute;
+                        top: -40px; right: -40px;
+                        width: 200px; height: 200px;
+                        border-radius: 50%;
+                        background: radial-gradient(circle, rgba(52,211,153,.18) 0%, transparent 70%);
+                        pointer-events: none;
+                    }
+                    .asi-hero-icon-box {
+                        background: rgba(255,255,255,.12);
+                        width: 52px; height: 52px;
+                        border-radius: 14px;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 1.4rem;
+                        margin-right: 1.1rem;
+                        flex-shrink: 0;
+                    }
+                    .asi-hero-controls { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+                    .asi-hero-controls label { font-size: 0.62rem; font-weight: 800; letter-spacing: .6px; color: #a7f3d0; text-transform: uppercase; margin-bottom: .35rem; display: block; }
+                    .asi-hero-controls select, .asi-hero-controls input[type="date"] {
+                        border: none; border-radius: 10px; padding: .55rem 1rem;
+                        font-size: .9rem; font-weight: 600; color: #1f2937;
+                        background: #fff; min-width: 210px;
+                        box-shadow: 0 2px 6px rgba(0,0,0,.08);
+                    }
 
+                    /* KPI Cards */
+                    .asi-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; margin-bottom: 1.5rem; }
+                    @media(max-width:767px){ .asi-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+                    .asi-kpi-card-new {
+                        background: #fff; border-radius: 16px;
+                        padding: 1.2rem 1.3rem; border: 1px solid rgba(0,0,0,.06);
+                        display: flex; align-items: center; gap: 1rem;
+                        box-shadow: 0 2px 8px rgba(0,0,0,.04); transition: box-shadow .2s;
+                    }
+                    .asi-kpi-card-new:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+                    .asi-kpi-icon-new {
+                        width: 46px; height: 46px; border-radius: 50%;
+                        display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+                    }
+                    .asi-kpi-icon-new.total    { background: #e0f2fe; color: #0284c7; }
+                    .asi-kpi-icon-new.present  { background: #dcfce7; color: #16a34a; }
+                    .asi-kpi-icon-new.absent   { background: #ffedd5; color: #ea580c; }
+                    .asi-kpi-icon-new.pending  { background: #f3e8ff; color: #9333ea; }
+                    .asi-kpi-val  { font-size: 1.65rem; font-weight: 800; color: #111827; line-height: 1; }
+                    .asi-kpi-lbl  { font-size: .78rem; color: #4b5563; font-weight: 600; margin-top: .15rem; }
+                    .asi-kpi-sub2  { font-size: .68rem; color: #9ca3af; }
+
+                    /* Main card panels */
+                    .asi-panel-new {
+                        background: #fff; border-radius: 18px;
+                        padding: 1.5rem; border: 1px solid rgba(0,0,0,.06);
+                        box-shadow: 0 2px 10px rgba(0,0,0,.04);
+                    }
+                    .asi-thead2 { display: flex; align-items: center; padding: .5rem 0 .75rem; border-bottom: 2px solid #f3f4f6; margin-bottom: .75rem; }
+                    .asi-thead2 span { font-size: .7rem; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+
+                    /* Student row */
+                    .asi-row {
+                        display: flex; align-items: center;
+                        padding: .85rem 1rem; border-radius: 12px;
+                        border: 1px solid #f3f4f6; margin-bottom: .4rem;
+                        background: #fff; transition: border-color .18s, box-shadow .18s;
+                        gap: .75rem;
+                    }
+                    .asi-row:hover { border-color: #d1fae5; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
+                    .asi-row-num { width: 36px; text-align: center; font-size: .85rem; font-weight: 700; color: #9ca3af; flex-shrink: 0; }
+                    .asi-row-name { flex: 2; }
+                    .asi-row-name strong { font-size: .9rem; font-weight: 700; color: #111827; display: block; }
+                    .asi-row-doc { flex: 1; font-size: .8rem; color: #6b7280; font-weight: 500; }
+                    .asi-row-action { width: 110px; display: flex; justify-content: center; flex-shrink: 0; }
+
+                    /* Toggle button */
+                    .asi-btn-estado {
+                        width: 34px; height: 34px; border-radius: 50%;
+                        border: none; cursor: pointer; font-weight: 700; font-size: .95rem;
+                        display: flex; align-items: center; justify-content: center;
+                        transition: all .18s;
+                    }
+                    .asi-btn-estado.pendiente { background: #f3f4f6; color: #9ca3af; border: 1.5px dashed #d1d5db; }
+                    .asi-btn-estado.presente  { background: #10b981; color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.35); }
+                    .asi-btn-estado.ausente   { background: #ef4444; color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,.35); }
+
+                    /* Legend dots */
+                    .asi-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: .4rem; }
+                    .asi-dot.presente { background: #10b981; }
+                    .asi-dot.ausente  { background: #ef4444; }
+                    .asi-dot.pendiente{ background: #f59e0b; }
+
+                    /* Sidebar action buttons */
+                    .asi-action-btn {
+                        display: flex; align-items: center; justify-content: center; gap: .5rem;
+                        padding: .65rem 1rem; border-radius: 10px; font-size: .85rem; font-weight: 600;
+                        border: 1.5px solid; cursor: pointer; width: 100%; transition: all .18s; background: none;
+                    }
+                    .asi-action-btn.success { border-color: #86efac; color: #16a34a; background: #f0fdf4; }
+                    .asi-action-btn.success:hover { background: #dcfce7; }
+                    .asi-action-btn.danger  { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+                    .asi-action-btn.danger:hover  { background: #fee2e2; }
+                    .asi-action-btn.neutral { border-color: #e5e7eb; color: #6b7280; background: #fff; }
+                    .asi-action-btn.neutral:hover { background: #f9fafb; }
+
+                    /* Save button */
+                    .asi-save-btn {
+                        background: #16a34a; color: #fff; font-weight: 700; font-size: .95rem;
+                        border: none; border-radius: 12px; padding: .9rem 1.5rem;
+                        width: 100%; cursor: pointer; display: flex; align-items: center;
+                        justify-content: center; gap: .6rem; transition: background .2s, box-shadow .2s;
+                        box-shadow: 0 4px 14px rgba(22,163,74,.3);
+                    }
+                    .asi-save-btn:hover { background: #15803d; box-shadow: 0 6px 20px rgba(22,163,74,.4); }
+
+                    /* Info table */
+                    .asi-info-tbl td { padding: .35rem .25rem; font-size: .82rem; vertical-align: middle; border: none; }
+                    .asi-info-tbl td:first-child { color: #6b7280; font-weight: 600; width: 45%; }
+                    .asi-info-tbl td:last-child { color: #111827; font-weight: 600; text-align: right; }
+                </style>
+
+                <form action="<?= URLROOT; ?>/index.php?route=asistencias/guardarPlanilla" method="POST" id="formAsistenciaDigital">
+
+                    <!-- ① HERO BANNER -->
+                    <div class="asi-hero">
+                        <div class="d-flex align-items-center">
+                            <div class="asi-hero-icon-box"><i class="fa-solid fa-clipboard-user"></i></div>
+                            <div>
+                                <h4 class="fw-bold mb-1" style="font-size:1.2rem;">Planilla Digital de Asistencia</h4>
+                                <p class="mb-0" style="color:#a7f3d0;font-size:.85rem;">Gestiona la asistencia de los aprendices de manera rápida y sencilla.</p>
+                            </div>
+                        </div>
+                        <div class="asi-hero-controls">
+                            <div>
+                                <label>Sesión Programada</label>
+                                <select name="id_programacion" id="id_programacion_select" required>
+                                    <option value="">Seleccione una sesión...</option>
+                                    <?php if (!empty($programacion)): ?>
+                                        <?php foreach ($programacion as $prog): ?>
+                                            <option value="<?= $prog->id_programacion; ?>"
+                                                data-desc="<?= htmlspecialchars($prog->nombre_programa ?? 'Programa de Formación'); ?>"
+                                                data-amb="<?= htmlspecialchars($prog->id_numero_ambiente ?? 'Sin Asignar'); ?>"
+                                                data-hora="<?= htmlspecialchars($prog->hora_inicio ?? '00:00') . ' - ' . htmlspecialchars($prog->hora_fin ?? '00:00'); ?>"
+                                                data-jornada="<?= htmlspecialchars($prog->jornada ?? 'Diurna'); ?>">
+                                                <?= htmlspecialchars($prog->nombre_programa ?? 'Programación Web'); ?> - Ficha <?= $prog->numero_ficha; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Fecha de Sesión</label>
+                                <input type="date" name="fecha_asistencia" value="<?= date('Y-m-d'); ?>" required>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- ② KPI CARDS -->
+                    <div class="asi-kpi-row">
+                        <div class="asi-kpi-card-new">
+                            <div class="asi-kpi-icon-new total"><i class="fa-solid fa-users"></i></div>
+                            <div>
+                                <div class="asi-kpi-val"><span id="kpi-total-val">0</span> <span style="font-size:.95rem;color:#9ca3af;">/ 0</span></div>
+                                <div class="asi-kpi-lbl">Aprendices registrados</div>
+                                <div class="asi-kpi-sub2"><span id="kpi-total-pct">0</span>% del total</div>
+                            </div>
+                        </div>
+                        <div class="asi-kpi-card-new">
+                            <div class="asi-kpi-icon-new present"><i class="fa-solid fa-check"></i></div>
+                            <div>
+                                <div class="asi-kpi-val" id="kpi-presentes-val">0</div>
+                                <div class="asi-kpi-lbl">Asistieron</div>
+                                <div class="asi-kpi-sub2"><span id="kpi-presentes-pct">0</span>% del total</div>
+                            </div>
+                        </div>
+                        <div class="asi-kpi-card-new">
+                            <div class="asi-kpi-icon-new absent"><i class="fa-solid fa-face-frown-open"></i></div>
+                            <div>
+                                <div class="asi-kpi-val" id="kpi-ausentes-val">0</div>
+                                <div class="asi-kpi-lbl">No asistieron</div>
+                                <div class="asi-kpi-sub2"><span id="kpi-ausentes-pct">0</span>% del total</div>
+                            </div>
+                        </div>
+                        <div class="asi-kpi-card-new">
+                            <div class="asi-kpi-icon-new pending"><i class="fa-solid fa-clipboard-list"></i></div>
+                            <div>
+                                <div class="asi-kpi-val" id="kpi-pendientes-val">–</div>
+                                <div class="asi-kpi-lbl">Pendientes</div>
+                                <div class="asi-kpi-sub2">Por marcar</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ③ MAIN CONTENT -->
+                    <div class="row g-4 mb-4">
+
+                        <!-- LEFT: Student List -->
+                        <div class="col-12 col-lg-8">
+                            <div class="asi-panel-new h-100 d-flex flex-column">
+
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                                    <div>
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size:.95rem;">
+                                            <i class="fa-solid fa-users me-2 text-success"></i> Planilla de Aprendices
+                                        </h6>
+                                        <p class="text-muted small mb-0">Marca la asistencia de cada aprendiz</p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <div class="input-group input-group-sm" style="max-width:200px;">
+                                            <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px;">
+                                                <i class="fa-solid fa-magnifying-glass text-muted" style="font-size:.75rem;"></i>
+                                            </span>
+                                            <input type="text" id="buscadorAprendices" class="form-control border-start-0 ps-0" placeholder="Buscar aprendiz..." style="border-radius:0 8px 8px 0;">
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 px-3" style="border-radius:8px;font-size:.82rem;">
+                                            <i class="fa-solid fa-filter"></i> Filtros
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="asi-thead2">
+                                    <span style="width:36px;text-align:center;">#</span>
+                                    <span style="flex:2;padding-left:.5rem;">Aprendiz</span>
+                                    <span style="flex:1;">Documento</span>
+                                    <span style="width:110px;text-align:center;">Estado</span>
+                                </div>
+
+                                <div id="listaAprendicesContainer" class="flex-grow-1" style="min-height:230px;">
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center py-5 text-muted h-100">
+                                        <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-3 opacity-60">
+                                            <rect x="18" y="8" width="46" height="58" rx="5" fill="#e5e7eb"/>
+                                            <rect x="23" y="16" width="36" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="24" width="28" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="32" width="32" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="40" width="20" height="4" rx="2" fill="#d1d5db"/>
+                                            <circle cx="62" cy="58" r="18" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+                                            <circle cx="62" cy="58" r="11" fill="none" stroke="#9ca3af" stroke-width="2.5"/>
+                                            <line x1="70" y1="66" x2="78" y2="74" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+                                        </svg>
+                                        <p class="fw-bold text-dark mb-1" style="font-size:.9rem;">No hay aprendices registrados en esta sesión</p>
+                                        <p class="small mb-0">Los aprendices aparecerán aquí cuando la sesión tenga aprendices asignados.</p>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-center gap-4 mt-4 pt-3 border-top text-muted small fw-medium">
+                                    <span><span class="asi-dot presente"></span> Asistió</span>
+                                    <span><span class="asi-dot ausente"></span> No asistió</span>
+                                    <span><span class="asi-dot pendiente"></span> Pendiente</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Sidebar -->
+                        <div class="col-12 col-lg-4">
+
+                            <div class="asi-panel-new mb-3">
+                                <h6 class="fw-bold text-dark mb-3" style="font-size:.9rem;">
+                                    <i class="fa-solid fa-bolt text-warning me-2"></i> Acciones Rápidas
+                                </h6>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="asi-action-btn success" onclick="marcarTodos('presente')">
+                                        <i class="fa-solid fa-check"></i> Marcar todos como asistieron
+                                    </button>
+                                    <button type="button" class="asi-action-btn danger" onclick="marcarTodos('ausente')">
+                                        <i class="fa-solid fa-xmark"></i> Marcar todos como no asistieron
+                                    </button>
+                                    <button type="button" class="asi-action-btn neutral" onclick="marcarTodos('pendiente')">
+                                        <i class="fa-solid fa-rotate-right"></i> Limpiar planilla
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="asi-panel-new mb-3">
+                                <h6 class="fw-bold text-dark mb-3" style="font-size:.9rem;">
+                                    <i class="fa-regular fa-calendar text-success me-2"></i> Información de la Sesión
+                                </h6>
+                                <table class="asi-info-tbl w-100">
+                                    <tbody>
+                                        <tr><td>Programa:</td><td id="info-prog">-</td></tr>
+                                        <tr><td>Ambiente:</td><td id="info-amb">-</td></tr>
+                                        <tr><td>Hora:</td><td id="info-hora">-</td></tr>
+                                        <tr><td>Instructor:</td><td><?= htmlspecialchars($_SESSION['user_name'] ?? 'Instructor'); ?></td></tr>
+                                        <tr><td>Jornada:</td><td><span class="badge bg-success-subtle text-success rounded-pill px-2" id="info-jor">-</span></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button type="submit" class="asi-save-btn">
+                                <i class="fa-regular fa-floppy-disk"></i> Guardar Planilla de Asistencia
+                            </button>
+
+                        </div>
+                    </div>
+
+                    <!-- ④ FOOTER TIP -->
+                    <div class="d-flex align-items-center gap-2 py-2 px-3 rounded-3 shadow-sm"
+                         style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:.83rem;">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Recuerda que puedes marcar la asistencia individualmente o usar las acciones rápidas para agilizar el proceso.
+                    </div>
+
+                    <!-- ⑤ JS LOGIC (unchanged) -->
+                    <script>
+                        const aprendicesPorProgramacion = <?= isset($aprendicesPorProgramacion) ? $aprendicesPorProgramacion : '{}'; ?>;
+                        const listaContainer = document.getElementById('listaAprendicesContainer');
+                        const selectProgramacion = document.getElementById('id_programacion_select');
+                        const buscador = document.getElementById('buscadorAprendices');
+                        let currentAprendices = [];
+
+                        function renderizarKPIs() {
+                            const total = currentAprendices.length;
+                            document.getElementById('kpi-total-val').innerText = total;
+                            document.getElementById('kpi-total-val').nextElementSibling.innerText = `/ ${total}`;
+
+                            if (total === 0) {
+                                document.getElementById('kpi-presentes-val').innerText = '0';
+                                document.getElementById('kpi-presentes-pct').innerText = '0';
+                                document.getElementById('kpi-ausentes-val').innerText = '0';
+                                document.getElementById('kpi-ausentes-pct').innerText = '0';
+                                document.getElementById('kpi-pendientes-val').innerText = '–';
+                                return;
+                            }
+
+                            const btns = listaContainer.querySelectorAll('.asi-btn-estado');
+                            let presentes = 0, ausentes = 0, pendientes = 0;
+                            btns.forEach(btn => {
+                                if (btn.classList.contains('presente')) presentes++;
+                                else if (btn.classList.contains('ausente')) ausentes++;
+                                else pendientes++;
+                            });
+
+                            document.getElementById('kpi-presentes-val').innerText = presentes;
+                            document.getElementById('kpi-presentes-pct').innerText = Math.round((presentes / total) * 100);
+                            document.getElementById('kpi-ausentes-val').innerText = ausentes;
+                            document.getElementById('kpi-ausentes-pct').innerText = Math.round((ausentes / total) * 100);
+                            document.getElementById('kpi-pendientes-val').innerText = pendientes > 0 ? pendientes : '–';
+                        }
+
+                        selectProgramacion.addEventListener('change', function () {
+                            const idProg = this.value;
+                            listaContainer.innerHTML = '';
+
+                            if (!idProg || !aprendicesPorProgramacion[idProg] || aprendicesPorProgramacion[idProg].length === 0) {
+                                currentAprendices = [];
+                                listaContainer.innerHTML = `
+                                    <div class="d-flex flex-column align-items-center justify-content-center text-center py-5 text-muted h-100">
+                                        <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-3 opacity-60">
+                                            <rect x="18" y="8" width="46" height="58" rx="5" fill="#e5e7eb"/>
+                                            <rect x="23" y="16" width="36" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="24" width="28" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="32" width="32" height="4" rx="2" fill="#d1d5db"/>
+                                            <rect x="23" y="40" width="20" height="4" rx="2" fill="#d1d5db"/>
+                                            <circle cx="62" cy="58" r="18" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+                                            <circle cx="62" cy="58" r="11" fill="none" stroke="#9ca3af" stroke-width="2.5"/>
+                                            <line x1="70" y1="66" x2="78" y2="74" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+                                        </svg>
+                                        <p class="fw-bold text-dark mb-1" style="font-size:.9rem;">No hay aprendices registrados en esta sesión</p>
+                                        <p class="small mb-0">Los aprendices aparecerán aquí cuando la sesión tenga aprendices asignados.</p>
+                                    </div>`;
+                                renderizarKPIs();
+                                document.getElementById('info-prog').innerText = '-';
+                                document.getElementById('info-amb').innerText = '-';
+                                document.getElementById('info-hora').innerText = '-';
+                                document.getElementById('info-jor').innerText = '-';
+                                return;
+                            }
+
+                            const option = this.options[this.selectedIndex];
+                            document.getElementById('info-prog').innerText = option.getAttribute('data-desc') || 'Programa Técnico';
+                            document.getElementById('info-amb').innerText = option.getAttribute('data-amb') ? `Ambiente ${option.getAttribute('data-amb')}` : 'Sin Asignar';
+                            document.getElementById('info-hora').innerText = option.getAttribute('data-hora') || '00:00 - 00:00';
+                            document.getElementById('info-jor').innerText = option.getAttribute('data-jornada') || 'Diurna';
+
+                            currentAprendices = aprendicesPorProgramacion[idProg];
+                            renderizarListaAsistencia(currentAprendices);
+                        });
+
+                        function renderizarListaAsistencia(aprendices) {
+                            if (aprendices.length === 0) {
+                                listaContainer.innerHTML = `<div class="text-center py-4 text-muted"><p class="fw-medium mb-0">No se encontraron aprendices con ese criterio.</p></div>`;
+                                return;
+                            }
+                            let html = '';
+                            aprendices.forEach((apr, index) => {
+                                html += `
+                                    <div class="asi-row" data-nombre="${apr.nombre} ${apr.apellido}">
+                                        <div class="asi-row-num">${index + 1}</div>
+                                        <div class="asi-row-name">
+                                            <strong>${apr.nombre} ${apr.apellido}</strong>
+                                            <div class="d-none d-md-block mt-1">
+                                                <input type="text" name="asistencia[${apr.id_usuario}][observacion]"
+                                                    class="form-control form-control-sm shadow-none"
+                                                    style="border:1px solid #f3f4f6;border-radius:6px;font-size:.72rem;"
+                                                    placeholder="Agregar observación, incapacidad o excusa médica...">
+                                            </div>
+                                        </div>
+                                        <div class="asi-row-doc">${apr.documento || 'N/A'}</div>
+                                        <div class="asi-row-action">
+                                            <input type="hidden" name="asistencia[${apr.id_usuario}][estado]" id="estado_apr_${apr.id_usuario}" value="">
+                                            <button type="button" class="asi-btn-estado pendiente shadow-sm"
+                                                onclick="toggleEstadoAsistencia(this, 'estado_apr_${apr.id_usuario}')">–</button>
+                                        </div>
+                                    </div>`;
+                            });
+                            listaContainer.innerHTML = html;
+                            renderizarKPIs();
+                        }
+
+                        buscador.addEventListener('input', function (e) {
+                            const term = e.target.value.toLowerCase();
+                            listaContainer.querySelectorAll('.asi-row').forEach(item => {
+                                item.style.display = item.getAttribute('data-nombre').toLowerCase().includes(term) ? 'flex' : 'none';
+                            });
+                        });
+
+                        function toggleEstadoAsistencia(btn, hiddenId) {
+                            const h = document.getElementById(hiddenId);
+                            if (h.value === "") {
+                                h.value = "1"; btn.className = "asi-btn-estado presente shadow-sm";
+                                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                            } else if (h.value === "1") {
+                                h.value = "0"; btn.className = "asi-btn-estado ausente shadow-sm";
+                                btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                            } else {
+                                h.value = ""; btn.className = "asi-btn-estado pendiente shadow-sm";
+                                btn.innerHTML = '–';
+                            }
+                            renderizarKPIs();
+                        }
+
+                        function marcarTodos(estado) {
+                            if (currentAprendices.length === 0) return;
+                            listaContainer.querySelectorAll('.asi-btn-estado').forEach(btn => {
+                                const h = btn.previousElementSibling;
+                                if (estado === 'presente') {
+                                    h.value = "1"; btn.className = "asi-btn-estado presente shadow-sm";
+                                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                                } else if (estado === 'ausente') {
+                                    h.value = "0"; btn.className = "asi-btn-estado ausente shadow-sm";
+                                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                                } else {
+                                    h.value = ""; btn.className = "asi-btn-estado pendiente shadow-sm";
+                                    btn.innerHTML = '–';
+                                }
+                            });
+                            renderizarKPIs();
+                        }
+
+                        document.getElementById('formAsistenciaDigital').addEventListener('submit', function (e) {
+                            if (currentAprendices.length === 0) {
+                                e.preventDefault();
+                                alert("No hay aprendices registrados para enviar la planilla.");
+                                return;
+                            }
+                            const pendings = listaContainer.querySelectorAll('.asi-btn-estado.pendiente');
+                            if (pendings.length > 0) {
+                                if (!confirm("Hay " + pendings.length + " aprendiz/ces marcados como 'Pendiente'. El sistema los guardará como 'Falla'. ¿Deseas continuar?")) {
+                                    e.preventDefault();
+                                }
+                            }
+                        });
+                    </script>
                 </form>
 
             </div>
-
             <!-- PESTAÑA 3: REPORTAR NOVEDAD DE AMBIENTE (Exactamente igual a la imagen 3 del usuario) -->
             <div class="tab-pane fade" id="pills-inst-novedad" role="tabpanel" aria-labelledby="pills-inst-novedad-tab">
                 
