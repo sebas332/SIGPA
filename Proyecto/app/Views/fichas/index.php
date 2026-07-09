@@ -980,30 +980,205 @@ foreach ($db->resultSet() as $r) {
      ============================================== -->
 
 <?php if ($current_role === 'Coordinador'): ?>
+<style>
+    .ficha-create-dialog {
+        max-width: 920px;
+    }
+
+    .ficha-create-content {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.28);
+    }
+
+    .ficha-create-header {
+        background: linear-gradient(135deg, #046b31 0%, #0b8e43 62%, #119b4d 100%);
+        color: #ffffff;
+        border: 0;
+        min-height: 112px;
+        padding: 1.45rem 1.9rem;
+    }
+
+    .ficha-create-header-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #e3f7ea;
+        color: #0b8e43;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.85rem;
+        flex: 0 0 auto;
+    }
+
+    .ficha-create-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: 0;
+    }
+
+    .ficha-create-subtitle {
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.96rem;
+        margin-top: 0.25rem;
+    }
+
+    .ficha-create-close {
+        filter: invert(1) grayscale(100%) brightness(2);
+        opacity: 0.95;
+        box-shadow: none;
+    }
+
+    .ficha-create-body {
+        padding: 1.75rem 1.9rem 1.55rem;
+        background: #ffffff;
+    }
+
+    .ficha-create-grid {
+        row-gap: 1.55rem;
+    }
+
+    .ficha-create-label {
+        color: #374151;
+        font-size: 0.92rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 0.58rem;
+        margin-bottom: 0.68rem;
+    }
+
+    .ficha-create-label i {
+        color: #0b8e43;
+        font-size: 1rem;
+    }
+
+    .ficha-create-input,
+    .ficha-create-select {
+        min-height: 54px;
+        border: 1px solid #d8dee8;
+        border-radius: 9px;
+        color: #111827;
+        font-size: 1rem;
+        box-shadow: none;
+        padding: 0.74rem 0.95rem;
+    }
+
+    .ficha-create-input::placeholder {
+        color: #9ca3af;
+    }
+
+    .ficha-create-input:focus,
+    .ficha-create-select:focus {
+        border-color: #0b8e43;
+        box-shadow: 0 0 0 3px rgba(11, 142, 67, 0.12);
+    }
+
+    .ficha-create-footer {
+        background: #ffffff;
+        border-top: 1px solid #e5e7eb;
+        padding: 1.2rem 1.9rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .ficha-create-cancel,
+    .ficha-create-save {
+        min-width: 150px;
+        min-height: 46px;
+        border-radius: 999px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .ficha-create-cancel {
+        color: #4b5563;
+        border: 1px solid #aeb7c4;
+        background: #ffffff;
+    }
+
+    .ficha-create-cancel:hover {
+        border-color: #6b7280;
+        background: #f9fafb;
+        color: #111827;
+    }
+
+    .ficha-create-save {
+        border: 0;
+        background: #0b8e43;
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(11, 142, 67, 0.22);
+    }
+
+    .ficha-create-save:hover {
+        background: #087638;
+        color: #ffffff;
+    }
+
+    @media (max-width: 767.98px) {
+        .ficha-create-dialog {
+            margin: 0.75rem;
+        }
+
+        .ficha-create-body {
+            padding: 1.2rem;
+        }
+
+        .ficha-create-footer {
+            flex-direction: column-reverse;
+            padding: 1rem 1.2rem;
+        }
+
+        .ficha-create-cancel,
+        .ficha-create-save {
+            width: 100%;
+        }
+    }
+</style>
+
 <!-- Modal Crear Ficha -->
 <div class="modal fade" id="modalCrearFicha" tabindex="-1" aria-labelledby="modalCrearFichaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-dark text-white p-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalCrearFichaLabel">
-                    <i class="fa-solid fa-users me-2 text-success"></i> Registrar Nueva Ficha
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered ficha-create-dialog">
+        <div class="modal-content ficha-create-content">
+            <div class="modal-header ficha-create-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="ficha-create-header-icon" aria-hidden="true">
+                        <i class="fa-regular fa-calendar-plus"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title ficha-create-title" id="modalCrearFichaLabel">Registrar Nueva Ficha</h5>
+                        <div class="ficha-create-subtitle">Crea una nueva ficha académica para los aprendices.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ficha-create-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="<?= URLROOT; ?>/index.php?route=fichas/create" method="POST" id="form-crear-ficha">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
+                <div class="modal-body ficha-create-body">
+                    <div class="row ficha-create-grid">
                         <div class="col-md-6">
-                            <label for="numero_ficha" class="form-label fw-semibold text-secondary">Número de Ficha</label>
-                            <input type="number" class="form-control form-control-lg rounded-3" id="numero_ficha" name="numero_ficha" placeholder="Ej. 2670003" required oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10);" min="0">
+                            <label for="numero_ficha" class="ficha-create-label">
+                                <i class="fa-regular fa-file-lines"></i> Número de Ficha
+                            </label>
+                            <input type="number" class="form-control ficha-create-input" id="numero_ficha" name="numero_ficha" placeholder="Ej. 2670003" required oninput="if(this.value.length > 10) this.value = this.value.slice(0, 10);" min="0">
                         </div>
                         <div class="col-md-6">
-                            <label for="cantidad_estudiantes" class="form-label fw-semibold text-secondary">Cupos Autorizados</label>
-                            <input type="number" class="form-control form-control-lg rounded-3" id="cantidad_estudiantes" name="cantidad_estudiantes" placeholder="Ej. 30" required oninput="if(this.value.length > 2) this.value = this.value.slice(0, 2);" min="0">
+                            <label for="cantidad_estudiantes" class="ficha-create-label">
+                                <i class="fa-solid fa-user-group"></i> Cupos Autorizados
+                            </label>
+                            <input type="number" class="form-control ficha-create-input" id="cantidad_estudiantes" name="cantidad_estudiantes" placeholder="Ej. 30" required oninput="if(this.value.length > 2) this.value = this.value.slice(0, 2);" min="0">
                         </div>
                         <div class="col-md-12">
-                            <label for="id_programa" class="form-label fw-semibold text-secondary">Programa de Formación</label>
-                            <select class="form-select form-select-lg rounded-3" id="id_programa" name="id_programa" required>
+                            <label for="id_programa" class="ficha-create-label">
+                                <i class="fa-solid fa-book-open"></i> Programa de Formación
+                            </label>
+                            <select class="form-select ficha-create-select" id="id_programa" name="id_programa" required>
                                 <option value="">Selecciona un programa...</option>
                                 <?php foreach ($programas as $prog): ?>
                                     <option value="<?= $prog->id_programa; ?>"><?= htmlspecialchars($prog->nombre) . ' (' . $prog->codigo . ')'; ?></option>
@@ -1011,8 +1186,10 @@ foreach ($db->resultSet() as $r) {
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="id_usuario_instructor_lider" class="form-label fw-semibold text-secondary">Instructor Líder</label>
-                            <select class="form-select form-select-lg rounded-3" id="id_usuario_instructor_lider" name="id_usuario_instructor_lider" required>
+                            <label for="id_usuario_instructor_lider" class="ficha-create-label">
+                                <i class="fa-solid fa-user-plus"></i> Instructor Líder
+                            </label>
+                            <select class="form-select ficha-create-select" id="id_usuario_instructor_lider" name="id_usuario_instructor_lider" required>
                                 <option value="">Selecciona un instructor...</option>
                                 <?php foreach ($instructores as $inst): ?>
                                     <option value="<?= $inst->id_usuario; ?>"><?= htmlspecialchars($inst->nombre . ' ' . $inst->apellido); ?></option>
@@ -1020,8 +1197,10 @@ foreach ($db->resultSet() as $r) {
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="id_jornada" class="form-label fw-semibold text-secondary">Jornada</label>
-                            <select class="form-select form-select-lg rounded-3" id="id_jornada" name="id_jornada" required>
+                            <label for="id_jornada" class="ficha-create-label">
+                                <i class="fa-regular fa-clock"></i> Jornada
+                            </label>
+                            <select class="form-select ficha-create-select" id="id_jornada" name="id_jornada" required>
                                 <option value="">Selecciona la jornada...</option>
                                 <?php foreach ($jornadas as $jor): ?>
                                     <option value="<?= $jor->id_jornada; ?>"><?= htmlspecialchars($jor->nombre); ?></option>
@@ -1029,22 +1208,32 @@ foreach ($db->resultSet() as $r) {
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="fecha_inicio" class="form-label fw-semibold text-secondary">Fecha Inicio</label>
-                            <input type="date" class="form-control form-control-lg rounded-3" id="fecha_inicio" name="fecha_inicio" required>
+                            <label for="fecha_inicio" class="ficha-create-label">
+                                <i class="fa-regular fa-calendar-days"></i> Fecha Inicio
+                            </label>
+                            <input type="date" class="form-control ficha-create-input" id="fecha_inicio" name="fecha_inicio" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="fecha_practicas" class="form-label fw-semibold text-secondary">Fecha Prácticas</label>
-                            <input type="date" class="form-control form-control-lg rounded-3" id="fecha_practicas" name="fecha_practicas" required>
+                            <label for="fecha_practicas" class="ficha-create-label">
+                                <i class="fa-regular fa-calendar"></i> Fecha Prácticas
+                            </label>
+                            <input type="date" class="form-control ficha-create-input" id="fecha_practicas" name="fecha_practicas" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="fecha_fin" class="form-label fw-semibold text-secondary">Fecha Fin</label>
-                            <input type="date" class="form-control form-control-lg rounded-3" id="fecha_fin" name="fecha_fin" required>
+                            <label for="fecha_fin" class="ficha-create-label">
+                                <i class="fa-regular fa-calendar-check"></i> Fecha Fin
+                            </label>
+                            <input type="date" class="form-control ficha-create-input" id="fecha_fin" name="fecha_fin" required>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light">
-                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-sena-success px-4 py-2"><i class="fa-solid fa-floppy-disk"></i> Guardar Ficha</button>
+                <div class="modal-footer ficha-create-footer">
+                    <button type="button" class="btn ficha-create-cancel" data-bs-dismiss="modal">
+                        <i class="fa-regular fa-circle-xmark"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn ficha-create-save">
+                        <i class="fa-regular fa-floppy-disk"></i> Guardar Ficha
+                    </button>
                 </div>
             </form>
         </div>

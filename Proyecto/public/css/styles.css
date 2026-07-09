@@ -981,6 +981,178 @@ body {
     white-space: nowrap;
 }
 
+/* Modal de asignacion de horarios */
+.schedule-modal-dialog {
+    max-width: 920px;
+}
+
+.schedule-modal-content {
+    border: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28) !important;
+}
+
+.schedule-modal-header {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem 1.85rem;
+    min-height: 90px;
+    color: #fff;
+    border: 0;
+    background:
+        radial-gradient(circle at 86% 0%, rgba(255, 255, 255, 0.15), transparent 31%),
+        radial-gradient(circle at 78% 100%, rgba(255, 255, 255, 0.1), transparent 28%),
+        linear-gradient(135deg, #008f3d 0%, #087d36 48%, #006b2f 100%);
+}
+
+.schedule-modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.schedule-modal-icon {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    color: #087d36;
+    background: linear-gradient(135deg, #ffffff 0%, #dcf7e8 100%);
+    box-shadow: 0 12px 30px rgba(0, 75, 48, 0.22);
+    font-size: 1.55rem;
+}
+
+.schedule-modal-title {
+    margin: 0;
+    color: #fff;
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: 0;
+}
+
+.schedule-modal-subtitle {
+    margin-top: 0.25rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.schedule-modal-close {
+    margin: 0;
+    padding: 0.35rem;
+    opacity: 0.92;
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.schedule-modal-body {
+    padding: 1.65rem 1.85rem 1.45rem;
+    background: #fff;
+}
+
+.schedule-modal-grid {
+    --bs-gutter-x: 1.35rem;
+    --bs-gutter-y: 1rem;
+}
+
+.schedule-modal-label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.55rem;
+    color: #334155;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.schedule-modal-label i {
+    width: 18px;
+    color: #0f963d;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.schedule-modal-control {
+    min-height: 56px;
+    border: 1px solid #d9e1ea;
+    border-radius: 8px;
+    color: #1f2937;
+    background-color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    box-shadow: none;
+}
+
+.schedule-modal-control::placeholder {
+    color: #8b95a5;
+}
+
+.schedule-modal-control:focus {
+    border-color: #8bd5a5;
+    box-shadow: 0 0 0 0.2rem rgba(16, 163, 74, 0.14);
+}
+
+.schedule-modal-control:disabled,
+.schedule-modal-control[readonly] {
+    color: #667085;
+    background-color: #f4f6f8;
+    border-color: #e8edf2;
+    font-weight: 700;
+}
+
+.schedule-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.45rem 1.85rem;
+    border-top: 1px solid #e5eaf0;
+    background: #f8fafc;
+}
+
+.schedule-modal-cancel,
+.schedule-modal-save {
+    min-width: 150px;
+    min-height: 48px;
+    border-radius: 16px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+}
+
+.schedule-modal-cancel {
+    color: #475569;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+}
+
+.schedule-modal-cancel:hover {
+    color: #1f2937;
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.schedule-modal-save {
+    color: #fff;
+    border: 0;
+    background: linear-gradient(135deg, #0f963d 0%, #008f3d 100%);
+    box-shadow: 0 12px 24px rgba(0, 143, 61, 0.24);
+}
+
+.schedule-modal-save:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(0, 143, 61, 0.28);
+}
+
 /* Responsividad general */
 @media (max-width: 1050px) {
     .sga-sidebar {
@@ -1065,5 +1237,22 @@ body {
     .banner-user-card {
         width: 100%;
         margin-top: 1.25rem;
+    }
+    .schedule-modal-dialog {
+        margin: 0.75rem;
+    }
+    .schedule-modal-header {
+        padding: 1.2rem;
+    }
+    .schedule-modal-body {
+        padding: 1.25rem;
+    }
+    .schedule-modal-footer {
+        padding: 1.1rem 1.25rem;
+        flex-direction: column-reverse;
+    }
+    .schedule-modal-cancel,
+    .schedule-modal-save {
+        width: 100%;
     }
 }

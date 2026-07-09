@@ -580,8 +580,13 @@
         /* Estilos para el Calendario Mensual de Programación Académica */
         .calendar-days-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 12px;
+        }
+        #gridDiasCalendario,
+        #gridDiasCalendarioAmbiente {
+            grid-auto-rows: 132px;
+            align-items: stretch;
         }
         .calendar-day-name {
             text-align: center;
@@ -595,7 +600,9 @@
             border: 1px solid rgba(0,0,0,0.04);
         }
         .calendar-cell {
-            min-height: 110px;
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
             background: #ffffff;
             border: 1px solid rgba(0,0,0,0.06);
             border-radius: 12px;
@@ -604,13 +611,13 @@
             flex-direction: column;
             gap: 4px;
             position: relative;
+            overflow: hidden;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
         .calendar-cell:hover {
             box-shadow: 0 8px 24px rgba(0,0,0,0.05);
             border-color: rgba(57, 169, 0, 0.25);
-            transform: translateY(-2px);
         }
         .calendar-cell.other-month {
             background: #f8fafc;
@@ -625,6 +632,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex: 0 0 auto;
+            min-width: 0;
             border-bottom: 1px solid rgba(0,0,0,0.02);
             padding-bottom: 0.2rem;
         }
@@ -647,9 +656,10 @@
         .calendar-session-list {
             display: flex;
             flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
             gap: 4px;
             overflow-y: auto;
-            max-height: 140px;
             padding-right: 2px;
         }
         .calendar-session-list::-webkit-scrollbar {
@@ -660,6 +670,8 @@
             border-radius: 3px;
         }
         .calendar-session-card {
+            flex: 0 0 auto;
+            min-width: 0;
             background: #f8fafc;
             border-left: 3px solid #39A900;
             padding: 0.4rem;
@@ -668,9 +680,14 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+            overflow: hidden;
             border: 1px solid rgba(0,0,0,0.04);
             border-left: 3px solid #39A900;
             transition: all 0.2s ease;
+        }
+        .calendar-session-card .d-flex {
+            min-width: 0;
+            gap: 4px;
         }
         .calendar-session-card:hover {
             background: #f1f5f9;
@@ -680,21 +697,30 @@
             font-weight: 700;
             color: #334155;
             font-size: 0.68rem;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .calendar-session-ficha {
             font-weight: 700;
             color: #e28743;
             font-size: 0.68rem;
+            flex: 0 0 auto;
         }
         .calendar-session-instructor {
             color: #2563eb;
             font-weight: 700;
             cursor: pointer;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 3px;
             font-size: 0.66rem;
             margin-top: 1px;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .calendar-session-instructor:hover {
             text-decoration: underline;

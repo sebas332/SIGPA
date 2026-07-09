@@ -364,8 +364,13 @@
 /* Estilos para el Calendario Mensual de Programación Académica */
 .calendar-days-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 12px;
+}
+#gridDiasCalendario,
+#gridDiasCalendarioAmbiente {
+    grid-auto-rows: 132px;
+    align-items: stretch;
 }
 .calendar-day-name {
     text-align: center;
@@ -379,7 +384,9 @@
     border: 1px solid rgba(0,0,0,0.04);
 }
 .calendar-cell {
-    min-height: 110px;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
     background: #ffffff;
     border: 1px solid rgba(0,0,0,0.06);
     border-radius: 12px;
@@ -388,13 +395,13 @@
     flex-direction: column;
     gap: 4px;
     position: relative;
+    overflow: hidden;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 4px rgba(0,0,0,0.01);
 }
 .calendar-cell:hover {
     box-shadow: 0 8px 24px rgba(0,0,0,0.05);
     border-color: rgba(57, 169, 0, 0.25);
-    transform: translateY(-2px);
 }
 .calendar-cell.other-month {
     background: #f8fafc;
@@ -409,6 +416,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex: 0 0 auto;
+    min-width: 0;
     border-bottom: 1px solid rgba(0,0,0,0.02);
     padding-bottom: 0.2rem;
 }
@@ -431,9 +440,10 @@
 .calendar-session-list {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     gap: 4px;
     overflow-y: auto;
-    max-height: 140px;
     padding-right: 2px;
 }
 .calendar-session-list::-webkit-scrollbar {
@@ -444,6 +454,8 @@
     border-radius: 3px;
 }
 .calendar-session-card {
+    flex: 0 0 auto;
+    min-width: 0;
     background: #f8fafc;
     border-left: 3px solid #39A900;
     padding: 0.4rem;
@@ -452,9 +464,14 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    overflow: hidden;
     border: 1px solid rgba(0,0,0,0.04);
     border-left: 3px solid #39A900;
     transition: all 0.2s ease;
+}
+.calendar-session-card .d-flex {
+    min-width: 0;
+    gap: 4px;
 }
 .calendar-session-card:hover {
     background: #f1f5f9;
@@ -464,21 +481,30 @@
     font-weight: 700;
     color: #334155;
     font-size: 0.68rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .calendar-session-ficha {
     font-weight: 700;
     color: #e28743;
     font-size: 0.68rem;
+    flex: 0 0 auto;
 }
 .calendar-session-instructor {
     color: #2563eb;
     font-weight: 700;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 3px;
     font-size: 0.66rem;
     margin-top: 1px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .calendar-session-instructor:hover {
     text-decoration: underline;
@@ -4266,18 +4292,76 @@
                         const kpiCapacidad = document.getElementById("kpi-total-capacidad");
                         const kpiActivos = document.getElementById("kpi-total-activos");
                         const paginationInfo = document.getElementById("env-pagination-info");
+                        const paginationControls = document.getElementById("env-pagination-controls");
 
                         const wrappers = Array.from(document.querySelectorAll(".env-card-wrapper"));
+                        const itemsPerPage = 4;
+                        let currentPage = 1;
+                        let filteredWrappers = wrappers.slice();
 
-                        function applyFilters() {
-                            const query = searchInput.value.trim().toLowerCase();
-                            const estado = filterEstado.value;
-                            const tipo = filterTipo.value;
+                        function renderPagination() {
+                            const totalFiltered = filteredWrappers.length;
+                            const totalPages = Math.max(1, Math.ceil(totalFiltered / itemsPerPage));
+                            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+                            const startIndex = totalFiltered === 0 ? 0 : (currentPage - 1) * itemsPerPage;
+                            const endIndex = Math.min(startIndex + itemsPerPage, totalFiltered);
+                            const visiblePageItems = new Set(filteredWrappers.slice(startIndex, endIndex));
+
+                            wrappers.forEach(wrapper => {
+                                wrapper.classList.toggle("d-none", !visiblePageItems.has(wrapper));
+                            });
+
+                            if (paginationInfo) {
+                                if (totalFiltered === 0) {
+                                    paginationInfo.textContent = "No hay ambientes para mostrar";
+                                } else {
+                                    paginationInfo.textContent = `Mostrando ${startIndex + 1} a ${endIndex} de ${totalFiltered} ambientes`;
+                                }
+                            }
+
+                            if (!paginationControls) return;
+
+                            let controlsHtml = `
+                                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                    <button type="button" class="page-link rounded border-0 bg-transparent text-secondary" data-env-page="prev" aria-label="Página anterior">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                </li>
+                            `;
+
+                            for (let page = 1; page <= totalPages; page++) {
+                                const isActive = page === currentPage;
+                                controlsHtml += `
+                                    <li class="page-item ${isActive ? 'active' : ''}">
+                                        <button type="button" class="page-link rounded fw-bold border-0 ${isActive ? 'text-white' : 'text-secondary bg-transparent'}" data-env-page="${page}" style="${isActive ? 'background-color: #39A900;' : ''} min-width: 28px; text-align: center;">
+                                            ${page}
+                                        </button>
+                                    </li>
+                                `;
+                            }
+
+                            controlsHtml += `
+                                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                    <button type="button" class="page-link rounded border-0 bg-transparent text-secondary" data-env-page="next" aria-label="Página siguiente">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </li>
+                            `;
+
+                            paginationControls.innerHTML = controlsHtml;
+                        }
+
+                        function applyFilters(resetPage = true) {
+                            const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+                            const estado = filterEstado ? filterEstado.value : "all";
+                            const tipo = filterTipo ? filterTipo.value : "all";
 
                             let visibleCount = 0;
                             let activeCount = 0;
                             let totalPcs = 0;
                             let totalCapacidad = 0;
+                            filteredWrappers = [];
 
                             wrappers.forEach(wrapper => {
                                 const name = wrapper.dataset.nombre;
@@ -4299,15 +4383,13 @@
                                 const matchesTipo = (tipo === "all") || (wrapperTipo.includes(tipo));
 
                                 if (matchesSearch && matchesEstado && matchesTipo) {
-                                    wrapper.classList.remove("d-none");
+                                    filteredWrappers.push(wrapper);
                                     visibleCount++;
                                     if (isAvailable === "1") {
                                         activeCount++;
                                     }
                                     totalPcs += pcs;
                                     totalCapacidad += cap;
-                                } else {
-                                    wrapper.classList.add("d-none");
                                 }
                             });
 
@@ -4319,15 +4401,38 @@
                                 kpiActivos.textContent = pct + "%";
                             }
 
-                            if (paginationInfo) {
-                                paginationInfo.textContent = `Mostrando 1 a ${visibleCount} de ${visibleCount} ambientes`;
+                            if (resetPage) {
+                                currentPage = 1;
                             }
+
+                            renderPagination();
                         }
 
-                        if (searchInput) searchInput.addEventListener("input", applyFilters);
-                        if (filterEstado) filterEstado.addEventListener("change", applyFilters);
-                        if (filterTipo) filterTipo.addEventListener("change", applyFilters);
-                        if (filterSede) filterSede.addEventListener("change", applyFilters);
+                        if (searchInput) searchInput.addEventListener("input", function() { applyFilters(true); });
+                        if (filterEstado) filterEstado.addEventListener("change", function() { applyFilters(true); });
+                        if (filterTipo) filterTipo.addEventListener("change", function() { applyFilters(true); });
+                        if (filterSede) filterSede.addEventListener("change", function() { applyFilters(true); });
+
+                        if (paginationControls) {
+                            paginationControls.addEventListener("click", function(event) {
+                                const button = event.target.closest("[data-env-page]");
+                                const pageItem = button ? button.closest(".page-item") : null;
+                                if (!button || (pageItem && pageItem.classList.contains("disabled"))) return;
+
+                                const targetPage = button.dataset.envPage;
+                                const totalPages = Math.max(1, Math.ceil(filteredWrappers.length / itemsPerPage));
+
+                                if (targetPage === "prev") {
+                                    currentPage = Math.max(1, currentPage - 1);
+                                } else if (targetPage === "next") {
+                                    currentPage = Math.min(totalPages, currentPage + 1);
+                                } else {
+                                    currentPage = parseInt(targetPage, 10) || 1;
+                                }
+
+                                renderPagination();
+                            });
+                        }
 
                         const btnGrid = document.getElementById("env-toggle-grid");
                         const btnList = document.getElementById("env-toggle-list");
@@ -4353,6 +4458,8 @@
                                 });
                             });
                         }
+
+                        applyFilters();
                     });
                 </script>
             </div>
@@ -7763,76 +7870,404 @@
     </div>
 </div>
 
+<style>
+    .modal-dialog.amb-edit-modal {
+        max-width: 910px;
+    }
+
+    .amb-edit-modal .modal-content {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.28);
+    }
+
+    .amb-edit-header {
+        background: linear-gradient(135deg, #046b31 0%, #0b8e43 62%, #0f9f4c 100%);
+        color: #ffffff;
+        border: 0;
+        padding: 1.45rem 1.7rem;
+        min-height: 108px;
+    }
+
+    .amb-edit-header-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: #dff5e7;
+        color: #0b8e43;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        flex: 0 0 auto;
+    }
+
+    .amb-edit-title {
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: 0;
+    }
+
+    .amb-edit-subtitle {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 0.92rem;
+        margin-top: 0.2rem;
+    }
+
+    .amb-edit-close {
+        filter: invert(1) grayscale(100%) brightness(2);
+        opacity: 0.9;
+        box-shadow: none;
+    }
+
+    .amb-edit-body {
+        padding: 1.6rem 1.85rem 1.4rem;
+        background: #ffffff;
+    }
+
+    .amb-edit-label {
+        color: #374151;
+        font-size: 0.9rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .amb-edit-label i {
+        color: #0b8e43;
+        font-size: 0.95rem;
+    }
+
+    .amb-edit-input,
+    .amb-edit-select {
+        min-height: 52px;
+        border: 1px solid #d8dee8;
+        border-radius: 9px;
+        color: #111827;
+        font-size: 1rem;
+        box-shadow: none;
+        padding: 0.72rem 0.95rem;
+    }
+
+    .amb-edit-input:focus,
+    .amb-edit-select:focus {
+        border-color: #0b8e43;
+        box-shadow: 0 0 0 3px rgba(11, 142, 67, 0.12);
+    }
+
+    .amb-edit-upload {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 1rem;
+        min-height: 88px;
+        border: 1px dashed #cfd7e2;
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 1rem 1.2rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .amb-edit-upload:hover {
+        border-color: #0b8e43;
+        background: #fbfefc;
+    }
+
+    .amb-edit-upload-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: #e8f7ed;
+        color: #0b8e43;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.55rem;
+    }
+
+    .amb-edit-upload-title {
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .amb-edit-upload-subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .amb-edit-upload-pill {
+        border-radius: 999px;
+        background: #e8f7ed;
+        color: #157347;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 0.45rem 1.1rem;
+        white-space: nowrap;
+    }
+
+    .amb-edit-file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .amb-edit-help {
+        color: #6b7280;
+        font-size: 0.86rem;
+        margin-top: 0.7rem;
+    }
+
+    .amb-edit-equipment {
+        border: 1px solid #d8dee8;
+        border-radius: 10px;
+        padding: 1.1rem 1.15rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(130px, 1fr));
+        gap: 1rem 1.25rem;
+        background: #ffffff;
+    }
+
+    .amb-edit-switch {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    .amb-edit-switch .form-check-input {
+        width: 2.6rem;
+        height: 1.35rem;
+        margin: 0;
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+
+    .amb-edit-switch .form-check-input:checked {
+        background-color: #0b8e43;
+        border-color: #0b8e43;
+    }
+
+    .amb-edit-switch .form-check-input:focus {
+        box-shadow: 0 0 0 3px rgba(11, 142, 67, 0.15);
+        border-color: #0b8e43;
+    }
+
+    .amb-edit-switch-icon {
+        color: #0b8e43;
+        font-size: 1.05rem;
+        flex: 0 0 auto;
+    }
+
+    .amb-edit-switch-label {
+        color: #1f2937;
+        font-size: 0.9rem;
+        font-weight: 750;
+        line-height: 1.15;
+    }
+
+    .amb-edit-footer {
+        background: #ffffff;
+        border-top: 1px solid #e5e7eb;
+        padding: 1.15rem 1.85rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .amb-edit-cancel,
+    .amb-edit-save {
+        min-width: 150px;
+        min-height: 46px;
+        border-radius: 999px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+    }
+
+    .amb-edit-cancel {
+        color: #4b5563;
+        border: 1px solid #aeb7c4;
+        background: #ffffff;
+    }
+
+    .amb-edit-cancel:hover {
+        border-color: #6b7280;
+        background: #f9fafb;
+        color: #111827;
+    }
+
+    .amb-edit-save {
+        border: 0;
+        background: #0b8e43;
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(11, 142, 67, 0.22);
+    }
+
+    .amb-edit-save:hover {
+        background: #087638;
+        color: #ffffff;
+    }
+
+    @media (max-width: 767.98px) {
+        .amb-edit-modal .modal-dialog {
+            margin: 0.75rem;
+        }
+
+        .amb-edit-body {
+            padding: 1.2rem;
+        }
+
+        .amb-edit-upload {
+            grid-template-columns: auto 1fr;
+        }
+
+        .amb-edit-upload-pill {
+            grid-column: 1 / -1;
+            justify-self: start;
+        }
+
+        .amb-edit-equipment {
+            grid-template-columns: 1fr;
+        }
+
+        .amb-edit-footer {
+            flex-direction: column-reverse;
+        }
+
+        .amb-edit-cancel,
+        .amb-edit-save {
+            width: 100%;
+        }
+    }
+</style>
+
 <!-- MODAL EDITAR AMBIENTE -->
 <div class="modal fade" id="modalEditarAmbiente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-primary text-white px-4 py-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalEditarAmbienteLabel"><i class="fa-solid fa-pen me-2"></i>Editar Ambiente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered amb-edit-modal">
+        <div class="modal-content">
+            <div class="modal-header amb-edit-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="amb-edit-header-icon" aria-hidden="true">
+                        <i class="fa-regular fa-clock"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title amb-edit-title" id="modalEditarAmbienteLabel">Editar Ambiente</h5>
+                        <div class="amb-edit-subtitle">Actualiza la información del ambiente físico</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close amb-edit-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="<?= URLROOT; ?>/index.php?route=ambientes/update" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id_numero_ambiente" id="edit_amb_id">
-                <div class="modal-body px-4 py-4">
-                    <div class="row g-3">
+                <div class="modal-body amb-edit-body">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-medium text-secondary">Nombre del Ambiente</label>
-                            <input type="text" class="form-control form-control-lg" id="edit_amb_nombre" name="nombre" maxlength="15" required>
+                            <label class="amb-edit-label" for="edit_amb_nombre">
+                                <i class="fa-regular fa-clipboard"></i> Nombre del Ambiente
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="edit_amb_nombre" name="nombre" maxlength="15" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-medium text-secondary">Tipo</label>
-                            <select class="form-select form-select-lg" id="edit_amb_tipo" name="tipo" onchange="toggleEspecialidad(this, 'edit_amb_especialidad')" required>
+                            <label class="amb-edit-label" for="edit_amb_tipo">
+                                <i class="fa-solid fa-layer-group"></i> Tipo
+                            </label>
+                            <select class="form-select amb-edit-select" id="edit_amb_tipo" name="tipo" onchange="toggleEspecialidad(this, 'edit_amb_especialidad')" required>
                                 <option value="Convencional">Convencional</option>
                                 <option value="Especializado">Especializado</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-medium text-secondary">Capacidad (Max 2 dígitos)</label>
-                            <input type="text" class="form-control form-control-lg" id="edit_amb_capacidad" name="capacidad" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)" required>
+                            <label class="amb-edit-label" for="edit_amb_capacidad">
+                                <i class="fa-regular fa-id-badge"></i> Capacidad (Max 2 dígitos)
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="edit_amb_capacidad" name="capacidad" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-medium text-secondary">Cantidad de Computadores</label>
-                            <input type="text" class="form-control form-control-lg" id="edit_amb_computadores" name="computadores" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,3)" required>
+                            <label class="amb-edit-label" for="edit_amb_computadores">
+                                <i class="fa-solid fa-desktop"></i> Cantidad de Computadores
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="edit_amb_computadores" name="computadores" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,3)" required>
                         </div>
                         <div class="col-md-4" id="div_edit_amb_especialidad" style="display:none;">
-                            <label class="form-label fw-medium text-secondary">Especialidad del Ambiente</label>
-                            <input type="text" class="form-control form-control-lg" id="edit_amb_especialidad" name="especialidad_ambiente">
+                            <label class="amb-edit-label" for="edit_amb_especialidad">
+                                <i class="fa-solid fa-graduation-cap"></i> Especialidad del Ambiente
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="edit_amb_especialidad" name="especialidad_ambiente">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-medium text-secondary d-block mt-2 mb-2">Agregar Nuevas Fotos (Opcional)</label>
-                            <input type="file" class="form-control form-control-lg" name="fotos[]" multiple accept="image/*">
-                            <small class="text-muted">Puedes seleccionar varias imágenes. Las existentes se mantendrán.</small>
+                            <label class="amb-edit-label" for="edit_amb_fotos">
+                                <i class="fa-regular fa-image"></i> Agregar Nuevas Fotos (Opcional)
+                            </label>
+                            <label class="amb-edit-upload" for="edit_amb_fotos">
+                                <span class="amb-edit-upload-icon" aria-hidden="true">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </span>
+                                <span>
+                                    <span class="amb-edit-upload-title d-block">Elegir archivos</span>
+                                    <span class="amb-edit-upload-subtitle d-block">o arrastra y suelta imágenes aquí</span>
+                                </span>
+                                <span class="amb-edit-upload-pill" id="edit_amb_fotos_status">Sin archivos seleccionados</span>
+                                <input type="file" class="amb-edit-file-input" id="edit_amb_fotos" name="fotos[]" multiple accept="image/*">
+                            </label>
+                            <div class="amb-edit-help">Puedes seleccionar varias imágenes. Las existentes se mantendrán.</div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-medium text-secondary d-block mb-3">Dotación e Instalaciones</label>
-                            <div class="d-flex flex-wrap gap-4 bg-light p-3 rounded-3 border border-secondary-subtle">
-                                <div class="form-check form-switch form-check-lg">
+                            <label class="amb-edit-label">
+                                <i class="fa-solid fa-screwdriver-wrench"></i> Dotación e Instalaciones
+                            </label>
+                            <div class="amb-edit-equipment">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_amb_aire" name="aire" value="1">
-                                    <label class="form-check-label fw-medium" for="edit_amb_aire">Aire Acondicionado</label>
+                                    <i class="fa-regular fa-snowflake amb-edit-switch-icon"></i>
+                                    <label class="form-check-label amb-edit-switch-label" for="edit_amb_aire">Aire Acondicionado</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_amb_vent" name="ventilador" value="1">
-                                    <label class="form-check-label fw-medium" for="edit_amb_vent">Ventilador</label>
+                                    <i class="fa-solid fa-fan amb-edit-switch-icon"></i>
+                                    <label class="form-check-label amb-edit-switch-label" for="edit_amb_vent">Ventilador</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_amb_tablero" name="tablero" value="1">
-                                    <label class="form-check-label fw-medium" for="edit_amb_tablero">Tablero / Pizarra</label>
+                                    <i class="fa-solid fa-chalkboard amb-edit-switch-icon"></i>
+                                    <label class="form-check-label amb-edit-switch-label" for="edit_amb_tablero">Tablero / Pizarra</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_amb_tv" name="tv" value="1">
-                                    <label class="form-check-label fw-medium" for="edit_amb_tv">Televisor</label>
+                                    <i class="fa-solid fa-tv amb-edit-switch-icon"></i>
+                                    <label class="form-check-label amb-edit-switch-label" for="edit_amb_tv">Televisor</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="edit_amb_disp" name="disponibilidad" value="1">
-                                    <label class="form-check-label fw-medium text-success" for="edit_amb_disp">Disponible</label>
+                                    <i class="fa-regular fa-circle-check amb-edit-switch-icon"></i>
+                                    <label class="form-check-label amb-edit-switch-label" for="edit_amb_disp">Disponible</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light d-flex justify-content-end">
-                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary fw-bold shadow-sm ms-2" style="padding: 0.6rem 1.4rem; border-radius: 25px;"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios</button>
+                <div class="modal-footer amb-edit-footer">
+                    <button type="button" class="btn amb-edit-cancel" data-bs-dismiss="modal">
+                        <i class="fa-regular fa-circle-xmark"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn amb-edit-save">
+                        <i class="fa-regular fa-floppy-disk"></i> Guardar Cambios
+                    </button>
                 </div>
             </form>
         </div>
@@ -8333,18 +8768,29 @@
 
 <!-- MODAL CREACIÓN ("+ Asignar Horario") -->
 <div class="modal fade" id="modalAsignarHorario" tabindex="-1" aria-labelledby="modalAsignarHorarioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-dark text-white p-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalAsignarHorarioLabel"><i class="fa-solid fa-calendar-plus me-2 text-success"></i>Programar Nueva Sesión Académica</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered schedule-modal-dialog">
+        <div class="modal-content schedule-modal-content">
+            <div class="modal-header schedule-modal-header">
+                <div class="schedule-modal-heading">
+                    <span class="schedule-modal-icon" aria-hidden="true">
+                        <i class="fa-solid fa-clock"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title schedule-modal-title" id="modalAsignarHorarioLabel">Programar Nueva Sesión Académica</h5>
+                        <div class="schedule-modal-subtitle">Asigna los detalles de la sesión académica.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close schedule-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formCrearProgramacionAjax">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
+                <div class="modal-body schedule-modal-body">
+                    <div class="row schedule-modal-grid">
                         <div class="col-md-6">
-                            <label for="modal_numero_ficha" class="form-label fw-medium text-secondary">Ficha de Formación</label>
-                            <select class="form-select form-select-lg" id="modal_numero_ficha" name="numero_ficha" required>
+                            <label for="modal_numero_ficha" class="schedule-modal-label">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                                <span>Ficha de Formación</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_numero_ficha" name="numero_ficha" required>
                                 <option value="">Selecciona la ficha...</option>
                                 <?php foreach ($fichas as $f): ?>
                                     <option value="<?= $f->numero_ficha; ?>">Ficha <?= $f->numero_ficha; ?></option>
@@ -8352,24 +8798,36 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_programa_nombre" class="form-label fw-medium text-secondary">Programa de Formación</label>
-                            <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold text-dark" id="modal_programa_nombre" readonly placeholder="Se cargará automáticamente...">
+                            <label for="modal_programa_nombre" class="schedule-modal-label">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>Programa de Formación</span>
+                            </label>
+                            <input type="text" class="form-control schedule-modal-control" id="modal_programa_nombre" readonly placeholder="Se cargará automáticamente...">
                         </div>
                         <div class="col-md-12">
-                            <label for="modal_id_competencia" class="form-label fw-medium text-secondary">Competencia</label>
-                            <select class="form-select form-select-lg" id="modal_id_competencia" name="id_competencia" disabled required>
+                            <label for="modal_id_competencia" class="schedule-modal-label">
+                                <i class="fa-solid fa-bullseye"></i>
+                                <span>Competencia</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_id_competencia" name="id_competencia" disabled required>
                                 <option value="">Selecciona primero una ficha...</option>
                             </select>
                         </div>
                         <div class="col-md-12">
-                            <label for="modal_id_resultado_aprendizaje" class="form-label fw-medium text-secondary">Resultado de Aprendizaje (RA)</label>
-                            <select class="form-select form-select-lg" id="modal_id_resultado_aprendizaje" name="id_resultado_aprendizaje" disabled required>
+                            <label for="modal_id_resultado_aprendizaje" class="schedule-modal-label">
+                                <i class="fa-solid fa-book-open"></i>
+                                <span>Resultado de Aprendizaje (RA)</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_id_resultado_aprendizaje" name="id_resultado_aprendizaje" disabled required>
                                 <option value="">Selecciona primero una competencia...</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_id_usuario" class="form-label fw-medium text-secondary">Instructor</label>
-                            <select class="form-select form-select-lg" id="modal_id_usuario" name="id_usuario" required>
+                            <label for="modal_id_usuario" class="schedule-modal-label">
+                                <i class="fa-solid fa-user"></i>
+                                <span>Instructor</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_id_usuario" name="id_usuario" required>
                                 <option value="">Selecciona al instructor...</option>
                                 <?php foreach ($instructores as $inst): ?>
                                     <option value="<?= $inst->id_usuario; ?>"><?= $inst->nombre . ' ' . $inst->apellido; ?></option>
@@ -8377,8 +8835,11 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_id_numero_ambiente" class="form-label fw-medium text-secondary">Ambiente de Formación</label>
-                            <select class="form-select form-select-lg" id="modal_id_numero_ambiente" name="id_numero_ambiente" required>
+                            <label for="modal_id_numero_ambiente" class="schedule-modal-label">
+                                <i class="fa-solid fa-building"></i>
+                                <span>Ambiente de Formación</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_id_numero_ambiente" name="id_numero_ambiente" required>
                                 <option value="">Selecciona un ambiente...</option>
                                 <?php foreach ($ambientes as $amb): ?>
                                     <option value="<?= $amb->id_numero_ambiente; ?>"><?= $amb->nombre; ?></option>
@@ -8386,8 +8847,11 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_id_dias" class="form-label fw-medium text-secondary">Día de la Semana</label>
-                            <select class="form-select form-select-lg" id="modal_id_dias" name="id_dias" required>
+                            <label for="modal_id_dias" class="schedule-modal-label">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Día de la Semana</span>
+                            </label>
+                            <select class="form-select schedule-modal-control" id="modal_id_dias" name="id_dias" required>
                                 <option value="">Selecciona el día...</option>
                                 <?php foreach ($dias as $d): ?>
                                     <option value="<?= $d->id_dias; ?>"><?= $d->nombre_dia; ?></option>
@@ -8395,22 +8859,37 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_fecha_inicio" class="form-label fw-medium text-secondary">Fecha de Inicio Estimada</label>
-                            <input type="date" class="form-control form-control-lg" id="modal_fecha_inicio" name="fecha_inicio" value="<?= date('Y-m-d'); ?>" required>
+                            <label for="modal_fecha_inicio" class="schedule-modal-label">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Fecha de Inicio Estimada</span>
+                            </label>
+                            <input type="date" class="form-control schedule-modal-control" id="modal_fecha_inicio" name="fecha_inicio" value="<?= date('Y-m-d'); ?>" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_hora_inicio" class="form-label fw-medium text-secondary">Hora de Inicio</label>
-                            <input type="time" class="form-control form-control-lg" id="modal_hora_inicio" name="hora_inicio" required>
+                            <label for="modal_hora_inicio" class="schedule-modal-label">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>Hora de Inicio</span>
+                            </label>
+                            <input type="time" class="form-control schedule-modal-control" id="modal_hora_inicio" name="hora_inicio" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_hora_fin" class="form-label fw-medium text-secondary">Hora de Fin</label>
-                            <input type="time" class="form-control form-control-lg" id="modal_hora_fin" name="hora_fin" required>
+                            <label for="modal_hora_fin" class="schedule-modal-label">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>Hora de Fin</span>
+                            </label>
+                            <input type="time" class="form-control schedule-modal-control" id="modal_hora_fin" name="hora_fin" required>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light rounded-bottom-4">
-                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success fw-bold px-4 py-2 shadow-sm"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Horario</button>
+                <div class="modal-footer schedule-modal-footer">
+                    <button type="button" class="btn schedule-modal-cancel" data-bs-dismiss="modal">
+                        <i class="fa-regular fa-circle-xmark"></i>
+                        <span>Cancelar</span>
+                    </button>
+                    <button type="submit" class="btn schedule-modal-save">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Guardar Horario</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -8717,6 +9196,22 @@ function toggleEspecialidad(selectElement, targetId) {
         target.value = '';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    var fotosInput = document.getElementById('edit_amb_fotos');
+    var fotosStatus = document.getElementById('edit_amb_fotos_status');
+
+    if (fotosInput && fotosStatus) {
+        fotosInput.addEventListener('change', function() {
+            var total = fotosInput.files ? fotosInput.files.length : 0;
+            fotosStatus.textContent = total === 0
+                ? 'Sin archivos seleccionados'
+                : total === 1
+                    ? '1 archivo seleccionado'
+                    : total + ' archivos seleccionados';
+        });
+    }
+});
 
 function editarAmbiente(id, nombre, tipo, cap, comp, esp, aire, vent, tab, tv, disp) {
     document.getElementById('edit_amb_id').value = id;
