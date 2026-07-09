@@ -2229,10 +2229,10 @@
                         <p class="programas-hero-subtitle mb-0">Explora la oferta académica disponible para aprendices y consulta los detalles de cada programa de formación.</p>
                     </div>
                     <div class="programas-hero-divider" aria-hidden="true"></div>
-                    <a href="<?= URLROOT; ?>/index.php?route=programas/crearCompleto" class="btn programas-create-btn text-decoration-none d-inline-flex align-items-center gap-3">
+                    <button type="button" class="btn programas-create-btn text-decoration-none d-inline-flex align-items-center gap-3" data-bs-toggle="modal" data-bs-target="#modalCrearPrograma">
                         <span class="programas-create-icon"><i class="fa-solid fa-plus"></i></span>
                         <span>Crear Programa</span>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Buscador de Programas -->
@@ -2288,88 +2288,16 @@
                                                 <td>
                                                     <div class="fw-bold text-dark small"><?= $p->nombre; ?></div>
                                                     <div class="text-muted small">Duración total: <?= $p->duracion_lectiva + $p->duracion_practica; ?> horas</div>
-                                                    <a href="#competencias-prog-<?= $p->id_programa; ?>" data-bs-toggle="collapse" class="text-success text-decoration-none small fw-bold d-inline-block mt-1" style="font-size: 0.78rem;">
-                                                        <i class="fa-solid fa-book-bookmark me-1"></i> Ver Competencias y Resultados
-                                                    </a>
                                                 </td>
                                                 <td class="text-dark small fw-medium">v<?= $p->version; ?></td>
                                                 <td class="text-dark small fw-medium"><?= $p->vigencia; ?></td>
                                                 <td class="text-end pe-4">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-circle shadow-sm me-1" onclick="abrirModalEditarPrograma(<?= $p->id_programa; ?>)" title="Editar">
-                                                        <i class="fa-solid fa-pen"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="confirmarEliminacionPrograma(<?= $p->id_programa; ?>)" title="Eliminar">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
+                                                    <a href="<?= URLROOT; ?>/index.php?route=programas/show&id=<?= $p->id_programa; ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-sm">
+                                                        <i class="fa-solid fa-eye me-1"></i> Ver Programa
+                                                    </a>
                                                 </td>
                                             </tr>
-                                            <tr class="collapse" id="competencias-prog-<?= $p->id_programa; ?>">
-                                                <td colspan="5" class="bg-light p-3">
-                                                    <div class="card border-0 shadow-none bg-transparent">
-                                                        <div class="card-body p-0">
-                                                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                                                <h6 class="fw-bold text-success m-0" style="font-size: 0.85rem;"><i class="fa-solid fa-book-bookmark me-1"></i> Competencias de <?= htmlspecialchars($p->nombre); ?></h6>
-                                                                <button type="button" class="btn btn-sm btn-success rounded-pill px-3 py-1 text-white shadow-sm border-0" style="font-size: 0.75rem; background-color: #39A900;" onclick="abrirModalCompetencia(<?= $p->id_programa; ?>)">
-                                                                    <i class="fa-solid fa-plus me-1"></i> Agregar Competencia
-                                                                </button>
-                                                            </div>
-                                                            
-                                                            <?php 
-                                                            $compProg = array_filter($competencias ?? [], function($c) use ($p) {
-                                                                return $c->id_programa == $p->id_programa;
-                                                            });
-                                                            if (empty($compProg)):
-                                                            ?>
-                                                                <div class="text-muted small py-2 bg-white rounded-3 px-3 border">No hay competencias registradas para este programa.</div>
-                                                            <?php else: ?>
-                                                                <div class="accordion" id="accordionComp-<?= $p->id_programa; ?>">
-                                                                    <?php foreach ($compProg as $c): ?>
-                                                                        <div class="accordion-item border mb-2 shadow-sm rounded-3 overflow-hidden bg-white">
-                                                                            <h2 class="accordion-header">
-                                                                                <button class="accordion-button collapsed bg-white fw-bold text-dark py-2 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp-<?= $c->id_competencia; ?>" aria-expanded="false" style="font-size: 0.8rem; box-shadow: none;">
-                                                                                    <span class="text-success me-2">[<?= $c->codigo; ?>]</span> <?= htmlspecialchars($c->nombre); ?>
-                                                                                    <span class="badge bg-light text-secondary border ms-auto me-3"><?= $c->horas_totales; ?> hrs totales</span>
-                                                                                    <span class="badge bg-success-subtle text-success me-3"><?= $c->total_sesiones; ?> sesiones (<?= $c->horas_a_ejecutar; ?> hrs a ejecutar al <?= $c->porcentaje; ?>%)</span>
-                                                                                </button>
-                                                                            </h2>
-                                                                            <div id="collapseComp-<?= $c->id_competencia; ?>" class="accordion-collapse collapse" data-bs-parent="#accordionComp-<?= $p->id_programa; ?>">
-                                                                                <div class="accordion-body bg-white p-3 border-top">
-                                                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                                                                        <span class="fw-bold small text-muted">Resultados de Aprendizaje (RAP)</span>
-                                                                                        <button type="button" class="btn btn-outline-warning text-dark fw-bold rounded-pill px-2 py-1 border-1" style="font-size: 0.72rem;" onclick="abrirModalResultado(<?= $c->id_competencia; ?>)">
-                                                                                            <i class="fa-solid fa-plus me-1"></i> Agregar RAP
-                                                                                        </button>
-                                                                                    </div>
-                                                                                    <?php 
-                                                                                    $raComp = array_filter($resultados ?? [], function($r) use ($c) {
-                                                                                        return $r->id_competencia == $c->id_competencia;
-                                                                                    });
-                                                                                    if (empty($raComp)):
-                                                                                    ?>
-                                                                                        <div class="text-muted small">No hay resultados de aprendizaje registrados para esta competencia.</div>
-                                                                                    <?php else: ?>
-                                                                                        <ul class="list-group list-group-flush">
-                                                                                            <?php foreach ($raComp as $r): ?>
-                                                                                                <li class="list-group-item d-flex justify-content-between align-items-start px-0 py-2 border-0">
-                                                                                                    <div class="ms-2 me-auto">
-                                                                                                        <div class="fw-bold text-warning-emphasis small" style="font-size: 0.75rem;">[<?= $r->codigo; ?>]</div>
-                                                                                                        <span class="text-secondary small" style="font-size: 0.75rem;"><?= htmlspecialchars($r->descripcion); ?></span>
-                                                                                                    </div>
-                                                                                                    <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill"><?= $r->sesiones_asignadas; ?> sesiones</span>
-                                                                                                </li>
-                                                                                            <?php endforeach; ?>
-                                                                                        </ul>
-                                                                                    <?php endif; ?>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    <?php endforeach; ?>
-                                                                </div>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
+
                                         </tbody>
                                     <?php endforeach; ?>
                                 </table>
@@ -8304,13 +8232,21 @@
 
 <!-- MODAL EDITAR PROGRAMA COMPLETO (AJAX) -->
 <div class="modal fade" id="modalEditarPrograma" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
-            <div class="modal-header bg-dark text-white p-3 border-0">
-                <h5 class="modal-title fw-bold m-0"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar Programa Formativo</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            <div class="modal-header bg-success text-white p-4 border-0 position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 48px; height: 48px;">
+                        <i class="fa-solid fa-pen-to-square text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="modal-title fw-bold mb-1">Editar Programa Formativo</h4>
+                        <p class="mb-0 small text-white-50">Actualiza los datos del programa seleccionado.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 mt-4 me-4" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body p-0 position-relative" style="height: 80vh; background: #fafbfc; min-height: 400px;">
+            <div class="modal-body p-0 position-relative" style="background: #ffffff; min-height: 400px;">
                 <div class="d-flex justify-content-center align-items-center position-absolute top-0 start-0 w-100 h-100 bg-white" id="loaderEditarPrograma" style="z-index:10;">
                     <div class="text-center">
                         <div class="spinner-border text-primary mb-2" role="status" style="width: 3rem; height: 3rem;"></div>
@@ -8390,102 +8326,73 @@
 <div class="modal fade" id="modalCrearPrograma" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light p-4 border-0">
-                <h5 class="modal-title fw-bold text-dark m-0"><i class="fa-solid fa-graduation-cap me-2 text-primary"></i>Crear Programa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="<?= URLROOT; ?>/index.php?route=programas/create" method="POST">
-            <div class="modal-body p-4">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-8">
-                        <label class="text-muted small fw-bold mb-1">Nombre Programa</label>
-                        <input type="text" name="nombre" class="form-control" required>
+            <!-- Header Verde Institucional SENA -->
+            <div class="modal-header bg-success text-white p-4 border-0 position-relative">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 48px; height: 48px;">
+                        <i class="fa-solid fa-graduation-cap text-success fs-4"></i>
                     </div>
-                    <div class="col-md-4">
-                        <label class="text-muted small fw-bold mb-1">Código</label>
-                        <input type="text" name="codigo" class="form-control" required>
+                    <div>
+                        <h4 class="modal-title fw-bold mb-1">Registrar Nuevo Programa</h4>
+                        <p class="mb-0 small text-white-50">Crea un nuevo programa de formación en el catálogo.</p>
                     </div>
                 </div>
-                <div class="row g-3 mb-3">
-                    <div class="col-md-4">
-                        <label class="text-muted small fw-bold mb-1">Versión</label>
-                            <input type="text" name="version" class="form-control" required>
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 mt-4 me-4" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <form action="<?= URLROOT; ?>/index.php?route=programas/create" method="POST">
+                <div class="modal-body p-4 p-md-5">
+                    <div class="row g-4">
+                        <!-- Nombre del Programa -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-book text-success me-2"></i> Nombre del Programa</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" name="nombre" placeholder="Ej. Producción Multimedia" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Vigencia</label>
-                            <input type="text" name="vigencia" class="form-control" required>
+                        
+                        <!-- Código y Tipo -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-hashtag text-success me-2"></i> Código</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" name="codigo" placeholder="Ej. 228190" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Tipo Programa</label>
-                            <select name="id_tipo_programa" class="form-select" required>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-tags text-success me-2"></i> Tipo de Programa</label>
+                            <select class="form-select form-select-lg rounded-3" name="id_tipo_programa" required>
+                                <option value="" disabled selected>Selecciona un tipo...</option>
                                 <?php if(isset($tipos)): foreach($tipos as $t): ?>
-                                    <option value="<?= $t->id_tipo_programa; ?>"><?= $t->nombre; ?></option>
+                                    <option value="<?= $t->id_tipo_programa; ?>"><?= htmlspecialchars($t->nombre); ?></option>
                                 <?php endforeach; endif; ?>
                             </select>
                         </div>
-                    </div>
-                    <div class="row g-3">
+                        
+                        <!-- Versión y Vigencia -->
                         <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Duración Lectiva (hrs)</label>
-                            <input type="number" name="duracion_lectiva" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Duración Práctica (hrs)</label>
-                            <input type="number" name="duracion_practica" class="form-control" required>
-                        </div>
-                    </div>
-                    
-                    <!-- Competencia Inicial (Opcional) -->
-                    <hr class="my-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold text-success m-0"><i class="fa-solid fa-book-medical me-1"></i> Competencia Inicial (Opcional)</h6>
-                        <span class="badge bg-light text-secondary border">Crear junto al programa</span>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-8">
-                            <label class="text-muted small fw-bold mb-1">Nombre de la Competencia</label>
-                            <input type="text" name="comp_nombre" id="prog_comp_nombre" class="form-control" placeholder="Ej. Programar aplicaciones web">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Código Competencia</label>
-                            <input type="text" name="comp_codigo" id="prog_comp_codigo" class="form-control" placeholder="Ej. 220501099">
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Horas Totales</label>
-                            <input type="number" name="comp_horas_totales" id="prog_comp_horas_totales" class="form-control" placeholder="Ej. 180">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Resultados Totales (RA)</label>
-                            <input type="number" name="comp_resultados_totales" id="prog_comp_resultados_totales" class="form-control" placeholder="Ej. 3">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="text-muted small fw-bold mb-1">Porcentaje (%)</label>
-                            <input type="number" name="comp_porcentaje" id="prog_comp_porcentaje" class="form-control" placeholder="Ej. 100" value="100">
-                        </div>
-                    </div>
-
-                    <!-- Campos Calculados Dinámicamente para la Competencia del Programa -->
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <span class="d-block text-muted small fw-bold">Horas a Ejecutar</span>
-                                <h5 class="m-0 fw-bold text-success" id="prog_comp_calc_horas_ejecutar">0 hrs</h5>
-                            </div>
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-code-branch text-success me-2"></i> Versión</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" name="version" placeholder="Ej. V1" value="V1" required>
                         </div>
                         <div class="col-md-6">
-                            <div class="p-3 bg-light rounded-3 border">
-                                <span class="d-block text-muted small fw-bold">Total Sesiones (de 6 horas)</span>
-                                <h5 class="m-0 fw-bold text-primary" id="prog_comp_calc_total_sesiones">0 sesiones</h5>
-                            </div>
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-calendar-check text-success me-2"></i> Vigencia</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" name="vigencia" placeholder="Ej. 2026" value="2026" required>
+                        </div>
+                        
+                        <!-- Duraciones -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-clock text-success me-2"></i> Duración Lectiva (hrs)</label>
+                            <input type="number" class="form-control form-control-lg rounded-3" name="duracion_lectiva" placeholder="Ej. 3120" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small mb-2"><i class="fa-solid fa-briefcase text-success me-2"></i> Duración Práctica (hrs)</label>
+                            <input type="number" class="form-control form-control-lg rounded-3" name="duracion_practica" placeholder="Ej. 864" required>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="submit" class="btn btn-primary rounded-pill">Crear</button>
+                
+                <div class="modal-footer p-4 border-top-0 d-flex justify-content-end gap-2 bg-white">
+                    <button type="button" class="btn btn-light border rounded-pill px-4 fw-bold text-secondary" data-bs-dismiss="modal">
+                        <i class="fa-regular fa-circle-xmark me-1"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Programa
+                    </button>
                 </div>
             </form>
         </div>

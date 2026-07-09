@@ -10,6 +10,8 @@ class FichaController extends BaseController {
     private $programaModel;
     private $jornadaModel;
     private $usuarioModel;
+    private $competenciaModel;
+    private $resultadoModel;
 
     public function __construct() {
         $this->fichaModel = $this->model('Ficha');
@@ -18,6 +20,8 @@ class FichaController extends BaseController {
         $this->programaModel = $this->model('Programa');
         $this->jornadaModel = $this->model('Jornada');
         $this->usuarioModel = $this->model('Usuario');
+        $this->competenciaModel = $this->model('Competencia');
+        $this->resultadoModel = $this->model('ResultadoAprendizaje');
     }
 
     /**
@@ -128,7 +132,7 @@ class FichaController extends BaseController {
         $sesiones_pendientes = max(0, $total_sesiones_programadas - $sesiones_realizadas);
         $porcentaje_avance = $total_sesiones_programadas > 0 ? round(($sesiones_realizadas / $total_sesiones_programadas) * 100) : 0;
 
-        // Extraer competencias y resultados asociados únicos
+        // Extraer competencias y resultados asociados únicos (de programaciones existentes)
         $competencias_asociadas = [];
         $resultados_asociados = [];
         foreach ($programacion as $prog) {
@@ -140,9 +144,20 @@ class FichaController extends BaseController {
             }
         }
 
+        // Obtener el programa de la ficha
+        $programa = $this->programaModel->find($ficha->id_programa);
+        
+        // Obtener TODAS las competencias asociadas al programa de la ficha (Nuevo Requerimiento)
+        $competencias_programa = $this->competenciaModel->getByPrograma($ficha->id_programa);
+        $resultados_programa = [];
+        foreach ($competencias_programa as $comp) {
+            $resultados_programa[$comp->id_competencia] = $this->resultadoModel->getByCompetencia($comp->id_competencia);
+        }
+
         $this->render('fichas/show', [
             'titulo' => 'Detalle de Ficha: ' . $ficha->numero_ficha,
             'ficha' => $ficha,
+            'programa' => $programa,
             'aprendices' => $aprendices,
             'programacion' => $programacion,
             'candidatos' => $candidatos,
@@ -156,7 +171,10 @@ class FichaController extends BaseController {
             'sesiones_pendientes' => $sesiones_pendientes,
             'porcentaje_avance' => $porcentaje_avance,
             'competencias_asociadas' => array_keys($competencias_asociadas),
-            'resultados_asociados' => $resultados_asociados
+            'resultados_asociados' => $resultados_asociados,
+            // Curriculum completo
+            'competencias_programa' => $competencias_programa,
+            'resultados_programa' => $resultados_programa
         ]);
     }
 

@@ -37,6 +37,45 @@ class ProgramaController extends BaseController {
     }
 
     /**
+     * Muestra el detalle de un programa de formación
+     */
+    public function show() {
+        $this->requireLogin();
+        $id = $_GET['id'] ?? 0;
+        
+        $programa = $this->programaModel->find($id);
+        if (!$programa) {
+            $_SESSION['flash_error'] = 'Programa no encontrado.';
+            $this->redirect('dashboard/index#pills-programas');
+            return;
+        }
+
+        $competencias = $this->competenciaModel->getByPrograma($id);
+        $resultados = [];
+        foreach ($competencias as $comp) {
+            $resultados[$comp->id_competencia] = $this->resultadoModel->getByCompetencia($comp->id_competencia);
+        }
+
+        $tipos = $this->tipoProgramaModel->all();
+
+        $todasLasCompetencias = $this->competenciaModel->all();
+        $asociadasIds = array_map(function($c) { return $c->id_competencia; }, $competencias);
+        $competenciasDisponibles = array_filter($todasLasCompetencias, function($c) use ($asociadasIds) {
+            return !in_array($c->id_competencia, $asociadasIds);
+        });
+
+        $this->render('programas/show', [
+            'titulo' => 'Detalle del Programa',
+            'programa' => $programa,
+            'competencias' => $competencias,
+            'resultados' => $resultados,
+            'tipos' => $tipos,
+            'competenciasDisponibles' => $competenciasDisponibles,
+            'current_role' => $_SESSION['current_role'] ?? 'Aprendiz'
+        ]);
+    }
+
+    /**
      * Crear un nuevo programa de formación (Coordinador)
      */
     public function create() {
@@ -176,6 +215,75 @@ class ProgramaController extends BaseController {
         }
         $redirect = $_POST['redirect'] ?? 'programas/index';
         $this->redirect($redirect);
+    }
+
+    /**
+     * Crear una competencia junto con sus resultados de aprendizaje (Modal Completo)
+     */
+    public function createCompetenciaCompleta() {
+        $this->requireRol('Coordinador');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $db = Database::getInstance();
+            
+            $id_programa = $_POST['id_programa'] ?? 0;
+            $compData = $_POST['competencia'] ?? [];
+            $rapsData = $_POST['raps'] ?? [];
+
+            try {
+                $db->beginTransaction();
+
+                // 1. Crear Competencia
+                $competenciaInput = [
+                    'id_programa' => $id_programa,
+                    'nombre' => $compData['nombre'] ?? '',
+                    'codigo' => $compData['codigo'] ?? '',
+                    'horas_totales' => $compData['horas_totales'] ?? 0,
+                    'resultados_totales' => $compData['resultados_totales'] ?? 0,
+                    'porcentaje' => $compData['porcentaje'] ?? 100
+                ];
+
+                if (!$this->competenciaModel->create($competenciaInput)) {
+                    throw new Exception("Error al guardar la competencia.");
+                }
+
+                $id_competencia = $this->competenciaModel->getLastInsertId();
+                if (!$id_competencia) {
+                    throw new Exception("No se pudo obtener el ID de la competencia creada.");
+                }
+
+                // 2. Crear los Resultados de Aprendizaje (RAP)
+                foreach ($rapsData as $rap) {
+                    // Validar que al menos venga el código
+                    if (empty($rap['codigo'])) continue;
+
+                    $rapInput = [
+                        'id_competencia' => $id_competencia,
+                        'codigo' => $rap['codigo'],
+                        'descripcion' => $rap['descripcion'] ?? '',
+                        'sesiones_asignadas' => (isset($rap['sesiones_asignadas']) && $rap['sesiones_asignadas'] !== '') ? $rap['sesiones_asignadas'] : null
+                    ];
+
+                    if (!$this->resultadoModel->create($rapInput)) {
+                        throw new Exception("Error al guardar el resultado de aprendizaje: " . $rap['codigo']);
+                    }
+                }
+
+                // Confirmar transacción
+                $db->commit();
+                $_SESSION['flash_success'] = 'Competencia y sus Resultados de Aprendizaje registrados exitosamente.';
+                
+                // Auditoría
+                AuditLogger::log('Creación Competencia Completa', 'competencias', $id_competencia, 'Programa ID: ' . $id_programa . ', RAPs creados: ' . count($rapsData));
+
+            } catch (Exception $e) {
+                // Revertir todo en caso de error (ej: validaciones de Triggers en MariaDB)
+                $db->rollBack();
+                $_SESSION['flash_error'] = 'Error al registrar la competencia y resultados: ' . $e->getMessage();
+            }
+        }
+        
+        $this->redirect('dashboard/index#pills-programas');
     }
 
     /**
@@ -390,82 +498,12 @@ class ProgramaController extends BaseController {
                 'duracion_practica' => $_POST['duracion_practica'] ?? 0,
                 'id_tipo_programa' => $_POST['id_tipo_programa'] ?? 0
             ];
-
-            $competenciasData = $_POST['competencias'] ?? [];
-
             try {
                 $db->beginTransaction();
 
                 // 1. Actualizar Programa
                 if (!$this->programaModel->update($id_programa, $progData)) {
                     throw new Exception("Error al actualizar el programa.");
-                }
-
-                // 2. Para simplificar la actualización compleja:
-                // Eliminamos las competencias existentes (los RAPs se eliminan en cascada por BD o los eliminamos manual)
-                // Wait! Si eliminamos competencias, se pueden romper llaves foráneas en programación.
-                // En su lugar, vamos a actualizar las que tienen ID y crear las nuevas. Las que no vengan, se eliminan.
-                
-                $competenciasViejas = $this->competenciaModel->getByPrograma($id_programa);
-                $idsViejosComp = array_column($competenciasViejas, 'id_competencia');
-                $idsNuevosComp = [];
-
-                foreach ($competenciasData as $comp) {
-                    $id_comp = !empty($comp['id_competencia']) ? $comp['id_competencia'] : 0;
-                    
-                    $cData = [
-                        'id_programa' => $id_programa,
-                        'nombre' => $comp['nombre'] ?? '',
-                        'codigo' => $comp['codigo'] ?? '',
-                        'horas_totales' => $comp['horas_totales'] ?? 0,
-                        'resultados_totales' => $comp['resultados_totales'] ?? 0,
-                        'porcentaje' => $comp['porcentaje'] ?? 100
-                    ];
-
-                    if ($id_comp > 0) {
-                        // Actualizar
-                        $this->competenciaModel->update($id_comp, $cData);
-                        $idsNuevosComp[] = $id_comp;
-                    } else {
-                        // Crear
-                        $this->competenciaModel->create($cData);
-                        $id_comp = $this->competenciaModel->getLastInsertId();
-                    }
-
-                    // Resultados de esta competencia
-                    $resultadosData = $comp['resultados'] ?? [];
-                    $resultadosViejos = $this->resultadoModel->getByCompetencia($id_comp);
-                    $idsViejosRes = array_column($resultadosViejos, 'id_resultado');
-                    $idsNuevosRes = [];
-
-                    foreach ($resultadosData as $ra) {
-                        $id_res = !empty($ra['id_resultado']) ? $ra['id_resultado'] : 0;
-                        $rData = [
-                            'id_competencia' => $id_comp,
-                            'codigo' => $ra['codigo'] ?? '',
-                            'descripcion' => $ra['descripcion'] ?? '',
-                            'sesiones_asignadas' => ($ra['sesiones_asignadas'] !== '') ? $ra['sesiones_asignadas'] : null
-                        ];
-
-                        if ($id_res > 0) {
-                            $this->resultadoModel->update($id_res, $rData);
-                            $idsNuevosRes[] = $id_res;
-                        } else {
-                            $this->resultadoModel->create($rData);
-                        }
-                    }
-
-                    // Eliminar RAPs huérfanos
-                    $resABorrar = array_diff($idsViejosRes, $idsNuevosRes);
-                    foreach ($resABorrar as $rDel) {
-                        $this->resultadoModel->delete($rDel);
-                    }
-                }
-
-                // Eliminar competencias huérfanas
-                $compABorrar = array_diff($idsViejosComp, $idsNuevosComp);
-                foreach ($compABorrar as $cDel) {
-                    $this->competenciaModel->delete($cDel);
                 }
 
                 $db->commit();
@@ -480,6 +518,91 @@ class ProgramaController extends BaseController {
             }
         }
 
-        $this->redirect('dashboard/index#pills-programas');
+        if (isset($_POST['from_show']) && $_POST['from_show'] == '1') {
+            $this->redirect('programas/show&id=' . $id_programa);
+        } else {
+            $this->redirect('dashboard/index#pills-programas');
+        }
+    }
+
+    /**
+     * Asocia competencias a un programa (vía AJAX)
+     */
+    public function asociarCompetencias() {
+        $this->requireRol('Coordinador');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_programa = $_POST['id_programa'] ?? 0;
+            $competencias_ids = $_POST['competencias'] ?? [];
+
+            if (empty($id_programa)) {
+                echo json_encode(['success' => false, 'message' => 'ID de programa no válido.']);
+                exit;
+            }
+
+            if (empty($competencias_ids)) {
+                echo json_encode(['success' => false, 'message' => 'No se seleccionaron competencias.']);
+                exit;
+            }
+
+            $db = Database::getInstance();
+            try {
+                $db->beginTransaction();
+
+                foreach ($competencias_ids as $id_competencia) {
+                    // Verificar que no esté asociada ya
+                    $db->query("SELECT 1 FROM programa_competencia WHERE id_programa = :id_programa AND id_competencia = :id_competencia");
+                    $db->bind(':id_programa', $id_programa);
+                    $db->bind(':id_competencia', $id_competencia);
+                    if (!$db->single()) {
+                        $db->query("INSERT INTO programa_competencia (id_programa, id_competencia) VALUES (:id_programa, :id_competencia)");
+                        $db->bind(':id_programa', $id_programa);
+                        $db->bind(':id_competencia', $id_competencia);
+                        $db->execute();
+                    }
+                }
+
+                $db->commit();
+                echo json_encode(['success' => true, 'message' => 'Competencias asociadas correctamente.']);
+                // Opcional: AuditLogger
+                // AuditLogger::log('Asociar Competencias', 'programa_competencia', $id_programa, 'Asociadas ' . count($competencias_ids) . ' competencias.');
+            } catch (Exception $e) {
+                $db->rollBack();
+                echo json_encode(['success' => false, 'message' => 'Error en base de datos: ' . $e->getMessage()]);
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Desvincula una competencia de un programa (vía AJAX)
+     */
+    public function desvincularCompetencia() {
+        $this->requireRol('Coordinador');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_programa = $_POST['id_programa'] ?? 0;
+            $id_competencia = $_POST['id_competencia'] ?? 0;
+
+            if (empty($id_programa) || empty($id_competencia)) {
+                echo json_encode(['success' => false, 'message' => 'Datos insuficientes para desvincular.']);
+                exit;
+            }
+
+            $db = Database::getInstance();
+            try {
+                $db->query("DELETE FROM programa_competencia WHERE id_programa = :id_programa AND id_competencia = :id_competencia");
+                $db->bind(':id_programa', $id_programa);
+                $db->bind(':id_competencia', $id_competencia);
+                if ($db->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'Competencia desvinculada correctamente.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se pudo desvincular la competencia.']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error en base de datos: ' . $e->getMessage()]);
+            }
+            exit;
+        }
     }
 }

@@ -15,9 +15,7 @@ class Competencia {
      * @return array
      */
     public function all() {
-        $this->db->query("SELECT c.*, p.nombre as programa_nombre FROM competencias c 
-                          INNER JOIN programa p ON c.id_programa = p.id_programa 
-                          ORDER BY p.nombre, c.nombre");
+        $this->db->query("SELECT * FROM competencias ORDER BY nombre");
         return $this->db->resultSet();
     }
 
@@ -27,7 +25,13 @@ class Competencia {
      * @return array
      */
     public function getByPrograma($id_programa) {
-        $this->db->query("SELECT * FROM competencias WHERE id_programa = :id_programa ORDER BY nombre");
+        $this->db->query("
+            SELECT c.* 
+            FROM competencias c
+            INNER JOIN programa_competencia pc ON c.id_competencia = pc.id_competencia
+            WHERE pc.id_programa = :id_programa 
+            ORDER BY c.nombre
+        ");
         $this->db->bind(':id_programa', $id_programa);
         return $this->db->resultSet();
     }
@@ -38,9 +42,7 @@ class Competencia {
      * @return object|false
      */
     public function find($id) {
-        $this->db->query("SELECT c.*, p.nombre as programa_nombre FROM competencias c 
-                          INNER JOIN programa p ON c.id_programa = p.id_programa 
-                          WHERE c.id_competencia = :id");
+        $this->db->query("SELECT * FROM competencias WHERE id_competencia = :id");
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
@@ -52,9 +54,8 @@ class Competencia {
      * @return bool
      */
     public function create($data) {
-        $this->db->query("INSERT INTO competencias (id_programa, nombre, codigo, horas_totales, resultados_totales, porcentaje) 
-                          VALUES (:id_programa, :nombre, :codigo, :horas_totales, :resultados_totales, :porcentaje)");
-        $this->db->bind(':id_programa', $data['id_programa']);
+        $this->db->query("INSERT INTO competencias (nombre, codigo, horas_totales, resultados_totales, porcentaje) 
+                          VALUES (:nombre, :codigo, :horas_totales, :resultados_totales, :porcentaje)");
         $this->db->bind(':nombre', $data['nombre']);
         $this->db->bind(':codigo', $data['codigo']);
         $this->db->bind(':horas_totales', $data['horas_totales']);
@@ -70,10 +71,9 @@ class Competencia {
      * @return bool
      */
     public function update($id, $data) {
-        $this->db->query("UPDATE competencias SET id_programa = :id_programa, nombre = :nombre, codigo = :codigo, 
+        $this->db->query("UPDATE competencias SET nombre = :nombre, codigo = :codigo, 
                           horas_totales = :horas_totales, resultados_totales = :resultados_totales, porcentaje = :porcentaje 
                           WHERE id_competencia = :id");
-        $this->db->bind(':id_programa', $data['id_programa']);
         $this->db->bind(':nombre', $data['nombre']);
         $this->db->bind(':codigo', $data['codigo']);
         $this->db->bind(':horas_totales', $data['horas_totales']);

@@ -1,3 +1,91 @@
+stdClass Object
+(
+    [Table] => programacion_academica
+    [Create Table] => CREATE TABLE `programacion_academica` (
+  `id_programacion` int(11) NOT NULL AUTO_INCREMENT,
+  `numero_ficha` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `id_numero_ambiente` int(11) NOT NULL,
+  `id_dias` int(11) NOT NULL,
+  `hora_inicio` time DEFAULT NULL,
+  `hora_fin` time DEFAULT NULL,
+  `id_resultado_aprendizaje` int(11) NOT NULL,
+  `total_sesiones` int(11) DEFAULT NULL,
+  `sesiones_realizadas` int(11) DEFAULT NULL,
+  `fecha_inicio` date DEFAULT NULL,
+  PRIMARY KEY (`id_programacion`),
+  KEY `fk_prog_ficha` (`numero_ficha`),
+  KEY `fk_prog_usuario` (`id_usuario`),
+  KEY `fk_prog_ambiente` (`id_numero_ambiente`),
+  KEY `fk_prog_dia` (`id_dias`),
+  KEY `fk_prog_resultado` (`id_resultado_aprendizaje`),
+  CONSTRAINT `fk_prog_ambiente` FOREIGN KEY (`id_numero_ambiente`) REFERENCES `ambientes` (`id_numero_ambiente`),
+  CONSTRAINT `fk_prog_dia` FOREIGN KEY (`id_dias`) REFERENCES `dias` (`id_dias`),
+  CONSTRAINT `fk_prog_ficha` FOREIGN KEY (`numero_ficha`) REFERENCES `fichas` (`numero_ficha`),
+  CONSTRAINT `fk_prog_resultado` FOREIGN KEY (`id_resultado_aprendizaje`) REFERENCES `resultado_aprendizaje` (`id_resultado`),
+  CONSTRAINT `fk_prog_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+)
 Array
 (
+    [0] => stdClass Object
+        (
+            [Trigger] => trg_programacion_bi
+            [Event] => INSERT
+            [Table] => programacion_academica
+            [Statement] => BEGIN
+    DECLARE v_sesiones_asignadas INT;
+
+    SELECT sesiones_asignadas
+    INTO v_sesiones_asignadas
+    FROM Resultado_Aprendizaje
+    WHERE id_resultado = NEW.id_resultado_aprendizaje;
+
+    IF v_sesiones_asignadas IS NULL OR v_sesiones_asignadas <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El resultado de aprendizaje no tiene sesiones asignadas válidas.';
+    END IF;
+
+    SET NEW.total_sesiones = v_sesiones_asignadas;
+    SET NEW.sesiones_realizadas = 0;
+END
+            [Timing] => BEFORE
+            [Created] => 2026-07-05 14:27:50.63
+            [sql_mode] => NO_AUTO_VALUE_ON_ZERO
+            [Definer] => root@localhost
+            [character_set_client] => utf8mb4
+            [collation_connection] => utf8mb4_general_ci
+            [Database Collation] => utf8mb4_general_ci
+        )
+
+    [1] => stdClass Object
+        (
+            [Trigger] => trg_programacion_bu
+            [Event] => UPDATE
+            [Table] => programacion_academica
+            [Statement] => BEGIN
+    IF NEW.sesiones_realizadas < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Las sesiones realizadas no pueden ser negativas.';
+    END IF;
+
+    IF NEW.total_sesiones IS NULL OR NEW.total_sesiones <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El total de sesiones debe ser mayor a 0.';
+    END IF;
+
+    IF NEW.sesiones_realizadas > NEW.total_sesiones THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Las sesiones realizadas no pueden superar el total de sesiones.';
+    END IF;
+END
+            [Timing] => BEFORE
+            [Created] => 2026-07-05 14:27:50.66
+            [sql_mode] => NO_AUTO_VALUE_ON_ZERO
+            [Definer] => root@localhost
+            [character_set_client] => utf8mb4
+            [collation_connection] => utf8mb4_general_ci
+            [Database Collation] => utf8mb4_general_ci
+        )
+
 )

@@ -97,9 +97,18 @@ class ResultadoAprendizaje {
     public function getByPrograma($id_programa) {
         $this->db->query("SELECT ra.* FROM resultado_aprendizaje ra 
                           INNER JOIN competencias c ON ra.id_competencia = c.id_competencia 
-                          WHERE c.id_programa = :id_programa 
+                          INNER JOIN programa_competencia pc ON c.id_competencia = pc.id_competencia
+                          WHERE pc.id_programa = :id_programa 
                           ORDER BY ra.codigo");
         $this->db->bind(':id_programa', $id_programa);
         return $this->db->resultSet();
+    }
+
+    /**
+     * Obtener el último ID insertado
+     * @return int
+     */
+    public function getLastInsertId() {
+        return $this->db->lastInsertId();
     }
 }

@@ -504,38 +504,44 @@ if ($ficha->fecha_fin === '1970-01-01') {
                         </div>
                     </div>
 
-                    <!-- Competencias Asociadas -->
-                    <div class="col-12 col-md-4 border-md-start px-md-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-book text-success me-1"></i> Competencias Asociadas</h6>
-                        <?php if (empty($competencias_asociadas)): ?>
-                            <p class="small text-muted">No se registran competencias asociadas a esta ficha.</p>
+                    <!-- Competencias y Resultados del Programa -->
+                    <div class="col-12 col-md-8 border-md-start px-md-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-book-bookmark text-success me-1"></i> Competencias y Resultados del Programa</h6>
+                        <?php if (empty($competencias_programa)): ?>
+                            <div class="alert alert-light text-center border text-muted">
+                                <i class="fa-solid fa-folder-open mb-2 fs-4"></i><br>
+                                No hay competencias asociadas a este programa.
+                            </div>
                         <?php else: ?>
-                            <ul class="list-group list-group-flush small">
-                                <?php foreach ($competencias_asociadas as $comp_nombre): ?>
-                                    <li class="list-group-item px-0 py-2 border-0 d-flex align-items-start gap-2 text-dark fw-medium">
-                                        <i class="fa-solid fa-circle-dot mt-1 text-secondary" style="font-size:0.6rem;"></i>
-                                        <span><?= htmlspecialchars($comp_nombre); ?></span>
-                                    </li>
+                            <div class="accordion accordion-flush shadow-sm border rounded-3" id="accordionCompetenciasFicha">
+                                <?php foreach ($competencias_programa as $index => $comp): ?>
+                                    <div class="accordion-item bg-white border-bottom">
+                                        <h2 class="accordion-header" id="headingComp_<?= $comp->id_competencia; ?>">
+                                            <button class="accordion-button collapsed fw-bold text-dark p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp_<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseComp_<?= $comp->id_competencia; ?>" style="font-size: 0.9rem;">
+                                                <i class="fa-solid fa-bookmark text-success me-2"></i> <?= htmlspecialchars($comp->codigo); ?> - <?= htmlspecialchars($comp->nombre); ?>
+                                                <span class="badge bg-light text-dark border ms-3"><?= $comp->horas_totales; ?> hrs</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapseComp_<?= $comp->id_competencia; ?>" class="accordion-collapse collapse" aria-labelledby="headingComp_<?= $comp->id_competencia; ?>" data-bs-parent="#accordionCompetenciasFicha">
+                                            <div class="accordion-body p-3 bg-light">
+                                                <?php 
+                                                $raps = $resultados_programa[$comp->id_competencia] ?? [];
+                                                if (empty($raps)): ?>
+                                                    <div class="text-danger small"><i class="fa-solid fa-triangle-exclamation"></i> Sin resultados de aprendizaje</div>
+                                                <?php else: ?>
+                                                    <ul class="list-group list-group-flush rounded-3 border">
+                                                        <?php foreach ($raps as $ra): ?>
+                                                            <li class="list-group-item d-flex flex-column bg-white">
+                                                                <span class="fw-bold text-primary small"><?= htmlspecialchars($ra->codigo); ?></span>
+                                                                <span class="text-secondary small mt-1"><?= htmlspecialchars($ra->descripcion); ?></span>
+                                                            </li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
                                 <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Resultados de Aprendizaje -->
-                    <div class="col-12 col-md-4 border-md-start px-md-4">
-                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-graduation-cap text-primary me-1"></i> Resultados de Aprendizaje</h6>
-                        <?php if (empty($resultados_asociados)): ?>
-                            <p class="small text-muted">No se registran resultados de aprendizaje vinculados.</p>
-                        <?php else: ?>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <ul class="list-group list-group-flush small">
-                                    <?php foreach ($resultados_asociados as $ra_cod => $ra_desc): ?>
-                                        <li class="list-group-item px-0 py-2 border-0 align-items-start text-dark">
-                                            <div class="fw-bold text-primary" style="font-size: 0.78rem;"><?= htmlspecialchars($ra_cod); ?></div>
-                                            <div class="text-secondary" style="font-size: 0.8rem; line-height: 1.25;"><?= htmlspecialchars($ra_desc); ?></div>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
                             </div>
                         <?php endif; ?>
                     </div>
