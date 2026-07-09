@@ -29,8 +29,9 @@ class NovedadAmbiente {
      * @return array
      */
     public function getByAmbiente($id_numero_ambiente) {
-        $this->db->query("SELECT na.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido 
+        $this->db->query("SELECT na.*, a.nombre as ambiente_nombre, u.nombre as usuario_nombre, u.apellido as usuario_apellido 
                           FROM novedad_ambiente na 
+                          INNER JOIN ambientes a ON na.id_numero_ambiente = a.id_numero_ambiente
                           INNER JOIN usuarios u ON na.id_usuario = u.id_usuario 
                           WHERE na.id_numero_ambiente = :id_numero_ambiente 
                           ORDER BY na.fecha_reporte DESC");

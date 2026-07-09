@@ -3620,7 +3620,7 @@
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
                                                         <li>
-                                                            <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/novedad&id=<?= $amb->id_numero_ambiente; ?>">
+                                                            <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=dashboard/index&novedades_ambiente=<?= $amb->id_numero_ambiente; ?>#pills-novedades">
                                                                 <i class="fa-solid fa-triangle-exclamation text-warning"></i> Novedades
                                                             </a>
                                                         </li>
@@ -3962,7 +3962,7 @@
                         
                         const btnFicha = document.getElementById('detail-btn-view-ficha');
                         if (btnFicha) {
-                            btnFicha.href = `${urlRoot}/index.php?route=ambientes/novedad&id=${id}`;
+                            btnFicha.href = `${urlRoot}/index.php?route=dashboard/index&novedades_ambiente=${id}#pills-novedades`;
                         }
                         
                         document.getElementById('env-catalog-view').classList.add('d-none');
@@ -4468,13 +4468,40 @@
             <div class="tab-pane fade" id="pills-novedades" role="tabpanel" aria-labelledby="pills-novedades-tab">
                 
                 <div class="mb-4 pb-1">
-                    <h5 class="fw-bold text-dark mb-1">Reportes de Novedades e Incidencias</h5>
-                    <p class="text-muted small mb-0">Novedades reportadas por los instructores líderes en relación al estado de la infraestructura física.</p>
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">
+                                Reportes de Novedades e Incidencias
+                                <?php if (!empty($novedades_ambiente)): ?>
+                                    <span class="text-success">- <?= htmlspecialchars($novedades_ambiente->nombre); ?></span>
+                                <?php endif; ?>
+                            </h5>
+                            <p class="text-muted small mb-0">
+                                <?php if (!empty($novedades_ambiente)): ?>
+                                    Novedades registradas únicamente para este ambiente.
+                                <?php else: ?>
+                                    Novedades reportadas por los instructores líderes en relación al estado de la infraestructura física.
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                        <?php if (!empty($novedades_ambiente)): ?>
+                            <a href="<?= URLROOT; ?>/index.php?route=dashboard/index#pills-novedades" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                <i class="fa-solid fa-list me-1"></i> Ver todas
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-4 p-md-5" style="border: 1px solid rgba(0,0,0,0.06);">
                     
                     <?php if (empty($novedades)): ?>
+                        <?php if (!empty($novedades_ambiente)): ?>
+                            <div class="p-5 text-center text-muted">
+                                <i class="fa-solid fa-file-shield fa-3x mb-3 text-success"></i>
+                                <h6 class="fw-bold">No hay novedades para <?= htmlspecialchars($novedades_ambiente->nombre); ?></h6>
+                                <p class="small mb-0">Este ambiente no tiene reportes registrados.</p>
+                            </div>
+                        <?php else: ?>
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center py-4 border-bottom border-light-subtle gap-4">
                             <div class="d-flex align-items-start gap-4">
                                 <div class="icon-box-warning">
@@ -4516,6 +4543,7 @@
                                 </a>
                             </div>
                         </div>
+                        <?php endif; ?>
                     <?php else: ?>
                         <?php foreach ($novedades as $nov): ?>
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center py-4 border-bottom border-light-subtle gap-4">
@@ -10484,6 +10512,14 @@ function setupAsignarHorarioModal() {
 document.addEventListener('DOMContentLoaded', function() {
     inicializarCalendario();
     
+    const initialHash = window.location.hash;
+    if (initialHash) {
+        const initialTab = document.querySelector(`[data-bs-target="${initialHash}"]`);
+        if (initialTab) {
+            initialTab.click();
+        }
+    }
+
     // Auto-open reservation modal if reserve_amb parameter is present
     const hash = window.location.hash;
     let targetAmbId = null;

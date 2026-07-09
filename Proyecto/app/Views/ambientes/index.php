@@ -943,7 +943,7 @@
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
                                             <li>
-                                                <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/novedad&id=<?= $amb->id_numero_ambiente; ?>">
+                                                <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=dashboard/index&novedades_ambiente=<?= $amb->id_numero_ambiente; ?>#pills-novedades">
                                                     <i class="fa-solid fa-triangle-exclamation text-warning"></i> Novedades
                                                 </a>
                                             </li>
@@ -1286,7 +1286,7 @@
             
             const btnFicha = document.getElementById('detail-btn-view-ficha');
             if (btnFicha) {
-                btnFicha.href = `\${urlRoot}/index.php?route=ambientes/novedad&id=\${id}`;
+                btnFicha.href = `\${urlRoot}/index.php?route=dashboard/index&novedades_ambiente=\${id}#pills-novedades`;
             }
             
             document.getElementById('env-catalog-view').classList.add('d-none');

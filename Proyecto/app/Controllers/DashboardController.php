@@ -78,7 +78,19 @@ class DashboardController extends BaseController {
             }
             $data['usuarios_count'] = count($this->usuarioModel->all());
             $data['programas_count'] = count($this->programaModel->all());
-            $data['novedades'] = $this->novedadModel->all();
+            $novedadesAmbienteId = filter_input(INPUT_GET, 'novedades_ambiente', FILTER_VALIDATE_INT);
+            if ($novedadesAmbienteId) {
+                $ambienteNovedades = $this->ambienteModel->find($novedadesAmbienteId);
+                if ($ambienteNovedades) {
+                    $data['novedades'] = $this->novedadModel->getByAmbiente($novedadesAmbienteId);
+                    $data['novedades_ambiente'] = $ambienteNovedades;
+                } else {
+                    $data['novedades'] = $this->novedadModel->all();
+                    $_SESSION['flash_error'] = 'El ambiente seleccionado para filtrar novedades no existe.';
+                }
+            } else {
+                $data['novedades'] = $this->novedadModel->all();
+            }
             $data['programacion'] = $this->programacionModel->all();
             $data['competencias'] = $this->competenciaModel->all();
             $data['resultados'] = $this->resultadoModel->all();
