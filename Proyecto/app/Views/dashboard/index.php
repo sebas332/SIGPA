@@ -8128,6 +8128,369 @@
             width: 100%;
         }
     }
+
+    .pm-training-calendar {
+        border: 1px solid #e3e8ef;
+        border-radius: 14px;
+        background: #ffffff;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .schedule-modal-dialog {
+        max-width: min(1120px, calc(100vw - 2rem));
+    }
+
+    .pm-calendar-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: #ffffff;
+    }
+
+    .pm-calendar-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .pm-calendar-icon {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        place-items: center;
+        border-radius: 10px;
+        background: #e8f7ed;
+        color: #0b8e43;
+        font-size: 1.25rem;
+    }
+
+    .pm-calendar-title {
+        color: #0f172a;
+        font-size: 1.2rem;
+        font-weight: 850;
+        line-height: 1.15;
+        margin: 0;
+    }
+
+    .pm-calendar-subtitle {
+        color: #52637a;
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+    }
+
+    .pm-calendar-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 0 0 auto;
+    }
+
+    .pm-calendar-nav,
+    .pm-calendar-month {
+        min-height: 42px;
+        border: 1px solid #d8dee8;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #0f172a;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    }
+
+    .pm-calendar-nav {
+        width: 46px;
+        display: inline-grid;
+        place-items: center;
+    }
+
+    .pm-calendar-month {
+        min-width: 170px;
+        padding: 0 1rem;
+    }
+
+    .pm-calendar-counter {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0 1.25rem 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #eff8ff 0%, #dff1ff 100%);
+        color: #0b3a78;
+    }
+
+    .pm-calendar-counter-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-size: 1rem;
+        font-weight: 850;
+    }
+
+    .pm-calendar-counter-value {
+        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 900;
+    }
+
+    .pm-calendar-counter-value .pm-counter-current {
+        color: #dc2626;
+    }
+
+    .pm-calendar-message {
+        display: none;
+        margin: -0.35rem 1.25rem 1rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 9px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+
+    .pm-calendar-message.show {
+        display: block;
+    }
+
+    .pm-calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        margin: 0 1.25rem 0;
+        border: 1px solid #18a15b;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .pm-calendar-weekday-btn {
+        min-height: 42px;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        border: 0;
+        border-right: 1px solid #18a15b;
+        background: #ffffff;
+        color: #087a43;
+        font-weight: 850;
+        transition: background-color 0.16s ease, color 0.16s ease;
+    }
+
+    .pm-calendar-weekday-btn:last-child {
+        border-right: 0;
+    }
+
+    .pm-calendar-weekday-btn:hover,
+    .pm-calendar-weekday-btn.is-active {
+        background: #0b8e43;
+        color: #ffffff;
+    }
+
+    .pm-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        margin: 1rem 1.25rem 0;
+        border: 1px solid #e3e8ef;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .pm-calendar-cell {
+        position: relative;
+        min-height: 94px;
+        padding: 0.65rem;
+        border-right: 1px solid #e8edf3;
+        border-bottom: 1px solid #e8edf3;
+        background: #ffffff;
+        cursor: pointer;
+        transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .pm-calendar-cell:nth-child(7n) {
+        border-right: 0;
+    }
+
+    .pm-calendar-cell:nth-last-child(-n + 7) {
+        border-bottom: 0;
+    }
+
+    .pm-calendar-cell:hover:not(.is-disabled) {
+        background: #f8fffb;
+        box-shadow: inset 0 0 0 2px rgba(11, 142, 67, 0.12);
+    }
+
+    .pm-calendar-cell.is-other-month {
+        background: #f8fafc;
+        color: #7a8798;
+    }
+
+    .pm-calendar-cell.is-disabled {
+        background: #f5f6f8;
+        color: #a8b0bd;
+        cursor: not-allowed;
+    }
+
+    .pm-calendar-cell.is-selected {
+        background: #f0fbf3;
+        box-shadow: inset 0 0 0 2px rgba(11, 142, 67, 0.2);
+    }
+
+    .pm-calendar-day {
+        display: flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        color: #0f172a;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .pm-calendar-cell.is-other-month .pm-calendar-day,
+    .pm-calendar-cell.is-disabled .pm-calendar-day {
+        color: inherit;
+    }
+
+    .pm-calendar-day-number {
+        font-size: 1rem;
+    }
+
+    .pm-calendar-day-month {
+        color: #55708f;
+        font-size: 0.78rem;
+        font-weight: 650;
+    }
+
+    .pm-session-chip {
+        position: absolute;
+        left: 0.65rem;
+        right: 0.65rem;
+        top: 2.45rem;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 42px;
+        padding: 0.45rem 1.7rem 0.45rem 0.55rem;
+        border: 0;
+        border-radius: 8px;
+        background: #dff5e4;
+        color: #0f172a;
+        font-size: 0.76rem;
+        line-height: 1.05;
+        text-align: left;
+        box-shadow: 0 8px 18px rgba(16, 185, 129, 0.12);
+    }
+
+    .pm-session-chip i {
+        color: #16a34a;
+        font-size: 1rem;
+        flex: 0 0 auto;
+    }
+
+    .pm-session-remove {
+        position: absolute;
+        right: 0.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        display: grid;
+        width: 20px;
+        height: 20px;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .pm-calendar-legend {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin: 1rem 1.25rem 1.25rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid #e3e8ef;
+        border-radius: 10px;
+        color: #40516a;
+        font-size: 0.86rem;
+    }
+
+    .pm-calendar-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .pm-legend-icon {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        place-items: center;
+        border-radius: 50%;
+        color: #16a34a;
+        font-size: 1rem;
+    }
+
+    .pm-legend-square {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: #dff5e4;
+    }
+
+    .pm-legend-square.is-empty {
+        background: #eef0f3;
+    }
+
+    @media (max-width: 767.98px) {
+        .pm-calendar-topbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .pm-calendar-controls {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .pm-calendar-month {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .pm-calendar-weekdays,
+        .pm-calendar-grid {
+            margin-left: 0.75rem;
+            margin-right: 0.75rem;
+        }
+
+        .pm-calendar-counter,
+        .pm-calendar-message,
+        .pm-calendar-legend {
+            margin-left: 0.75rem;
+            margin-right: 0.75rem;
+        }
+
+        .pm-calendar-cell {
+            min-height: 82px;
+            padding: 0.45rem;
+        }
+
+        .pm-session-chip {
+            left: 0.4rem;
+            right: 0.4rem;
+            top: 2rem;
+            min-height: 36px;
+            font-size: 0.68rem;
+        }
+
+        .pm-calendar-legend {
+            gap: 1rem;
+        }
+    }
 </style>
 
 <!-- MODAL EDITAR AMBIENTE -->
@@ -8814,55 +9177,74 @@
                             <input type="date" class="form-control schedule-modal-control pm-trigger-calc" id="pm_fecha_fin" name="fecha_fin" required>
                         </div>
 
-                        <!-- Días de la semana -->
+                        <!-- Calendario mensual interactivo -->
                         <div class="col-md-12 mt-3">
-                            <label class="schedule-modal-label d-block mb-2">
-                                <i class="fa-solid fa-list-check"></i>
-                                <span>Días de Formación a Agendar</span>
-                            </label>
-                            <div class="btn-group w-100 shadow-sm" role="group">
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_1" value="1" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_1">Lun</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_2" value="2" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_2">Mar</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_3" value="3" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_3">Mié</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_4" value="4" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_4">Jue</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_5" value="5" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_5">Vie</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_6" value="6" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_6">Sáb</label>
-
-                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_7" value="7" autocomplete="off">
-                                <label class="btn btn-outline-success fw-bold" for="dia_7">Dom</label>
-                            </div>
-                        </div>
-
-                        <!-- Indicador de estado y Lista de Previsualización -->
-                        <div class="col-md-12 mt-4">
-                            <div class="alert alert-info d-flex justify-content-between align-items-center rounded-3 border-0 shadow-sm mb-2 p-2 px-3">
-                                <div class="fw-bold fs-6">
-                                    <i class="fa-solid fa-layer-group me-2"></i> Sesiones Generadas:
+                            <section class="pm-training-calendar" aria-label="Calendario de Formación">
+                                <div class="pm-calendar-topbar">
+                                    <div class="pm-calendar-title-wrap">
+                                        <span class="pm-calendar-icon" aria-hidden="true">
+                                            <i class="fa-regular fa-calendar"></i>
+                                        </span>
+                                        <div>
+                                            <h6 class="pm-calendar-title">Calendario de Formación</h6>
+                                            <div class="pm-calendar-subtitle">Visualiza y gestiona los días de formación programados</div>
+                                        </div>
+                                    </div>
+                                    <div class="pm-calendar-controls">
+                                        <button type="button" class="pm-calendar-nav" id="pm_calendar_prev" aria-label="Mes anterior">
+                                            <i class="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                        <button type="button" class="pm-calendar-month" id="pm_calendar_month" aria-live="polite">
+                                            Julio 2026 <i class="fa-solid fa-chevron-down ms-2 small"></i>
+                                        </button>
+                                        <button type="button" class="pm-calendar-nav" id="pm_calendar_next" aria-label="Mes siguiente">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="fs-5 fw-bolder">
-                                    <span id="pm_contador_generadas" class="text-primary">0</span> / 
-                                    <span id="pm_contador_permitidas" class="text-secondary">∞</span> <!-- Se ajustará dinámicamente -->
+
+                                <div class="pm-calendar-counter">
+                                    <div class="pm-calendar-counter-label">
+                                        <i class="fa-solid fa-layer-group"></i>
+                                        <span>Sesiones Generadas:</span>
+                                    </div>
+                                    <div class="pm-calendar-counter-value">
+                                        <span id="pm_contador_generadas" class="pm-counter-current">0</span> /
+                                        <span id="pm_contador_permitidas">∞</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="border rounded-3 p-2 bg-light shadow-inner" style="max-height: 200px; overflow-y: auto;">
-                                <ul class="list-group list-group-flush" id="pm_lista_fechas">
-                                    <li class="list-group-item text-muted text-center py-4 bg-transparent border-0 small">
-                                        <i class="fa-solid fa-calendar-day fs-3 mb-2 d-block opacity-50"></i>
-                                        Selecciona rango de fechas y días para previsualizar el lote.
-                                    </li>
-                                </ul>
-                            </div>
+
+                                <div class="pm-calendar-message" id="pm_calendar_limit_msg">
+                                    Ya se generó el número máximo de sesiones para esta programación.
+                                </div>
+
+                                <div class="pm-calendar-weekdays" aria-label="Seleccionar días de formación">
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="1">Lun</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="2">Mar</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="3">Mié</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="4">Jue</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="5">Vie</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="6">Sáb</button>
+                                    <button type="button" class="pm-calendar-weekday-btn" data-iso-day="7">Dom</button>
+                                </div>
+
+                                <div class="pm-calendar-grid" id="pm_calendar_grid"></div>
+
+                                <div class="pm-calendar-legend">
+                                    <span class="pm-calendar-legend-item">
+                                        <span class="pm-legend-icon"><i class="fa-regular fa-circle-check"></i></span>
+                                        Sesión programada
+                                    </span>
+                                    <span class="pm-calendar-legend-item">
+                                        <span class="pm-legend-square"></span>
+                                        Día con sesiones
+                                    </span>
+                                    <span class="pm-calendar-legend-item">
+                                        <span class="pm-legend-square is-empty"></span>
+                                        Día sin sesiones
+                                    </span>
+                                </div>
+                            </section>
                         </div>
                         <div class="col-md-6">
                             <label for="modal_hora_inicio" class="schedule-modal-label">
@@ -10409,20 +10791,88 @@ function setupAsignarHorarioModal() {
             });
     });
 
-    // Motor de Lotes (Variables Globales para el Modal)
+    // Motor de calendario mensual para programación masiva
     let fechasGeneradasLote = [];
-    let limitePermitido = 999; 
+    let limitePermitido = 999;
+    let calendarViewDate = new Date(2026, 6, 1);
+    const diasSeleccionadosSemana = new Set();
 
     const fechaInicio = document.getElementById('pm_fecha_inicio');
     const fechaFin = document.getElementById('pm_fecha_fin');
-    const checkboxesDias = document.querySelectorAll('.pm-dia-check');
-    const listaFechas = document.getElementById('pm_lista_fechas');
+    const calendarGrid = document.getElementById('pm_calendar_grid');
+    const calendarMonth = document.getElementById('pm_calendar_month');
+    const calendarPrev = document.getElementById('pm_calendar_prev');
+    const calendarNext = document.getElementById('pm_calendar_next');
+    const calendarLimitMsg = document.getElementById('pm_calendar_limit_msg');
+    const weekdayButtons = document.querySelectorAll('.pm-calendar-weekday-btn');
     const contadorGeneradas = document.getElementById('pm_contador_generadas');
+    const contadorPermitidas = document.getElementById('pm_contador_permitidas');
     const btnSubmit = formCrear.querySelector('button[type="submit"]');
 
-    // Escuchadores para recalcular fechas
+    if (fechaInicio && fechaFin) {
+        [fechaInicio, fechaFin].forEach(el => {
+            el.addEventListener('change', function() {
+                sincronizarMesConRango();
+                depurarFechasFueraDeRango();
+                regenerarFechasDesdeDiasSeleccionados();
+                renderCalendarioFormacion();
+            });
+        });
+    }
+
+    weekdayButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const isoDay = parseInt(this.dataset.isoDay, 10);
+            if (diasSeleccionadosSemana.has(isoDay)) {
+                diasSeleccionadosSemana.delete(isoDay);
+                quitarFechasPorDiaSemana(isoDay);
+            } else {
+                diasSeleccionadosSemana.add(isoDay);
+                agregarFechasPorDiaSemana(isoDay);
+            }
+            renderCalendarioFormacion();
+        });
+    });
+
+    if (calendarPrev) {
+        calendarPrev.addEventListener('click', function() {
+            calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
+            renderCalendarioFormacion();
+        });
+    }
+
+    if (calendarNext) {
+        calendarNext.addEventListener('click', function() {
+            calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
+            renderCalendarioFormacion();
+        });
+    }
+
+    if (calendarMonth) {
+        calendarMonth.addEventListener('click', function() {
+            sincronizarMesConRango(true);
+            renderCalendarioFormacion();
+        });
+    }
+
+    if (calendarGrid) {
+        calendarGrid.addEventListener('click', function(event) {
+            const removeButton = event.target.closest('.pm-session-remove');
+            if (removeButton) {
+                event.stopPropagation();
+                quitarFechaSeleccionada(removeButton.dataset.date);
+                return;
+            }
+
+            const cell = event.target.closest('.pm-calendar-cell');
+            if (!cell || cell.classList.contains('is-disabled')) return;
+
+            alternarFechaSeleccionada(cell.dataset.date);
+        });
+    }
+
     document.querySelectorAll('.pm-trigger-calc').forEach(el => {
-        el.addEventListener('change', generarFechas);
+        el.addEventListener('change', renderCalendarioFormacion);
     });
 
     const selectResultadoAprendizaje = document.getElementById('modal_id_resultado_aprendizaje');
@@ -10431,93 +10881,230 @@ function setupAsignarHorarioModal() {
             const raId = this.value;
             if (raId && window.resultadosLimites && window.resultadosLimites[raId]) {
                 limitePermitido = parseInt(window.resultadosLimites[raId]);
-                document.getElementById('pm_contador_permitidas').textContent = limitePermitido;
+                contadorPermitidas.textContent = limitePermitido;
             } else {
                 limitePermitido = 999;
-                document.getElementById('pm_contador_permitidas').textContent = '∞';
+                contadorPermitidas.textContent = '∞';
             }
-            generarFechas();
+            if (fechasGeneradasLote.length > limitePermitido) {
+                fechasGeneradasLote = fechasGeneradasLote.slice(0, limitePermitido);
+            }
+            regenerarFechasDesdeDiasSeleccionados();
+            renderCalendarioFormacion();
         });
     }
 
-    function generarFechas() {
-        const inicioVal = fechaInicio.value;
-        const finVal = fechaFin.value;
+    function crearFechaLocal(dateStr) {
+        if (!dateStr) return null;
+        return new Date(dateStr + 'T00:00:00');
+    }
+
+    function fechaAString(dateObj) {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function normalizarMes(dateObj) {
+        return new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+    }
+
+    function sincronizarMesConRango(force = false) {
+        const inicio = crearFechaLocal(fechaInicio.value);
+        const fin = crearFechaLocal(fechaFin.value);
+        if (!inicio) return;
+
+        const viewStart = normalizarMes(calendarViewDate);
+        const startMonth = normalizarMes(inicio);
+        const endMonth = fin ? normalizarMes(fin) : null;
+        const outsideRangeMonths = endMonth && (viewStart < startMonth || viewStart > endMonth);
+
+        if (force || outsideRangeMonths || fechasGeneradasLote.length === 0) {
+            calendarViewDate = startMonth;
+        }
+    }
+
+    function estaEnRango(dateObj) {
+        const inicio = crearFechaLocal(fechaInicio.value);
+        const fin = crearFechaLocal(fechaFin.value);
+        if (!inicio || !fin) return false;
+        return dateObj >= inicio && dateObj <= fin;
+    }
+
+    function depurarFechasFueraDeRango() {
+        fechasGeneradasLote = fechasGeneradasLote.filter(fechaStr => {
+            const dateObj = crearFechaLocal(fechaStr);
+            return dateObj && estaEnRango(dateObj);
+        });
+    }
+
+    function isoDiaSemana(dateObj) {
+        const day = dateObj.getDay();
+        return day === 0 ? 7 : day;
+    }
+
+    function obtenerFechasValidasPorDia(isoDay) {
+        const inicio = crearFechaLocal(fechaInicio.value);
+        const fin = crearFechaLocal(fechaFin.value);
+        if (!inicio || !fin || inicio > fin) return [];
+
+        const fechas = [];
+        const cursor = new Date(inicio);
+
+        while (cursor <= fin) {
+            if (isoDiaSemana(cursor) === isoDay) {
+                fechas.push(fechaAString(cursor));
+            }
+            cursor.setDate(cursor.getDate() + 1);
+        }
+
+        return fechas;
+    }
+
+    function agregarFechasPorDiaSemana(isoDay) {
+        const fechas = obtenerFechasValidasPorDia(isoDay);
+        let alcanzoLimite = false;
+
+        fechas.forEach(fechaStr => {
+            if (fechasGeneradasLote.includes(fechaStr)) return;
+            if (fechasGeneradasLote.length >= limitePermitido) {
+                alcanzoLimite = true;
+                return;
+            }
+            fechasGeneradasLote.push(fechaStr);
+        });
+
+        fechasGeneradasLote.sort();
+        if (alcanzoLimite) mostrarMensajeLimite();
+    }
+
+    function quitarFechasPorDiaSemana(isoDay) {
+        fechasGeneradasLote = fechasGeneradasLote.filter(fechaStr => {
+            const dateObj = crearFechaLocal(fechaStr);
+            return !dateObj || isoDiaSemana(dateObj) !== isoDay;
+        });
+    }
+
+    function regenerarFechasDesdeDiasSeleccionados() {
+        if (diasSeleccionadosSemana.size === 0) return;
+
         fechasGeneradasLote = [];
-        
-        const diasMarcados = Array.from(checkboxesDias)
-                                .filter(chk => chk.checked)
-                                .map(chk => parseInt(chk.value));
-
-        if (!inicioVal || !finVal || diasMarcados.length === 0) {
-            renderListaFechas();
-            return;
-        }
-
-        let fechaActual = new Date(inicioVal + 'T00:00:00');
-        const fechaTope = new Date(finVal + 'T00:00:00');
-
-        while (fechaActual <= fechaTope && fechasGeneradasLote.length < limitePermitido) {
-            let jsDay = fechaActual.getDay();
-            let isoDay = jsDay === 0 ? 7 : jsDay;
-
-            if (diasMarcados.includes(isoDay)) {
-                fechasGeneradasLote.push(fechaActual.toISOString().split('T')[0]);
-            }
-            fechaActual.setDate(fechaActual.getDate() + 1);
-        }
-        renderListaFechas();
+        Array.from(diasSeleccionadosSemana)
+            .sort((a, b) => a - b)
+            .forEach(isoDay => agregarFechasPorDiaSemana(isoDay));
     }
 
-    function renderListaFechas() {
-        listaFechas.innerHTML = '';
-        
-        if (fechasGeneradasLote.length === 0) {
-            listaFechas.innerHTML = `
-                <li class="list-group-item text-muted text-center py-4 bg-transparent border-0 small">
-                    <i class="fa-solid fa-calendar-xmark fs-3 mb-2 d-block opacity-50"></i>
-                    No hay coincidencias de fechas.
-                </li>`;
-            contadorGeneradas.textContent = "0";
-            btnSubmit.disabled = true;
-            return;
-        }
-
-        fechasGeneradasLote.forEach((fechaStr, index) => {
-            const dateObj = new Date(fechaStr + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
-            const fechaLegible = dateObj.toLocaleDateString('es-CO', options);
-
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center bg-white mb-1 rounded-3 shadow-sm border-0';
-            li.innerHTML = `
-                <span>
-                    <i class="fa-solid fa-check text-success me-2"></i> 
-                    <span class="text-capitalize fw-bold text-dark small">${fechaLegible}</span>
-                </span>
-                <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle btn-eliminar-fecha" data-index="${index}" title="Quitar">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            `;
-            listaFechas.appendChild(li);
+    function renderDiasSemanaSeleccionados() {
+        weekdayButtons.forEach(button => {
+            const isoDay = parseInt(button.dataset.isoDay, 10);
+            button.classList.toggle('is-active', diasSeleccionadosSemana.has(isoDay));
         });
+    }
 
+    function mostrarMensajeLimite() {
+        if (!calendarLimitMsg) return;
+        calendarLimitMsg.classList.add('show');
+        window.clearTimeout(calendarLimitMsg._hideTimer);
+        calendarLimitMsg._hideTimer = window.setTimeout(() => {
+            calendarLimitMsg.classList.remove('show');
+        }, 3500);
+    }
+
+    function actualizarContadorYEstado() {
         contadorGeneradas.textContent = fechasGeneradasLote.length;
         if (fechasGeneradasLote.length === limitePermitido) {
-            contadorGeneradas.classList.replace('text-primary', 'text-danger');
+            contadorGeneradas.classList.add('text-danger');
         } else {
-            contadorGeneradas.classList.replace('text-danger', 'text-primary');
+            contadorGeneradas.classList.remove('text-danger');
         }
 
-        btnSubmit.disabled = false;
+        btnSubmit.disabled = fechasGeneradasLote.length === 0;
+    }
 
-        document.querySelectorAll('.btn-eliminar-fecha').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const idx = parseInt(this.getAttribute('data-index'));
-                fechasGeneradasLote.splice(idx, 1);
-                renderListaFechas();
-            });
-        });
+    function alternarFechaSeleccionada(fechaStr) {
+        const index = fechasGeneradasLote.indexOf(fechaStr);
+        if (index >= 0) {
+            fechasGeneradasLote.splice(index, 1);
+            renderCalendarioFormacion();
+            return;
+        }
+
+        if (fechasGeneradasLote.length >= limitePermitido) {
+            mostrarMensajeLimite();
+            return;
+        }
+
+        fechasGeneradasLote.push(fechaStr);
+        fechasGeneradasLote.sort();
+        renderCalendarioFormacion();
+    }
+
+    function quitarFechaSeleccionada(fechaStr) {
+        fechasGeneradasLote = fechasGeneradasLote.filter(fecha => fecha !== fechaStr);
+        renderCalendarioFormacion();
+    }
+
+    function renderCalendarioFormacion() {
+        if (!calendarGrid || !calendarMonth) return;
+
+        const mesesLargos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const year = calendarViewDate.getFullYear();
+        const month = calendarViewDate.getMonth();
+
+        calendarMonth.innerHTML = `${mesesLargos[month]} ${year} <i class="fa-solid fa-chevron-down ms-2 small"></i>`;
+        calendarGrid.innerHTML = '';
+
+        const firstDay = new Date(year, month, 1);
+        const firstIsoDay = firstDay.getDay() === 0 ? 7 : firstDay.getDay();
+        const gridStart = new Date(year, month, 1 - (firstIsoDay - 1));
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const totalCells = Math.ceil((firstIsoDay - 1 + daysInMonth) / 7) * 7;
+
+        for (let i = 0; i < totalCells; i++) {
+            const cellDate = new Date(gridStart);
+            cellDate.setDate(gridStart.getDate() + i);
+
+            const fechaStr = fechaAString(cellDate);
+            const isOtherMonth = cellDate.getMonth() !== month;
+            const isDisabled = !estaEnRango(cellDate);
+            const isSelected = fechasGeneradasLote.includes(fechaStr);
+
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'pm-calendar-cell';
+            cell.dataset.date = fechaStr;
+            cell.setAttribute('aria-label', `${cellDate.getDate()} ${mesesCortos[cellDate.getMonth()]} ${cellDate.getFullYear()}`);
+
+            if (isOtherMonth) cell.classList.add('is-other-month');
+            if (isDisabled) {
+                cell.classList.add('is-disabled');
+                cell.disabled = true;
+            }
+            if (isSelected) cell.classList.add('is-selected');
+
+            cell.innerHTML = `
+                <span class="pm-calendar-day">
+                    <span class="pm-calendar-day-number">${cellDate.getDate()}</span>
+                    <span class="pm-calendar-day-month">${mesesCortos[cellDate.getMonth()]}</span>
+                </span>
+                ${isSelected ? `
+                    <span class="pm-session-chip">
+                        <i class="fa-regular fa-circle-check"></i>
+                        <span>Sesión de<br>Formación</span>
+                        <span class="pm-session-remove" data-date="${fechaStr}" role="button" aria-label="Eliminar sesión">
+                            <i class="fa-solid fa-xmark"></i>
+                        </span>
+                    </span>
+                ` : ''}
+            `;
+
+            calendarGrid.appendChild(cell);
+        }
+
+        actualizarContadorYEstado();
+        renderDiasSemanaSeleccionados();
     }
 
     // Al cerrar el modal, resetear formulario y fechas
@@ -10525,10 +11112,21 @@ function setupAsignarHorarioModal() {
     if(modalEl) {
         modalEl.addEventListener('hidden.bs.modal', function () {
             fechasGeneradasLote = [];
-            renderListaFechas();
+            diasSeleccionadosSemana.clear();
             formCrear.reset();
+            calendarViewDate = new Date(2026, 6, 1);
+            limitePermitido = 999;
+            contadorPermitidas.textContent = '∞';
+            selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
+            selectCompetencia.disabled = true;
+            selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
+            selectResultado.disabled = true;
+            renderCalendarioFormacion();
         });
     }
+
+    sincronizarMesConRango(true);
+    renderCalendarioFormacion();
 
     formCrear.addEventListener('submit', function(e) {
         e.preventDefault();
