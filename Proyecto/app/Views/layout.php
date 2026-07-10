@@ -185,6 +185,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
         'Instructor' => [
             'MENÚ PRINCIPAL' => [
                 ['dashboard/index', 'fa-house', 'Visión General'],
+                ['dashboard/index#pills-inst-horario', 'fa-calendar-days', 'Mi horario'],
                 ['dashboard/index#pills-inst-asistencia', 'fa-clipboard-check', 'Registrar asistencia'],
                 ['dashboard/index#pills-inst-novedad', 'fa-triangle-exclamation', 'Reportar novedad']
             ],

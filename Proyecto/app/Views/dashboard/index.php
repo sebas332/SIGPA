@@ -4810,6 +4810,9 @@
                 <button class="nav-link active" id="pills-vision-inst-tab" data-bs-toggle="pill" data-bs-target="#pills-vision-inst" type="button" role="tab" aria-controls="pills-vision-inst" aria-selected="true">Visión General</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-inst-horario-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-horario" type="button" role="tab" aria-controls="pills-inst-horario" aria-selected="false">Mi horario</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-inst-asistencia-tab" data-bs-toggle="pill" data-bs-target="#pills-inst-asistencia" type="button" role="tab" aria-controls="pills-inst-asistencia" aria-selected="false">Registrar Asistencia</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -5095,6 +5098,333 @@
                             renderizarCalendarioInst(currentMesInst, currentAnioInst);
                         }
                     });
+                </script>
+            </div>
+
+            <!-- PESTAÑA 0.1: MI HORARIO -->
+            <div class="tab-pane fade" id="pills-inst-horario" role="tabpanel" aria-labelledby="pills-inst-horario-tab">
+                <style>
+                    #gridDiasCalendarioInst {
+                        grid-auto-rows: 145px;
+                        align-items: stretch;
+                    }
+                    .calendar-session-card-inst {
+                        flex: 0 0 auto;
+                        min-width: 0;
+                        background: #f0f7ff;
+                        border-left: 3px solid #3b82f6;
+                        padding: 0.4rem;
+                        border-radius: 6px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                        overflow: hidden;
+                        border: 1px solid rgba(0,0,0,0.04);
+                        border-left: 3px solid #3b82f6;
+                        transition: all 0.2s ease;
+                    }
+                    .calendar-session-card-inst:hover {
+                        background: #e0f2fe;
+                        border-color: rgba(0,0,0,0.08);
+                    }
+                    .programacion-control-card {
+                        background: #ffffff;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                        border-radius: 24px;
+                        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 1.35rem 1.45rem;
+                        position: relative;
+                    }
+                    .programacion-month-controls {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.65rem;
+                    }
+                    .programacion-nav-btn {
+                        width: 42px;
+                        height: 42px;
+                        border: 1px solid #dfe6ee;
+                        border-radius: 12px !important;
+                        background: #ffffff;
+                        color: #0f8f2f;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.95rem;
+                        padding: 0;
+                    }
+                    .programacion-nav-btn:hover {
+                        background: #f0fdf4;
+                        border-color: #c7e9d2;
+                        color: #087329;
+                    }
+                    .programacion-month-box {
+                        min-width: 172px;
+                        min-height: 42px;
+                        border: 1px solid #dfe6ee;
+                        border-radius: 12px;
+                        background: #ffffff;
+                        color: #111827;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.65rem;
+                        padding: 0 0.9rem;
+                        font-weight: 800;
+                        font-size: 0.9rem;
+                    }
+                    .programacion-month-box i {
+                        color: #0f8f2f;
+                    }
+
+                    /* Estilos para Imprimir y Exportar a PDF */
+                    #printHeaderHorario {
+                        display: none;
+                    }
+                    @media print {
+                        body * {
+                            visibility: hidden;
+                        }
+                        #printHorarioContainer, #printHorarioContainer * {
+                            visibility: visible;
+                        }
+                        #printHorarioContainer {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            border: none !important;
+                            box-shadow: none !important;
+                        }
+                        #gridDiasCalendarioInst {
+                            grid-auto-rows: minmax(110px, auto) !important;
+                        }
+                        .calendar-cell {
+                            page-break-inside: avoid;
+                            height: auto !important;
+                            overflow: visible !important;
+                            border: 1px solid #e2e8f0 !important;
+                        }
+                        .calendar-session-list {
+                            max-height: none !important;
+                            overflow: visible !important;
+                        }
+                        @page {
+                            size: A4 landscape;
+                            margin: 10mm;
+                        }
+                        #printHeaderHorario {
+                            display: flex !important;
+                        }
+                        .calendar-session-card-inst {
+                            border: 1px solid #e2e8f0 !important;
+                            border-left: 3px solid #3b82f6 !important;
+                            background: #f0f7ff !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .calendar-day-name {
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                            background: #fafbfc !important;
+                        }
+                    }
+                </style>
+
+                <div class="programacion-control-card mb-4">
+                    <div class="programacion-month-controls mx-auto">
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioInst2(-1)" title="Mes anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="programacion-month-box">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <span id="nombreMesAnioInst"></span>
+                        </div>
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioInst2(1)" title="Mes siguiente">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div style="position: absolute; right: 1.45rem; display: flex; gap: 0.5rem;" class="d-none d-lg-flex">
+                        <button class="btn btn-outline-success" onclick="imprimirHorarioInstructor()" style="border-radius: 8px; font-weight: 600; color: #39A900; border-color: #39A900;">
+                            <i class="fa-solid fa-print me-1"></i> Imprimir
+                        </button>
+                        <button class="btn btn-success" onclick="imprimirHorarioInstructor()" style="background-color: #39A900; border-color: #39A900; border-radius: 8px; font-weight: 600;">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" style="border: 1px solid rgba(0,0,0,0.06);" id="printHorarioContainer">
+                    
+                    <!-- Print Header (Oculto en pantalla) -->
+                    <div id="printHeaderHorario" class="flex-column align-items-center mb-4" style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; border-bottom: 2px solid #39A900; padding-bottom: 10px; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <!-- Logo SENA -->
+                                <img src="public/assets/img/logo_sena.png" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
+                                <div>
+                                    <h2 style="color: #39A900; font-weight: 800; margin: 0; font-size: 24px;">SIGPA</h2>
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px; font-weight: 500;">Sistema Integrado de Gestión Académica</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <h4 style="margin: 0; font-weight: 800; color: #1e3a8a; font-size: 18px;">Horario Docente</h4>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155; margin-top: 2px;">Instructor: <?= htmlspecialchars($_SESSION['user_name'] ?? 'Instructor') ?></p>
+                                <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 2px;" id="printDateHorario"></p>
+                            </div>
+                        </div>
+                        <h3 style="margin-bottom: 10px; font-weight: 800; color: #111827; text-transform: uppercase; font-size: 16px;" id="printMonthHorarioDisplay"></h3>
+                    </div>
+
+                    <div class="calendar-days-grid mb-2">
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                    </div>
+                    <div class="calendar-days-grid" id="gridDiasCalendarioInst">
+                        <!-- Generado dinámicamente con JS -->
+                    </div>
+                </div>
+
+                <script>
+                    let currentMesHorarioInst2 = (typeof currentMesInst !== 'undefined') ? currentMesInst : (new Date().getMonth() + 1);
+                    let currentAnioHorarioInst2 = (typeof currentAnioInst !== 'undefined') ? currentAnioInst : new Date().getFullYear();
+
+                    function renderizarCalendarioHorarioInst() {
+                        const grid = document.getElementById('gridDiasCalendarioInst');
+                        const labelMesAnio = document.getElementById('nombreMesAnioInst');
+                        if (!grid || !labelMesAnio || typeof programacionInst === 'undefined') return;
+
+                        labelMesAnio.innerText = mesesNombresInst[currentMesHorarioInst2] + ' ' + currentAnioHorarioInst2;
+                        grid.innerHTML = '';
+
+                        const primerDiaObj = new Date(`${currentAnioHorarioInst2}-${String(currentMesHorarioInst2).padStart(2, '0')}-01T00:00:00`);
+                        const offset = primerDiaObj.getDay() === 0 ? 6 : primerDiaObj.getDay() - 1;
+                        const diasMes = new Date(currentAnioHorarioInst2, currentMesHorarioInst2, 0).getDate();
+                        const hoy = new Date();
+
+                        let prevMonthDays = new Date(currentAnioHorarioInst2, currentMesHorarioInst2 - 1, 0).getDate();
+                        
+                        let html = '';
+                        // Días mes anterior
+                        for (let i = offset - 1; i >= 0; i--) {
+                            html += `<div class="calendar-cell other-month">
+                                        <div class="calendar-cell-header" style="border-bottom: none;"><span class="calendar-day-num">${prevMonthDays - i}</span></div>
+                                     </div>`;
+                        }
+
+                        // Días mes actual
+                        const strMes = String(currentMesHorarioInst2).padStart(2, '0');
+                        for (let d = 1; d <= diasMes; d++) {
+                            const strDia = String(d).padStart(2, '0');
+                            const dateStr = `${currentAnioHorarioInst2}-${strMes}-${strDia}`;
+                            const isToday = (d === hoy.getDate() && currentMesHorarioInst2 === (hoy.getMonth() + 1) && currentAnioHorarioInst2 === hoy.getFullYear());
+                            
+                            const sesionesDia = programacionInst.filter(p => p.fecha_inicio === dateStr).sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''));
+                            
+                            let numSesionesHtml = '';
+                            if (sesionesDia.length > 0) {
+                                const dateObj = new Date(`${dateStr}T00:00:00`);
+                                const todayDateOnly = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+                                const dotColor = dateObj < todayDateOnly ? '#eab308' : '#22c55e'; // yellow for past, green for future/today
+                                numSesionesHtml = `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${dotColor}; margin-top: 6px;"></div>`;
+                            }
+
+                            let sesionesHtml = '<div class="calendar-session-list">';
+                            sesionesDia.forEach(s => {
+                                const horaIniStr = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '';
+                                const horaFinStr = s.hora_fin ? s.hora_fin.substring(0, 5) : '';
+                                const ambienteNombre = s.ambiente_nombre || 'Sin ambiente';
+                                const isSameDay = (s.fecha_inicio === `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`);
+                                const btnAsistencia = isSameDay
+                                    ? `onclick="window.location.hash = '#pills-inst-asistencia'; document.getElementById('id_programacion_select').value = '${s.id_programacion}'; const evt = new Event('change'); document.getElementById('id_programacion_select').dispatchEvent(evt);"`
+                                    : `onclick="Swal.fire('Atención', 'Solo puedes llamar asistencia el mismo día de la sesión programada.', 'warning');"`;
+                                    
+                                sesionesHtml += `
+                                    <div class="calendar-session-card-inst" style="cursor:pointer;" ${btnAsistencia} title="Llamar asistencia">
+                                        <div class="d-flex" style="gap: 8px;">
+                                            <div style="font-weight:700; color:#334155; font-size:0.65rem; display:flex; flex-direction:column; line-height: 1.1;">
+                                                <span>${horaIniStr}</span>
+                                                <span>-</span>
+                                                <span>${horaFinStr}</span>
+                                            </div>
+                                            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-end;">
+                                                <span style="color:#e28743; font-weight:700; font-size:0.65rem;">#${s.numero_ficha}</span>
+                                            </div>
+                                        </div>
+                                        <div style="color: #2563eb; font-weight: 700; font-size: 0.65rem; margin-top: 4px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <i class="fa-regular fa-building"></i> ${ambienteNombre}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            sesionesHtml += '</div>';
+
+                            html += `
+                                <div class="calendar-cell ${isToday ? 'today' : ''}">
+                                    <div class="calendar-cell-header" style="border-bottom: none; padding-bottom: 0;">
+                                        <span class="calendar-day-num">${d}</span>
+                                        ${numSesionesHtml}
+                                    </div>
+                                    ${sesionesHtml}
+                                </div>
+                            `;
+                        }
+
+                        // Días mes siguiente
+                        const totalCells = offset + diasMes;
+                        const remainder = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
+                        for (let d = 1; d <= remainder; d++) {
+                            html += `<div class="calendar-cell other-month">
+                                        <div class="calendar-cell-header"><span class="calendar-day-num">${d}</span></div>
+                                     </div>`;
+                        }
+
+                        grid.innerHTML = html;
+                    }
+
+                    function navegarMesHorarioInst2(dir) {
+                        currentMesHorarioInst2 += dir;
+                        if (currentMesHorarioInst2 > 12) {
+                            currentMesHorarioInst2 = 1;
+                            currentAnioHorarioInst2++;
+                        } else if (currentMesHorarioInst2 < 1) {
+                            currentMesHorarioInst2 = 12;
+                            currentAnioHorarioInst2--;
+                        }
+                        renderizarCalendarioHorarioInst();
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.getElementById('gridDiasCalendarioInst')) {
+                            renderizarCalendarioHorarioInst();
+                        }
+                    });
+
+                    document.getElementById('pills-inst-horario-tab')?.addEventListener('shown.bs.tab', function() {
+                        renderizarCalendarioHorarioInst();
+                    });
+
+                    function imprimirHorarioInstructor() {
+                        const dateText = 'Generado: ' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+                        document.getElementById('printDateHorario').innerText = dateText;
+                        document.getElementById('printMonthHorarioDisplay').innerText = document.getElementById('nombreMesAnioInst').innerText;
+                        
+                        setTimeout(() => {
+                            window.print();
+                        }, 200);
+                    }
                 </script>
             </div>
 
