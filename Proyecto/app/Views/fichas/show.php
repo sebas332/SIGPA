@@ -517,10 +517,24 @@ if ($ficha->fecha_fin === '1970-01-01') {
                                 <?php foreach ($competencias_programa as $index => $comp): ?>
                                     <div class="accordion-item bg-white border-bottom">
                                         <h2 class="accordion-header" id="headingComp_<?= $comp->id_competencia; ?>">
-                                            <button class="accordion-button collapsed fw-bold text-dark p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp_<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseComp_<?= $comp->id_competencia; ?>" style="font-size: 0.9rem;">
-                                                <i class="fa-solid fa-bookmark text-success me-2"></i> <?= htmlspecialchars($comp->codigo); ?> - <?= htmlspecialchars($comp->nombre); ?>
-                                                <span class="badge bg-light text-dark border ms-3"><?= $comp->horas_totales; ?> hrs</span>
-                                            </button>
+                                            <div class="d-flex bg-white">
+                                                <button class="accordion-button collapsed fw-bold text-dark p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp_<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseComp_<?= $comp->id_competencia; ?>" style="font-size: 0.9rem;">
+                                                    <i class="fa-solid fa-bookmark text-success me-2"></i> <?= htmlspecialchars($comp->codigo); ?> - <?= htmlspecialchars($comp->nombre); ?>
+                                                    <span class="badge bg-light text-dark border ms-3"><?= $comp->horas_totales; ?> hrs</span>
+                                                </button>
+                                                <?php if ($current_role === 'Coordinador'): ?>
+                                                    <div class="d-flex align-items-center pe-3 border-start">
+                                                        <button type="button" class="btn btn-sm btn-outline-warning fw-bold text-nowrap btn-modificar-competencia" 
+                                                                data-bs-toggle="modal" data-bs-target="#modalCompetencia"
+                                                                data-id-competencia="<?= $comp->id_competencia; ?>"
+                                                                data-codigo="<?= htmlspecialchars($comp->codigo); ?>"
+                                                                data-nombre="<?= htmlspecialchars($comp->nombre); ?>"
+                                                                data-horas-totales="<?= $comp->horas_totales; ?>">
+                                                            <i class="fa-solid fa-sliders"></i> Modificar Competencia
+                                                        </button>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </h2>
                                         <div id="collapseComp_<?= $comp->id_competencia; ?>" class="accordion-collapse collapse" aria-labelledby="headingComp_<?= $comp->id_competencia; ?>" data-bs-parent="#accordionCompetenciasFicha">
                                             <div class="accordion-body p-3 bg-light">
@@ -699,11 +713,253 @@ if ($ficha->fecha_fin === '1970-01-01') {
 </div>
 <?php endif; ?>
 
+<?php if ($current_role === 'Coordinador'): ?>
+<!-- Modal Tabla de Control por Competencia -->
+<div class="modal fade" id="modalCompetencia" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-warning text-dark p-4 border-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-layer-group me-2"></i> Tabla de Control: Ajuste de Competencia
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            
+            <form action="<?= URLROOT; ?>/index.php?route=fichas/guardarAjusteMasivo" method="POST">
+                <div class="modal-body p-4 bg-light">
+                    <input type="hidden" name="numero_ficha" value="<?= $ficha->numero_ficha; ?>">
+                    <input type="hidden" name="id_competencia" id="modal_id_competencia">
+                    
+                    <h5 class="fw-bold text-dark mb-1" id="modal_nombre_competencia"></h5>
+                    <div class="text-secondary small mb-4">
+                        <i class="fa-solid fa-barcode me-1"></i> Código: <strong id="modal_codigo_competencia"></strong>
+                        <span class="mx-2">|</span>
+                        <i class="fa-solid fa-clock me-1"></i> Total Horas: <strong id="modal_horas_competencia"></strong>
+                        <span class="mx-2">|</span>
+                        <i class="fa-solid fa-person-chalkboard me-1"></i> Límite de Sesiones: <strong id="modal_sesiones_competencia" class="text-primary fs-6"></strong>
+                    </div>
+                    
+                    <!-- Alerta de Error (Oculta por defecto) -->
+                    <div id="alerta_limite" class="alert alert-danger d-none fw-bold text-center border-0 shadow-sm mb-4">
+                        <i class="fa-solid fa-triangle-exclamation fs-5 me-2"></i> Error: Excede el límite de sesiones
+                    </div>
+
+                    <!-- Tabla de RAPs -->
+                    <div class="table-responsive bg-white rounded-3 border shadow-sm">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+                            <thead class="table-light text-center">
+                                <tr>
+                                    <th style="width: 50%; text-align: left;" class="ps-3">Nombre del RAP</th>
+                                    <th style="width: 25%;">% de Ejecución</th>
+                                    <th style="width: 25%;" class="pe-3">Sesiones Asignadas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla_raps">
+                                <!-- Las filas se generan vía JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="modal-footer p-4 border-0 bg-white">
+                    <button type="button" class="btn btn-light rounded-pill px-4 border" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" id="btn_guardar_ajuste">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Ajustes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- ==============================================
      SCRIPTS DE CONFIRMACIÓN Y VALIDACIÓN (DETAIL)
      ============================================== -->
 <script>
+// Variable Global (Regla de Oro)
+let maximoSesionesPermitidas = 0;
+const HORAS_POR_SESION = 6;
+const numeroFichaGlobal = "<?= htmlspecialchars($ficha->numero_ficha); ?>";
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Escuchar el clic en el botón de la competencia
+    document.querySelectorAll('.btn-modificar-competencia').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            try {
+                const horasTotales = parseInt(this.getAttribute('data-horas-totales')) || 0;
+                const idCompetencia = this.getAttribute('data-id-competencia');
+                const codigoComp = this.getAttribute('data-codigo');
+                const nombreComp = this.getAttribute('data-nombre');
+
+                // Setear variables globales y UI inicial
+                maximoSesionesPermitidas = Math.ceil(horasTotales / HORAS_POR_SESION);
+                
+                document.getElementById('modal_id_competencia').value = idCompetencia;
+                document.getElementById('modal_nombre_competencia').textContent = nombreComp;
+                document.getElementById('modal_codigo_competencia').textContent = codigoComp;
+                document.getElementById('modal_horas_competencia').textContent = horasTotales + ' hrs';
+                document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
+
+                const tbody = document.getElementById('tabla_raps');
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fs-4 text-warning"></i> Cargando resultados de la competencia...</td></tr>';
+                document.getElementById('btn_guardar_ajuste').disabled = true;
+
+                // Petición AJAX para obtener los RAPs y sus ajustes
+                const response = await fetch(`<?= URLROOT; ?>/index.php?route=fichas/getAjustesCompetencia`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_competencia: idCompetencia, numero_ficha: numeroFichaGlobal })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    if (data.raps.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="fa-solid fa-circle-info me-2"></i>Esta competencia no tiene resultados de aprendizaje asociados.</td></tr>`;
+                    } else {
+                        renderizarTablaRaps(data.raps);
+                    }
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error procesando el modal:', error);
+                document.getElementById('tabla_raps').innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error interno al cargar la información.</td></tr>`;
+            }
+        });
+    });
+
+    // Evento de Guardado mediante Fetch
+    const btnGuardarAjuste = document.getElementById('btn_guardar_ajuste');
+    if (btnGuardarAjuste) {
+        btnGuardarAjuste.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            if (this.disabled) return;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+            this.disabled = true;
+
+            const idCompetencia = document.getElementById('modal_id_competencia').value;
+            
+            const rapsData = [];
+            document.querySelectorAll('#tabla_raps tr').forEach(tr => {
+                if (tr.querySelector('.rap-id')) {
+                    rapsData.push({
+                        id_resultado: tr.querySelector('.rap-id').value,
+                        horas_base: tr.querySelector('.rap-horas-base').value,
+                        porcentaje: tr.querySelector('.input-porcentaje').value,
+                        sesiones: tr.querySelector('.input-sesiones').value
+                    });
+                }
+            });
+
+            try {
+                const response = await fetch(`<?= URLROOT; ?>/index.php?route=fichas/guardarAjusteMasivoFetch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        numero_ficha: numeroFichaGlobal,
+                        id_competencia: idCompetencia,
+                        raps: rapsData
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Ajuste Guardado',
+                        text: 'La competencia ha sido balanceada correctamente.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', result.message || 'No se pudieron guardar los ajustes.', 'error');
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            } catch (error) {
+                Swal.fire('Error Crítico', 'No se pudo contactar con el servidor.', 'error');
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }
+        });
+    }
+});
+
+function renderizarTablaRaps(raps) {
+    const tbody = document.getElementById('tabla_raps');
+    tbody.innerHTML = '';
+
+    raps.forEach((rap, index) => {
+        tbody.innerHTML += `
+            <tr>
+                <td class="ps-3">
+                    <div class="fw-bold text-primary small mb-1">${rap.codigo}</div>
+                    <div class="text-secondary small" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${rap.descripcion}</div>
+                    <input type="hidden" class="rap-id" value="${rap.id_resultado}">
+                    <input type="hidden" class="rap-horas-base" value="${rap.horas_base}">
+                </td>
+                <td>
+                    <div class="input-group input-group-sm w-75 mx-auto">
+                        <input type="number" class="form-control text-center input-porcentaje" value="${rap.porcentaje_ajustado}" min="1" max="100" oninput="recalcularFila(this)">
+                        <span class="input-group-text bg-light">%</span>
+                    </div>
+                </td>
+                <td class="pe-3">
+                    <input type="number" class="form-control text-center fw-bold input-sesiones shadow-sm" value="${rap.sesiones_asignadas_ajustadas}" min="1" oninput="calcularSesiones()">
+                </td>
+            </tr>
+        `;
+    });
+    
+    document.getElementById('btn_guardar_ajuste').disabled = false;
+    calcularSesiones(); // Cálculo inicial
+}
+
+// Función que recalcula una fila si se cambia el porcentaje
+window.recalcularFila = function(inputPorcentaje) {
+    const tr = inputPorcentaje.closest('tr');
+    const horasBase = parseInt(tr.querySelector('.rap-horas-base').value);
+    const porcentaje = parseFloat(inputPorcentaje.value) || 0;
+    
+    const nuevasSesiones = Math.ceil((horasBase * (porcentaje / 100)) / HORAS_POR_SESION);
+    tr.querySelector('.input-sesiones').value = nuevasSesiones;
+    
+    calcularSesiones();
+}
+
+// Función Principal (Regla de Oro)
+window.calcularSesiones = function() {
+    let sumaTotal = 0;
+    const btnGuardar = document.getElementById('btn_guardar_ajuste');
+    const alertaError = document.getElementById('alerta_limite');
+
+    // Sumar todas las sesiones
+    document.querySelectorAll('.input-sesiones').forEach(input => {
+        sumaTotal += parseInt(input.value || 0);
+        input.classList.remove('is-invalid', 'text-danger');
+    });
+
+    // Validar regla estricta
+    if (sumaTotal > maximoSesionesPermitidas) {
+        alertaError.classList.remove('d-none');
+        btnGuardar.disabled = true;
+        
+        document.querySelectorAll('.input-sesiones').forEach(input => {
+            input.classList.add('is-invalid', 'text-danger');
+        });
+    } else {
+        alertaError.classList.add('d-none');
+        btnGuardar.disabled = false;
+    }
+}
+
     // Alertas de Desvinculación de Aprendiz
     document.querySelectorAll('.btn-remover-aprendiz-action').forEach(btn => {
         btn.addEventListener('click', function(e) {

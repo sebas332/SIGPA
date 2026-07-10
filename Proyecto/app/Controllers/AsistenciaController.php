@@ -123,6 +123,17 @@ class AsistenciaController extends BaseController {
                 return;
             }
 
+            // Blindaje estricto: Solo permitir asistencia si la fecha programada es HOY.
+            $hoy = date('Y-m-d');
+            if ($programacion->fecha_inicio !== $hoy) {
+                http_response_code(403);
+                echo json_encode([
+                    'status' => 'error', 
+                    'message' => 'Acción no permitida fuera de la fecha de sesión'
+                ]);
+                exit;
+            }
+
             if ($fecha !== $programacion->fecha_inicio) {
                 $_SESSION['flash_error'] = 'La fecha de asistencia debe coincidir con la fecha programada de la sesión (' . $programacion->fecha_inicio . ').';
                 $this->redirect('dashboard/index#pills-inst-asistencia');

@@ -5061,9 +5061,15 @@
                                             <div class="small text-secondary fw-medium"><i class="fa-solid fa-location-dot me-1 text-muted"></i> Ambiente: <strong class="text-dark">${s.ambiente_nombre || 'No asignado'}</strong></div>
                                             <div class="small text-secondary fw-medium">Sesiones: <strong class="text-dark">${s.sesiones_realizadas}/${s.total_sesiones}</strong></div>
                                         </div>
-                                        <button class="inst-btn-call" onclick="window.location.hash = '#pills-inst-asistencia'; document.getElementById('id_programacion_select').value = '${s.id_programacion}'; const evt = new Event('change'); document.getElementById('id_programacion_select').dispatchEvent(evt); return false;">
-                                            <i class="fa-solid fa-clipboard-user me-2"></i> Llamar Asistencia
-                                        </button>
+                                        ${s.fecha_inicio === '<?= date('Y-m-d') ?>' ? 
+                                            `<button class="inst-btn-call" onclick="window.location.hash = '#pills-inst-asistencia'; document.getElementById('id_programacion_select').value = '${s.id_programacion}'; const evt = new Event('change'); document.getElementById('id_programacion_select').dispatchEvent(evt); return false;">
+                                                <i class="fa-solid fa-clipboard-user me-2"></i> Llamar Asistencia
+                                            </button>`
+                                        : 
+                                            `<button class="inst-btn-call" style="background-color: #9ca3af; cursor: not-allowed; border-color: #9ca3af;" onclick="Swal.fire('Acceso Denegado', 'Solo puedes llamar asistencia el mismo día de la sesión programada.', 'warning'); return false;">
+                                                <i class="fa-solid fa-lock me-2"></i> Asistencia Bloqueada
+                                            </button>`
+                                        }
                                     </div>
                                 </div>
                             `;
@@ -5481,11 +5487,22 @@
                             }
 
                             const option = this.options[this.selectedIndex];
+                            const fechaSesion = option.getAttribute('data-fecha');
+                            const fechaActual = '<?= date('Y-m-d') ?>';
+
+                            if (fechaSesion !== fechaActual) {
+                                Swal.fire('Acceso Denegado', 'La asistencia solo puede tomarse en la fecha exacta de la sesión (' + fechaSesion + ').', 'warning');
+                                this.value = '';
+                                const evt = new Event('change');
+                                this.dispatchEvent(evt);
+                                return;
+                            }
+
                             document.getElementById('info-prog').innerText = option.getAttribute('data-desc') || 'Programa Técnico';
                             document.getElementById('info-amb').innerText = option.getAttribute('data-amb') ? `Ambiente ${option.getAttribute('data-amb')}` : 'Sin Asignar';
                             document.getElementById('info-hora').innerText = option.getAttribute('data-hora') || '00:00 - 00:00';
                             document.getElementById('info-jor').innerText = option.getAttribute('data-jornada') || 'Diurna';
-                            if (fechaAsistenciaInput) fechaAsistenciaInput.value = option.getAttribute('data-fecha') || '<?= date('Y-m-d'); ?>';
+                            if (fechaAsistenciaInput) fechaAsistenciaInput.value = fechaSesion || '<?= date('Y-m-d'); ?>';
 
                             currentAprendices = aprendicesPorProgramacion[idProg];
                             renderizarListaAsistencia(currentAprendices);
@@ -8781,24 +8798,71 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <!-- Reemplazando Día y Fecha única por Rango de Fechas Masivo -->
                         <div class="col-md-6">
-                            <label for="modal_id_dias" class="schedule-modal-label">
+                            <label for="pm_fecha_inicio" class="schedule-modal-label">
                                 <i class="fa-solid fa-calendar-days"></i>
-                                <span>Día de la Semana</span>
+                                <span>Fecha Inicial</span>
                             </label>
-                            <select class="form-select schedule-modal-control" id="modal_id_dias" name="id_dias" required>
-                                <option value="">Selecciona el día...</option>
-                                <?php foreach ($dias as $d): ?>
-                                    <option value="<?= $d->id_dias; ?>"><?= $d->nombre_dia; ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <input type="date" class="form-control schedule-modal-control pm-trigger-calc" id="pm_fecha_inicio" name="fecha_inicio" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="modal_fecha_inicio" class="schedule-modal-label">
-                                <i class="fa-solid fa-calendar-days"></i>
-                                <span>Fecha de Inicio Estimada</span>
+                            <label for="pm_fecha_fin" class="schedule-modal-label">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <span>Fecha Final Límite</span>
                             </label>
-                            <input type="date" class="form-control schedule-modal-control" id="modal_fecha_inicio" name="fecha_inicio" value="<?= date('Y-m-d'); ?>" required>
+                            <input type="date" class="form-control schedule-modal-control pm-trigger-calc" id="pm_fecha_fin" name="fecha_fin" required>
+                        </div>
+
+                        <!-- Días de la semana -->
+                        <div class="col-md-12 mt-3">
+                            <label class="schedule-modal-label d-block mb-2">
+                                <i class="fa-solid fa-list-check"></i>
+                                <span>Días de Formación a Agendar</span>
+                            </label>
+                            <div class="btn-group w-100 shadow-sm" role="group">
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_1" value="1" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_1">Lun</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_2" value="2" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_2">Mar</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_3" value="3" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_3">Mié</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_4" value="4" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_4">Jue</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_5" value="5" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_5">Vie</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_6" value="6" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_6">Sáb</label>
+
+                                <input type="checkbox" class="btn-check pm-dia-check pm-trigger-calc" id="dia_7" value="7" autocomplete="off">
+                                <label class="btn btn-outline-success fw-bold" for="dia_7">Dom</label>
+                            </div>
+                        </div>
+
+                        <!-- Indicador de estado y Lista de Previsualización -->
+                        <div class="col-md-12 mt-4">
+                            <div class="alert alert-info d-flex justify-content-between align-items-center rounded-3 border-0 shadow-sm mb-2 p-2 px-3">
+                                <div class="fw-bold fs-6">
+                                    <i class="fa-solid fa-layer-group me-2"></i> Sesiones Generadas:
+                                </div>
+                                <div class="fs-5 fw-bolder">
+                                    <span id="pm_contador_generadas" class="text-primary">0</span> / 
+                                    <span id="pm_contador_permitidas" class="text-secondary">∞</span> <!-- Se ajustará dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="border rounded-3 p-2 bg-light shadow-inner" style="max-height: 200px; overflow-y: auto;">
+                                <ul class="list-group list-group-flush" id="pm_lista_fechas">
+                                    <li class="list-group-item text-muted text-center py-4 bg-transparent border-0 small">
+                                        <i class="fa-solid fa-calendar-day fs-3 mb-2 d-block opacity-50"></i>
+                                        Selecciona rango de fechas y días para previsualizar el lote.
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="modal_hora_inicio" class="schedule-modal-label">
@@ -10319,18 +10383,19 @@ function setupAsignarHorarioModal() {
         selectResultado.innerHTML = '<option value="">Cargando...</option>';
         selectResultado.disabled = true;
 
-        if (!val) {
-            selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
-            return;
-        }
-
-        fetch(`<?= URLROOT; ?>/index.php?route=programacion/get_resultados_por_competencia&id_competencia=${val}`)
+        const fichaVal = document.getElementById('modal_numero_ficha').value;
+        
+        fetch(`<?= URLROOT; ?>/index.php?route=programacion/get_resultados_por_competencia&id_competencia=${val}&ficha=${fichaVal}`)
             .then(res => res.json())
             .then(res => {
                 if (res.success) {
+                    // Limpiamos los límites anteriores
+                    window.resultadosLimites = {};
+
                     let html = '<option value="">Selecciona el resultado...</option>';
                     res.resultados.forEach(r => {
                         html += `<option value="${r.id_resultado}">${r.codigo} - ${r.descripcion}</option>`;
+                        window.resultadosLimites[r.id_resultado] = r.limite_sesiones;
                     });
                     selectResultado.innerHTML = html;
                     selectResultado.disabled = false;
@@ -10344,76 +10409,186 @@ function setupAsignarHorarioModal() {
             });
     });
 
+    // Motor de Lotes (Variables Globales para el Modal)
+    let fechasGeneradasLote = [];
+    let limitePermitido = 999; 
+
+    const fechaInicio = document.getElementById('pm_fecha_inicio');
+    const fechaFin = document.getElementById('pm_fecha_fin');
+    const checkboxesDias = document.querySelectorAll('.pm-dia-check');
+    const listaFechas = document.getElementById('pm_lista_fechas');
+    const contadorGeneradas = document.getElementById('pm_contador_generadas');
+    const btnSubmit = formCrear.querySelector('button[type="submit"]');
+
+    // Escuchadores para recalcular fechas
+    document.querySelectorAll('.pm-trigger-calc').forEach(el => {
+        el.addEventListener('change', generarFechas);
+    });
+
+    const selectResultadoAprendizaje = document.getElementById('modal_id_resultado_aprendizaje');
+    if (selectResultadoAprendizaje) {
+        selectResultadoAprendizaje.addEventListener('change', function() {
+            const raId = this.value;
+            if (raId && window.resultadosLimites && window.resultadosLimites[raId]) {
+                limitePermitido = parseInt(window.resultadosLimites[raId]);
+                document.getElementById('pm_contador_permitidas').textContent = limitePermitido;
+            } else {
+                limitePermitido = 999;
+                document.getElementById('pm_contador_permitidas').textContent = '∞';
+            }
+            generarFechas();
+        });
+    }
+
+    function generarFechas() {
+        const inicioVal = fechaInicio.value;
+        const finVal = fechaFin.value;
+        fechasGeneradasLote = [];
+        
+        const diasMarcados = Array.from(checkboxesDias)
+                                .filter(chk => chk.checked)
+                                .map(chk => parseInt(chk.value));
+
+        if (!inicioVal || !finVal || diasMarcados.length === 0) {
+            renderListaFechas();
+            return;
+        }
+
+        let fechaActual = new Date(inicioVal + 'T00:00:00');
+        const fechaTope = new Date(finVal + 'T00:00:00');
+
+        while (fechaActual <= fechaTope && fechasGeneradasLote.length < limitePermitido) {
+            let jsDay = fechaActual.getDay();
+            let isoDay = jsDay === 0 ? 7 : jsDay;
+
+            if (diasMarcados.includes(isoDay)) {
+                fechasGeneradasLote.push(fechaActual.toISOString().split('T')[0]);
+            }
+            fechaActual.setDate(fechaActual.getDate() + 1);
+        }
+        renderListaFechas();
+    }
+
+    function renderListaFechas() {
+        listaFechas.innerHTML = '';
+        
+        if (fechasGeneradasLote.length === 0) {
+            listaFechas.innerHTML = `
+                <li class="list-group-item text-muted text-center py-4 bg-transparent border-0 small">
+                    <i class="fa-solid fa-calendar-xmark fs-3 mb-2 d-block opacity-50"></i>
+                    No hay coincidencias de fechas.
+                </li>`;
+            contadorGeneradas.textContent = "0";
+            btnSubmit.disabled = true;
+            return;
+        }
+
+        fechasGeneradasLote.forEach((fechaStr, index) => {
+            const dateObj = new Date(fechaStr + 'T00:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            const fechaLegible = dateObj.toLocaleDateString('es-CO', options);
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center bg-white mb-1 rounded-3 shadow-sm border-0';
+            li.innerHTML = `
+                <span>
+                    <i class="fa-solid fa-check text-success me-2"></i> 
+                    <span class="text-capitalize fw-bold text-dark small">${fechaLegible}</span>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle btn-eliminar-fecha" data-index="${index}" title="Quitar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            listaFechas.appendChild(li);
+        });
+
+        contadorGeneradas.textContent = fechasGeneradasLote.length;
+        if (fechasGeneradasLote.length === limitePermitido) {
+            contadorGeneradas.classList.replace('text-primary', 'text-danger');
+        } else {
+            contadorGeneradas.classList.replace('text-danger', 'text-primary');
+        }
+
+        btnSubmit.disabled = false;
+
+        document.querySelectorAll('.btn-eliminar-fecha').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-index'));
+                fechasGeneradasLote.splice(idx, 1);
+                renderListaFechas();
+            });
+        });
+    }
+
+    // Al cerrar el modal, resetear formulario y fechas
+    const modalEl = document.getElementById('modalAsignarHorario');
+    if(modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            fechasGeneradasLote = [];
+            renderListaFechas();
+            formCrear.reset();
+        });
+    }
+
     formCrear.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        if (fechasGeneradasLote.length === 0) {
+            Swal.fire('Atención', 'Debes generar al menos una fecha para guardar.', 'warning');
+            return;
+        }
+
         const data = {
             numero_ficha: document.getElementById('modal_numero_ficha').value,
             id_usuario: document.getElementById('modal_id_usuario').value,
-            id_numero_ambiente: document.getElementById('modal_id_numero_ambiente').value,
-            id_dias: document.getElementById('modal_id_dias').value,
-            fecha_inicio: document.getElementById('modal_fecha_inicio').value,
+            id_ambiente: document.getElementById('modal_id_numero_ambiente').value,
             hora_inicio: document.getElementById('modal_hora_inicio').value,
             hora_fin: document.getElementById('modal_hora_fin').value,
-            id_resultado_aprendizaje: document.getElementById('modal_id_resultado_aprendizaje').value
+            id_resultado: document.getElementById('modal_id_resultado_aprendizaje').value,
+            fechas: fechasGeneradasLote
         };
 
-        const btnSubmit = formCrear.querySelector('button[type="submit"]');
         const btnHtml = btnSubmit.innerHTML;
-        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando Lote...';
         btnSubmit.disabled = true;
 
-        fetch(`<?= URLROOT; ?>/index.php?route=programacion/create_ajax`, {
+        fetch(`<?= URLROOT; ?>/index.php?route=programacion/programarMasivo`, {
             method: 'POST',
             body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         })
         .then(res => res.json())
         .then(res => {
             btnSubmit.innerHTML = btnHtml;
             btnSubmit.disabled = false;
 
-            if (res.success) {
-                window.programacionDataGlobal.push(res.data);
-                
-                const modalEl = document.getElementById('modalAsignarHorario');
+            if (res.status === 'success') {
                 const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
                 if (modal) modal.hide();
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Programación Registrada',
+                    title: 'Lote Programado',
                     text: res.message,
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
-                    timer: 2500
+                    timer: 3000
+                }).then(() => {
+                    window.location.reload();
                 });
-
-                cargarFiltrosDinamicos();
-                renderizarCalendario();
-                renderizarLista();
-                if (typeof selectedAmbiente !== 'undefined' && selectedAmbiente !== null) {
-                    cargarProgramacionAmbiente(selectedAmbiente.id);
-                }
-                formCrear.reset();
-                selectCompetencia.innerHTML = '<option value="">Selecciona primero una ficha...</option>';
-                selectCompetencia.disabled = true;
-                selectResultado.innerHTML = '<option value="">Selecciona primero una competencia...</option>';
-                selectResultado.disabled = true;
             } else {
-                Swal.fire('Error', res.message, 'error');
+                Swal.fire('Error en Lote', res.message, 'error');
             }
         })
         .catch(err => {
             console.error(err);
             btnSubmit.innerHTML = btnHtml;
             btnSubmit.disabled = false;
-            Swal.fire('Error', 'No se pudo guardar el horario en el servidor.', 'error');
+            Swal.fire('Error Critico', 'Hubo un problema de conexión con el servidor.', 'error');
         });
     });
+
 }
 
 document.addEventListener('DOMContentLoaded', function() {

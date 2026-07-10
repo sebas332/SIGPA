@@ -192,13 +192,138 @@ class ProgramacionController extends BaseController {
     public function get_resultados_por_competencia() {
         header('Content-Type: application/json');
         $idCompetencia = $_GET['id_competencia'] ?? 0;
+        $numeroFicha = $_GET['ficha'] ?? 0; // Extra: pasamos la ficha si está disponible
 
         $resultados = $this->resultadoModel->getByCompetencia($idCompetencia);
+        
+        // Si hay una ficha, buscamos su configuración específica para los límites
+        if ($numeroFicha) {
+            $db = Database::getInstance();
+            foreach ($resultados as &$r) {
+                $db->query("SELECT sesiones_asignadas_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha AND id_resultado = :res");
+                $db->bind(':ficha', $numeroFicha);
+                $db->bind(':res', $r->id_resultado);
+                $configRow = $db->single();
+                if ($configRow && $configRow->sesiones_asignadas_ajustadas !== null) {
+                    $r->limite_sesiones = (int) $configRow->sesiones_asignadas_ajustadas;
+                } else {
+                    $r->limite_sesiones = (int) $r->sesiones_asignadas;
+                }
+            }
+        } else {
+            foreach ($resultados as &$r) {
+                $r->limite_sesiones = (int) $r->sesiones_asignadas;
+            }
+        }
 
         echo json_encode([
             'success' => true,
             'resultados' => $resultados
         ]);
+        exit;
+    }
+
+    /**
+     * Programar un lote de sesiones masivamente
+     */
+    public function programarMasivo() {
+        header('Content-Type: application/json');
+        try {
+            $this->requireRol('Coordinador');
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => 'No autorizado.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            echo json_encode(['status' => 'error', 'message' => 'Datos inválidos.']);
+            exit;
+        }
+
+        $fechas = $input['fechas'] ?? [];
+        if (empty($fechas)) {
+            echo json_encode(['status' => 'error', 'message' => 'No hay fechas para programar.']);
+            exit;
+        }
+
+        $db = Database::getInstance();
+        $id_lote = bin2hex(random_bytes(8)); // UUID corto para el lote
+
+        try {
+            $db->beginTransaction();
+
+            $errores_conflicto = [];
+            $sesiones_creadas = 0;
+
+            foreach ($fechas as $fecha) {
+                $data = [
+                    'numero_ficha' => $input['numero_ficha'],
+                    'id_usuario' => $input['id_usuario'],
+                    'id_numero_ambiente' => $input['id_ambiente'] ?? $input['id_numero_ambiente'] ?? 0,
+                    'hora_inicio' => $input['hora_inicio'],
+                    'hora_fin' => $input['hora_fin'],
+                    'id_resultado_aprendizaje' => $input['id_resultado'],
+                    'fecha_inicio' => $fecha,
+                    'id_dias' => date('N', strtotime($fecha))
+                ];
+
+                // Validar conflictos para esta fecha específica
+                $conflictMessage = $this->programacionModel->getConflictMessage($data);
+                if ($conflictMessage) {
+                    $errores_conflicto[] = "Conflicto en {$fecha}: {$conflictMessage}";
+                    continue; // Skip or we could abort entire batch. Let's abort entire batch for atomic integrity.
+                }
+
+                // Insert manual logic or use model's create
+                // Since model->create() uses its own queries, we just call it.
+                // Wait! To add id_lote we need a custom query or add it to Model.
+                // If ProgramacionAcademica model doesn't have id_lote yet, we should inject it here:
+                $sql = "INSERT INTO programacion_academica 
+                        (numero_ficha, id_usuario, id_numero_ambiente, id_dias, hora_inicio, hora_fin, id_resultado_aprendizaje, fecha_inicio, id_lote) 
+                        VALUES 
+                        (:ficha, :inst, :amb, :dias, :hi, :hf, :ra, :fech, :lote)";
+                
+                $db->query($sql);
+                $db->bind(':ficha', $data['numero_ficha']);
+                $db->bind(':inst', $data['id_usuario']);
+                $db->bind(':amb', $data['id_numero_ambiente']);
+                $db->bind(':dias', $data['id_dias']);
+                $db->bind(':hi', $data['hora_inicio']);
+                $db->bind(':hf', $data['hora_fin']);
+                $db->bind(':ra', $data['id_resultado_aprendizaje']);
+                $db->bind(':fech', $data['fecha_inicio']);
+                $db->bind(':lote', $id_lote);
+
+                if (!$db->execute()) {
+                    throw new Exception("Error al insertar la fecha {$fecha}");
+                }
+                $sesiones_creadas++;
+            }
+
+            if (!empty($errores_conflicto)) {
+                $db->rollBack();
+                echo json_encode([
+                    'status' => 'error', 
+                    'message' => 'Lote revertido por conflictos de horario. Detalles: ' . implode(" | ", $errores_conflicto)
+                ]);
+                exit;
+            }
+
+            $db->commit();
+            
+            // Audit
+            AuditLogger::log('Programación Masiva', 'programacion_academica', null, "Ficha: {$input['numero_ficha']}, Lote: {$id_lote}, Sesiones: {$sesiones_creadas}");
+
+            echo json_encode([
+                'status' => 'success',
+                'message' => "Se han programado correctamente {$sesiones_creadas} sesiones en el lote."
+            ]);
+
+        } catch (Exception $e) {
+            $db->rollBack();
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
         exit;
     }
 

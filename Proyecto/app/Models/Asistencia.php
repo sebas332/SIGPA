@@ -81,35 +81,20 @@ class Asistencia {
      * @return bool
      */
     public function guardar($id_programacion, $id_usuario_aprendiz, $fecha_asistencia, $asistio, $observacion) {
-        // Verificar si ya existe el registro para esa terna única (id_programacion, id_usuario_aprendiz, fecha_asistencia)
-        $this->db->query("SELECT id_asistencia FROM asistencia 
-                          WHERE id_programacion = :id_programacion 
-                            AND id_usuario_aprendiz = :id_aprendiz 
-                            AND fecha_asistencia = :fecha");
+        $sql = "INSERT INTO asistencia (id_programacion, id_usuario_aprendiz, fecha_asistencia, asistio, observacion) 
+                VALUES (:id_programacion, :id_aprendiz, :fecha, :asistio, :observacion)
+                ON DUPLICATE KEY UPDATE 
+                asistio = VALUES(asistio), 
+                observacion = VALUES(observacion)";
+                
+        $this->db->query($sql);
         $this->db->bind(':id_programacion', $id_programacion);
         $this->db->bind(':id_aprendiz', $id_usuario_aprendiz);
         $this->db->bind(':fecha', $fecha_asistencia);
-        $existente = $this->db->single();
-
-        if ($existente) {
-            // Actualizar
-            $this->db->query("UPDATE asistencia SET asistio = :asistio, observacion = :observacion 
-                              WHERE id_asistencia = :id_asistencia");
-            $this->db->bind(':asistio', $asistio);
-            $this->db->bind(':observacion', $observacion);
-            $this->db->bind(':id_asistencia', $existente->id_asistencia);
-            return $this->db->execute();
-        } else {
-            // Insertar (esto gatillará los triggers trg_asistencia_bi y trg_asistencia_ai)
-            $this->db->query("INSERT INTO asistencia (id_programacion, id_usuario_aprendiz, fecha_asistencia, asistio, observacion) 
-                              VALUES (:id_programacion, :id_aprendiz, :fecha, :asistio, :observacion)");
-            $this->db->bind(':id_programacion', $id_programacion);
-            $this->db->bind(':id_aprendiz', $id_usuario_aprendiz);
-            $this->db->bind(':fecha', $fecha_asistencia);
-            $this->db->bind(':asistio', $asistio);
-            $this->db->bind(':observacion', $observacion);
-            return $this->db->execute();
-        }
+        $this->db->bind(':asistio', $asistio);
+        $this->db->bind(':observacion', $observacion);
+        
+        return $this->db->execute();
     }
 
     /**

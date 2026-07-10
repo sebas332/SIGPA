@@ -12,6 +12,7 @@ class FichaController extends BaseController {
     private $usuarioModel;
     private $competenciaModel;
     private $resultadoModel;
+    private $fichaConfigModel;
 
     public function __construct() {
         $this->fichaModel = $this->model('Ficha');
@@ -22,6 +23,7 @@ class FichaController extends BaseController {
         $this->usuarioModel = $this->model('Usuario');
         $this->competenciaModel = $this->model('Competencia');
         $this->resultadoModel = $this->model('ResultadoAprendizaje');
+        $this->fichaConfigModel = $this->model('FichaResultadoConfig');
     }
 
     /**
@@ -667,6 +669,257 @@ class FichaController extends BaseController {
             
             $this->redirect('dashboard/index#pills-fichas');
         }
+    }
+
+    /**
+     * Ajuste Inteligente de Competencias (Masivo)
+     */
+    public function guardarAjusteMasivo() {
+        $this->requireRol('Coordinador');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $numero_ficha = $_POST['numero_ficha'] ?? null;
+            $raps = $_POST['raps'] ?? [];
+
+            if (!$numero_ficha || empty($raps)) {
+                $_SESSION['flash_error'] = 'Datos insuficientes para el ajuste.';
+                $this->redirect('fichas/show&id=' . ($numero_ficha ?? ''));
+                return;
+            }
+
+            $db = Database::getInstance();
+            $db->beginTransaction();
+
+            try {
+                $sql = "INSERT INTO ficha_resultado_config 
+                        (numero_ficha, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
+                        VALUES (:ficha, :id_resultado, :porcentaje, :horas, :sesiones)
+                        ON DUPLICATE KEY UPDATE 
+                        porcentaje_ajustado = VALUES(porcentaje_ajustado),
+                        horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
+                        sesiones_asignadas_ajustadas = VALUES(sesiones_asignadas_ajustadas)";
+
+                foreach ($raps as $rap) {
+                    $sesiones_finales = (int)$rap['sesiones'];
+                    $porcentaje_final = (float)$rap['porcentaje'];
+                    $horas_finales = (int)$rap['horas_base'] * ($porcentaje_final / 100);
+
+                    $db->query($sql);
+                    $db->bind(':ficha', $numero_ficha);
+                    $db->bind(':id_resultado', $rap['id_resultado']);
+                    $db->bind(':porcentaje', $porcentaje_final);
+                    $db->bind(':horas', $horas_finales);
+                    $db->bind(':sesiones', $sesiones_finales);
+                    $db->execute();
+                }
+
+                $db->commit();
+                $_SESSION['flash_success'] = 'Configuración de la competencia guardada correctamente.';
+                
+                if (class_exists('AuditLogger')) {
+                    AuditLogger::log('Ajuste Masivo de Competencia', 'ficha_resultado_config', $numero_ficha, "Ajustados " . count($raps) . " RAPs");
+                }
+            } catch (Exception $e) {
+                $db->rollBack();
+                $_SESSION['flash_error'] = 'Error al guardar configuración: ' . $e->getMessage();
+            }
+
+            $this->redirect('fichas/show&id=' . $numero_ficha);
+        }
+    }
+
+    /**
+     * Endpoint Fetch para obtener RAPs y sus configuraciones actuales
+     */
+    public function getAjustesCompetencia() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            
+            $id_competencia = $data['id_competencia'] ?? null;
+            $numero_ficha = $data['numero_ficha'] ?? null;
+
+            if (!$id_competencia || !$numero_ficha) {
+                echo json_encode(['status' => 'error', 'message' => 'Faltan datos requeridos.']);
+                exit;
+            }
+
+            $raps = $this->resultadoModel->getByCompetencia($id_competencia);
+            
+            $db = Database::getInstance();
+            $db->query("SELECT id_resultado, porcentaje_ajustado, sesiones_asignadas_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha");
+            $db->bind(':ficha', $numero_ficha);
+            $configs = $db->resultSet();
+            
+            $config_map = [];
+            foreach ($configs as $cfg) {
+                $config_map[$cfg->id_resultado] = $cfg;
+            }
+
+            $response_raps = [];
+            foreach ($raps as $rap) {
+                $horas_base = isset($rap->horas_base) ? (int)$rap->horas_base : 0;
+                $porcentaje = 100;
+                $sesiones = ceil($horas_base / 6);
+                
+                if (isset($config_map[$rap->id_resultado])) {
+                    $porcentaje = (float)$config_map[$rap->id_resultado]->porcentaje_ajustado;
+                    $sesiones = (int)$config_map[$rap->id_resultado]->sesiones_asignadas_ajustadas;
+                }
+
+                $response_raps[] = [
+                    'id_resultado' => $rap->id_resultado,
+                    'codigo' => $rap->codigo,
+                    'descripcion' => $rap->descripcion,
+                    'horas_base' => $horas_base,
+                    'porcentaje_ajustado' => $porcentaje,
+                    'sesiones_asignadas_ajustadas' => $sesiones
+                ];
+            }
+
+            echo json_encode(['status' => 'success', 'raps' => $response_raps]);
+            exit;
+        }
+    }
+
+    /**
+     * Endpoint Fetch para guardar los ajustes masivos
+     */
+    public function guardarAjusteMasivoFetch() {
+        $this->requireRol('Coordinador');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            $numero_ficha = $data['numero_ficha'] ?? null;
+            $id_competencia = $data['id_competencia'] ?? null;
+            $raps = $data['raps'] ?? [];
+
+            if (!$numero_ficha || empty($raps)) {
+                echo json_encode(['status' => 'error', 'message' => 'Datos insuficientes para el ajuste.']);
+                exit;
+            }
+
+            $db = Database::getInstance();
+            $db->beginTransaction();
+
+            try {
+                $sql = "INSERT INTO ficha_resultado_config 
+                        (numero_ficha, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
+                        VALUES (:ficha, :id_resultado, :porcentaje, :horas, :sesiones)
+                        ON DUPLICATE KEY UPDATE 
+                        porcentaje_ajustado = VALUES(porcentaje_ajustado),
+                        horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
+                        sesiones_asignadas_ajustadas = VALUES(sesiones_asignadas_ajustadas)";
+
+                foreach ($raps as $rap) {
+                    $sesiones_finales = (int)$rap['sesiones'];
+                    $porcentaje_final = (float)$rap['porcentaje'];
+                    $horas_finales = (int)$rap['horas_base'] * ($porcentaje_final / 100);
+
+                    $db->query($sql);
+                    $db->bind(':ficha', $numero_ficha);
+                    $db->bind(':id_resultado', $rap['id_resultado']);
+                    $db->bind(':porcentaje', $porcentaje_final);
+                    $db->bind(':horas', $horas_finales);
+                    $db->bind(':sesiones', $sesiones_finales);
+                    $db->execute();
+                }
+
+                $db->commit();
+                echo json_encode(['status' => 'success']);
+                
+                if (class_exists('AuditLogger')) {
+                    AuditLogger::log('Ajuste Masivo Fetch', 'ficha_resultado_config', $numero_ficha, "Ajustados " . count($raps) . " RAPs");
+                }
+            } catch (Exception $e) {
+                $db->rollBack();
+                echo json_encode(['status' => 'error', 'message' => 'Error al guardar configuración: ' . $e->getMessage()]);
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Obtiene el progreso detallado por RAP de una competencia específica para un aprendiz
+     */
+    public function getProgresoCompetencia() {
+        header('Content-Type: application/json');
+        
+        $this->requireLogin();
+        $id_competencia = $_GET['id_competencia'] ?? 0;
+        $id_estudiante = $_SESSION['user_id'];
+        
+        // El aprendiz solo puede ver su propio progreso, necesitamos obtener su ficha activa
+        $db = Database::getInstance();
+        $db->query("SELECT numero_ficha FROM ficha_aprendiz WHERE id_usuario_aprendiz = :id_estudiante AND estado = 'Activo' LIMIT 1");
+        $db->bind(':id_estudiante', $id_estudiante);
+        $fichaRow = $db->single();
+        
+        if (!$fichaRow) {
+            echo json_encode(['status' => 'error', 'message' => 'No estás asignado a una ficha activa.']);
+            exit;
+        }
+        
+        $numero_ficha = $fichaRow->numero_ficha;
+
+        try {
+            $sql = "
+                SELECT 
+                    c.id_competencia,
+                    c.nombre AS competencia_nombre,
+                    ra.id_resultado,
+                    ra.descripcion AS rap_descripcion,
+                    
+                    -- Horas Totales Permitidas (Límite configurado en Ficha o Límite base)
+                    COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) AS sesiones_totales_rap,
+                    COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6 AS horas_totales_rap,
+                    
+                    -- Horas Ejecutadas por el ESTUDIANTE (Asistencias efectivas)
+                    COALESCE((
+                        SELECT COUNT(DISTINCT asi.fecha_asistencia)
+                        FROM asistencia asi
+                        INNER JOIN programacion_academica pa ON asi.id_programacion = pa.id_programacion
+                        WHERE pa.id_resultado_aprendizaje = ra.id_resultado
+                          AND pa.numero_ficha = :numero_ficha
+                          AND asi.id_usuario_aprendiz = :id_estudiante
+                          AND asi.asistio = 1
+                    ), 0) AS sesiones_asistidas_estudiante,
+                    
+                    COALESCE((
+                        SELECT COUNT(DISTINCT asi.fecha_asistencia)
+                        FROM asistencia asi
+                        INNER JOIN programacion_academica pa ON asi.id_programacion = pa.id_programacion
+                        WHERE pa.id_resultado_aprendizaje = ra.id_resultado
+                          AND pa.numero_ficha = :numero_ficha
+                          AND asi.id_usuario_aprendiz = :id_estudiante
+                          AND asi.asistio = 1
+                    ), 0) * 6 AS horas_ejecutadas_estudiante
+                    
+                FROM competencias c
+                INNER JOIN resultado_aprendizaje ra ON c.id_competencia = ra.id_competencia
+                LEFT JOIN ficha_resultado_config frc ON ra.id_resultado = frc.id_resultado AND frc.numero_ficha = :numero_ficha
+                WHERE c.id_competencia = :id_competencia
+                ORDER BY c.id_competencia, ra.id_resultado;
+            ";
+            
+            $db->query($sql);
+            $db->bind(':numero_ficha', $numero_ficha);
+            $db->bind(':id_estudiante', $id_estudiante);
+            $db->bind(':id_competencia', $id_competencia);
+            
+            $resultados = $db->resultSet();
+            
+            echo json_encode([
+                'status' => 'success',
+                'resultados' => $resultados
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => 'Error en el servidor: ' . $e->getMessage()]);
+        }
+        exit;
     }
 }
 
