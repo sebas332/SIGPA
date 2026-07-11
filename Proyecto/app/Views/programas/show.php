@@ -38,18 +38,18 @@ foreach ($tipos as $t) {
         background-color: #ffffff;
         border-radius: var(--border-radius-lg);
         box-shadow: var(--card-shadow);
-        padding: 1.8rem 2.5rem;
+        padding: 1.5rem 2rem;
         border: 1px solid rgba(0, 0, 0, 0.04);
         margin-bottom: 2rem;
     }
     .btn-back-sena {
-        background-color: #f3f4f6;
-        color: #4b5563;
-        border: 1px solid #e5e7eb;
+        background-color: #f0fdf4;
+        color: #16a34a;
+        border: none;
         border-radius: 20px;
         padding: 0.35rem 1rem;
-        font-size: 0.82rem;
-        font-weight: 600;
+        font-size: 0.85rem;
+        font-weight: 700;
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
@@ -58,51 +58,97 @@ foreach ($tipos as $t) {
         margin-bottom: 1rem;
     }
     .btn-back-sena:hover {
-        background-color: #e5e7eb;
-        color: #1f2937;
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+    .program-header-icon {
+        width: 72px;
+        height: 72px;
+        background-color: #f0fdf4;
+        color: #16a34a;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        flex-shrink: 0;
     }
     .detail-title {
-        font-size: 1.8rem;
-        font-weight: 700;
+        font-size: 1.7rem;
+        font-weight: 800;
         color: #111827;
         margin-bottom: 0.25rem;
     }
     .detail-subtitle {
-        font-size: 0.95rem;
-        color: #6b7280;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #4b5563;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        flex-wrap: wrap;
     }
-    .btn-edit-programa {
-        background-color: #ea580c;
+    .detail-subtitle i {
+        color: #16a34a;
+    }
+    .detail-tags {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6b7280;
+    }
+    .detail-tag i {
+        color: #16a34a;
+        margin-right: 0.25rem;
+    }
+    .badge-green-light {
+        background-color: #f0fdf4;
+        color: #16a34a;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-left: 0.25rem;
+    }
+    .divider-vertical {
+        width: 1px;
+        height: 16px;
+        background-color: #e5e7eb;
+    }
+    .divider-vertical-large {
+        width: 1px;
+        height: 48px;
+        background-color: #e5e7eb;
+        margin-right: 0.5rem;
+    }
+    .btn-edit-programa-new {
+        background-color: #16a34a;
         color: #ffffff;
         font-weight: 600;
         border: none;
         border-radius: 20px;
-        padding: 0.5rem 1.25rem;
-        font-size: 0.88rem;
+        padding: 0.6rem 1.25rem;
+        font-size: 0.9rem;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
     }
-    .btn-edit-programa:hover {
-        background-color: #d97706;
+    .btn-edit-programa-new:hover {
+        background-color: #15803d;
         color: #ffffff;
     }
-    .btn-delete-programa-text {
-        background-color: #fef2f2;
-        color: #dc2626;
+    .btn-delete-programa-new {
+        background-color: #ffffff;
+        color: #16a34a;
         font-weight: 600;
-        border: 1px solid #fecaca;
+        border: 1px solid #16a34a;
         border-radius: 20px;
-        padding: 0.5rem 1.25rem;
-        font-size: 0.88rem;
+        padding: 0.6rem 1.25rem;
+        font-size: 0.9rem;
         transition: all 0.2s ease;
     }
-    .btn-delete-programa-text:hover {
-        background-color: #fee2e2;
-        color: #b91c1c;
+    .btn-delete-programa-new:hover {
+        background-color: #f0fdf4;
     }
 
     /* Tarjetas de Información General y Aprendices */
@@ -201,36 +247,40 @@ foreach ($tipos as $t) {
 <div class="detail-container container-fluid px-0">
 
     <a href="<?= URLROOT; ?>/index.php?route=dashboard/index#pills-programas" class="btn-back-sena">
-        <i class="fa-solid fa-arrow-left"></i> Volver a Programas
+        <i class="fa-solid fa-graduation-cap"></i> Volver a Programas
     </a>
 
     <!-- Encabezado Principal -->
-    <div class="detail-header-card d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-        <div>
-            <div class="detail-title">Detalle de Programa: <?= htmlspecialchars($programa->codigo); ?></div>
-            <div class="detail-subtitle">
-                <span><?= htmlspecialchars($programa->nombre); ?></span>
-                <span>•</span>
-                <span>Versión: <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;"><?= htmlspecialchars($programa->version); ?></span></span>
-                <span>•</span>
-                <span>Vigencia: <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;"><?= htmlspecialchars($programa->vigencia); ?></span></span>
+    <div class="detail-header-card d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+        <div class="d-flex align-items-center gap-4">
+            <!-- Icon block -->
+            <div class="program-header-icon d-none d-sm-flex">
+                <i class="fa-solid fa-code"></i>
+            </div>
+            <!-- Text block -->
+            <div>
+                <div class="detail-title">Detalle de Programa: <?= htmlspecialchars($programa->codigo); ?></div>
+                <div class="detail-subtitle mt-1">
+                    <span class="d-flex align-items-center gap-2"><i class="fa-solid fa-book-open"></i> <?= htmlspecialchars($programa->nombre); ?></span>
+                </div>
+                <div class="detail-tags mt-3">
+                    <span class="detail-tag" style="color: #16a34a;"><i class="fa-solid fa-tag"></i> Versión: &nbsp;<?= htmlspecialchars($programa->version); ?></span>
+                    <span class="divider-vertical"></span>
+                    <span class="detail-tag" style="color: #16a34a;"><i class="fa-regular fa-calendar"></i> Vigencia: &nbsp;<?= htmlspecialchars($programa->vigencia); ?></span>
+                </div>
             </div>
         </div>
         
         <?php if ($current_role === 'Coordinador'): ?>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn-edit-programa" data-bs-toggle="modal" data-bs-target="#modalEditarProgramaLocal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square me-1" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
-                        <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
-                    </svg> Editar Programa
+            <div class="d-flex align-items-center gap-3 mt-3 mt-md-0">
+                <div class="divider-vertical-large d-none d-md-block"></div>
+                <button type="button" class="btn-edit-programa-new" data-bs-toggle="modal" data-bs-target="#modalEditarProgramaLocal">
+                    <i class="fa-regular fa-pen-to-square me-1"></i> Editar Programa
                 </button>
-                <button type="button" class="btn-delete-programa-text btn-delete-programa-action" 
-                        data-programa="<?= $programa->codigo; ?>" 
+                <button type="button" class="btn-delete-programa-new btn-delete-programa-action" 
+                        data-programa="<?= htmlspecialchars($programa->codigo); ?>" 
                         data-url="<?= URLROOT; ?>/index.php?route=programas/delete&id=<?= $programa->id_programa; ?>">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill me-1" viewBox="0 0 16 16">
-                        <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
-                    </svg> Eliminar Programa
+                    <i class="fa-regular fa-trash-can me-1"></i> Eliminar Programa
                 </button>
             </div>
         <?php endif; ?>

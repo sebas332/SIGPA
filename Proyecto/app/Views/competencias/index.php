@@ -27,75 +27,195 @@
     .custom-scroll::-webkit-scrollbar-thumb:hover {
         background: #adb5bd;
     }
+
+    /* Nuevos Estilos para el Diseño de Competencias */
+    .nav-pills-custom {
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .nav-pills-custom .nav-link {
+        color: #16a34a;
+        background-color: #f0fdf4;
+        border-radius: 8px 8px 0 0;
+        font-weight: 700;
+        padding: 0.6rem 1.5rem;
+        margin-right: 0.4rem;
+        transition: all 0.2s ease;
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+    .nav-pills-custom .nav-link i {
+        color: #16a34a;
+    }
+    .nav-pills-custom .nav-link.active {
+        background-color: #ffffff !important;
+        color: #374151 !important;
+        border-bottom: 3px solid #16a34a !important;
+    }
+    .nav-pills-custom .nav-link.active i {
+        color: #15803d;
+    }
+    
+    .btn-action-blue {
+        color: #3b82f6;
+        background-color: #eff6ff;
+        border: none;
+        border-radius: 50px;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .btn-action-blue:hover {
+        background-color: #dbeafe;
+    }
+    
+    .btn-action-green {
+        color: #16a34a;
+        background-color: #f0fdf4;
+        border: none;
+        border-radius: 50px;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .btn-action-green:hover {
+        background-color: #dcfce7;
+    }
+    
+    .btn-action-red {
+        color: #dc2626;
+        background-color: #fef2f2;
+        border: none;
+        border-radius: 50px;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .btn-action-red:hover {
+        background-color: #fee2e2;
+    }
+    
+    .search-input-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 350px;
+    }
+    .search-input-wrapper input {
+        border-radius: 8px;
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+        border: 1px solid #e5e7eb;
+        height: 42px;
+        background-color: #ffffff;
+    }
+    .search-input-wrapper input:focus {
+        box-shadow: none;
+        border-color: #16a34a;
+    }
+    .search-icon-left {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+    .search-icon-right {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #111827;
+    }
 </style>
 
 <div class="container-fluid px-0">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <div>
-            <h3 class="fw-bold text-dark mb-1">Competencias y Resultados de Aprendizaje</h3>
-            <p class="text-muted small mb-0">Gestión de competencias, RAPs y validaciones de cálculo</p>
+    <div class="card shadow-sm border-0 rounded-4 bg-white p-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width: 52px; height: 52px; background-color: #f0fdf4; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold text-dark mb-0" style="font-size: 1.4rem;">Competencias y Resultados de Aprendizaje</h3>
+                <p class="text-muted small mb-0">Gestión de competencias, RAPs y validaciones de cálculo</p>
+            </div>
         </div>
         <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
             <?php if ($current_role === 'Coordinador'): ?>
-                <button type="button" class="btn btn-success shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalCompetenciaCompleta">
+                <button type="button" class="btn btn-success shadow-sm fw-medium px-4 py-2 rounded-3" style="background-color: #16a34a; border: none;" data-bs-toggle="modal" data-bs-target="#modalCompetenciaCompleta">
                     <i class="fa-solid fa-book-medical me-1"></i> Agregar Competencia
                 </button>
-
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- Pestañas de navegación -->
-    <ul class="nav nav-tabs mb-4 border-bottom-0" id="competenciasTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold px-4" id="competencias-tab" data-bs-toggle="tab" data-bs-target="#competencias" type="button" role="tab" aria-controls="competencias" aria-selected="true">
-                <i class="fa-solid fa-book-bookmark me-2 text-success"></i> Competencias
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold px-4" id="resultados-tab" data-bs-toggle="tab" data-bs-target="#resultados" type="button" role="tab" aria-controls="resultados" aria-selected="false">
-                <i class="fa-solid fa-list-check me-2 text-warning"></i> Resultados de Aprendizaje
-            </button>
-        </li>
-    </ul>
+    <!-- Pestañas de navegación y Buscador -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 pb-2">
+        <ul class="nav nav-pills nav-pills-custom mb-3 mb-lg-0" id="competenciasTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="competencias-tab" data-bs-toggle="tab" data-bs-target="#competencias" type="button" role="tab" aria-controls="competencias" aria-selected="true">
+                    <i class="fa-solid fa-book-bookmark me-2"></i> Competencias
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="resultados-tab" data-bs-toggle="tab" data-bs-target="#resultados" type="button" role="tab" aria-controls="resultados" aria-selected="false">
+                    <i class="fa-solid fa-list-check me-2"></i> Resultados de Aprendizaje
+                </button>
+            </li>
+        </ul>
+        
+        <div class="search-input-wrapper">
+            <i class="fa-solid fa-search search-icon-left"></i>
+            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o código...">
+            <i class="fa-solid fa-filter search-icon-right"></i>
+        </div>
+    </div>
 
     <!-- Contenido Pestañas -->
     <div class="tab-content" id="competenciasTabContent">
         <!-- Pestaña Competencias -->
         <div class="tab-pane fade show active" id="competencias" role="tabpanel" aria-labelledby="competencias-tab">
-            <div class="card shadow-sm border-0 rounded-4 bg-white">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-secondary small text-uppercase py-3">
-                                <tr>
-                                    <th class="ps-4">Código</th>
-                                    <th>Competencia</th>
-                                    <th>Horas Totales</th>
-                                    <th>Sesiones Calculadas (Triggers)</th>
-                                    <th class="text-end pe-4">Acciones</th>
-                                </tr>
-                            </thead>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="competenciasTable">
+                    <thead class="bg-white text-secondary small text-uppercase py-3">
+                        <tr>
+                            <th class="ps-4">Código</th>
+                            <th>Competencia</th>
+                            <th>Horas Totales</th>
+                            <th>Sesiones Calculadas (Triggers)</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
                             <tbody>
                                 <?php foreach ($competencias as $comp): ?>
-                                    <tr>
-                                        <td class="ps-4 fw-bold text-success"><?= $comp->codigo; ?></td>
+                                    <tr class="searchable-row">
+                                        <td class="ps-4 fw-bold" style="color: #16a34a;"><?= $comp->codigo; ?></td>
                                         <td><div class="fw-bold text-dark small"><?= $comp->nombre; ?></div></td>
-                                        <td><span class="badge bg-light text-dark border"><?= $comp->horas_totales; ?> hrs</span></td>
+                                        <td><span class="fw-bold text-muted" style="font-size: 0.85rem;"><?= $comp->horas_totales; ?> hrs</span></td>
                                         <td>
-                                            <span class="badge bg-primary px-3 py-1"><?= $comp->total_sesiones; ?> sesiones</span>
-                                            <div class="text-muted small mt-1">Horas a ejecutar: <?= $comp->horas_a_ejecutar; ?> (<?= $comp->porcentaje; ?>%)</div>
+                                            <div style="display:inline-flex; align-items:center; gap:0.4rem; padding: 0.25rem 0.75rem; border-radius: 20px; background-color: #f0fdf4; color: #16a34a; font-weight: 700; font-size: 0.8rem;">
+                                                <i class="fa-regular fa-calendar"></i> <?= $comp->total_sesiones; ?> sesiones
+                                            </div>
+                                            <div class="text-muted mt-1" style="font-size: 0.75rem;">Horas a ejecutar: <?= $comp->horas_a_ejecutar; ?> (<?= $comp->porcentaje; ?>%)</div>
                                         </td>
                                         <td class="text-end pe-4">
                                             <?php if ($current_role === 'Coordinador'): ?>
-                                                <div class="d-flex justify-content-end gap-1">
-                                                    <a href="<?= URLROOT; ?>/index.php?route=competencias/validarSesiones&id=<?= $comp->id_competencia; ?>" class="btn btn-outline-info btn-sm shadow-sm" title="Validar Sesiones (SP)">
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <a href="<?= URLROOT; ?>/index.php?route=competencias/validarSesiones&id=<?= $comp->id_competencia; ?>" class="btn-action-blue" title="Validar Sesiones (SP)">
                                                         <i class="fa-solid fa-gears"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-outline-primary btn-sm shadow-sm" title="Editar Competencia" onclick="abrirModalEditarCompetencia(<?= $comp->id_competencia; ?>)">
+                                                    <button type="button" class="btn-action-green" title="Editar Competencia" onclick="abrirModalEditarCompetencia(<?= $comp->id_competencia; ?>)">
                                                         <i class="fa-solid fa-pen"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm shadow-sm btn-delete-competencia" data-id="<?= $comp->id_competencia; ?>" data-codigo="<?= htmlspecialchars($comp->codigo); ?>" title="Eliminar Competencia">
+                                                    <button type="button" class="btn-action-red btn-delete-competencia" data-id="<?= $comp->id_competencia; ?>" data-codigo="<?= htmlspecialchars($comp->codigo); ?>" title="Eliminar Competencia">
                                                         <i class="fa-solid fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -106,27 +226,33 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
+                    
+                    <!-- Paginación Footer -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-3 border-top bg-white">
+                        <div class="text-muted small mb-3 mb-md-0" id="paginationInfoCompetencias">
+                            Mostrando 0 registros
+                        </div>
+                        <div class="d-flex gap-1" id="paginationControlsCompetencias">
+                            <!-- JS Pagination -->
+                        </div>
+                    </div>
         </div>
 
         <!-- Pestaña Resultados -->
         <div class="tab-pane fade" id="resultados" role="tabpanel" aria-labelledby="resultados-tab">
-            <div class="card shadow-sm border-0 rounded-4 bg-white">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-secondary small text-uppercase py-3">
-                                <tr>
-                                    <th class="ps-4">Código RA</th>
-                                    <th>Competencia Asociada</th>
-                                    <th>Descripción</th>
-                                    <th class="pe-4">Sesiones Asignadas</th>
-                                </tr>
-                            </thead>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="resultadosTable">
+                    <thead class="bg-white text-secondary small text-uppercase py-3">
+                        <tr>
+                            <th class="ps-4">Código RA</th>
+                            <th>Competencia Asociada</th>
+                            <th>Descripción</th>
+                            <th class="pe-4">Sesiones Asignadas</th>
+                        </tr>
+                    </thead>
                             <tbody>
                                 <?php foreach ($resultados as $ra): ?>
-                                    <tr>
+                                    <tr class="searchable-row">
                                         <td class="ps-4 fw-bold text-warning-emphasis"><?= $ra->codigo; ?></td>
                                         <td><div class="fw-bold text-dark small"><?= $ra->competencia_nombre; ?></div></td>
                                         <td><div class="text-muted small"><?= $ra->descripcion; ?></div></td>
@@ -136,10 +262,19 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
+                    
+                    <!-- Paginación Footer -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-3 border-top bg-white">
+                        <div class="text-muted small mb-3 mb-md-0" id="paginationInfoResultados">
+                            Mostrando 0 registros
+                        </div>
+                        <div class="d-flex gap-1" id="paginationControlsResultados">
+                            <!-- JS Pagination -->
+                        </div>
+                    </div>
         </div>
     </div>
+    </div> <!-- End main card -->
 </div>
 
 <?php if ($current_role === 'Coordinador'): ?>
@@ -420,6 +555,125 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     });
+
+    // --- Search and Pagination Logic ---
+    const searchInput = document.getElementById('searchInput');
+    const tableCompetencias = document.querySelector('#competenciasTable tbody');
+    const tableResultados = document.querySelector('#resultadosTable tbody');
+    
+    function initTablePagination(tableBody, infoId, controlsId) {
+        if (!tableBody) return null;
+        
+        const state = {
+            rows: Array.from(tableBody.querySelectorAll('tr.searchable-row')),
+            filteredRows: [],
+            currentPage: 1,
+            rowsPerPage: 8,
+            infoContainer: document.getElementById(infoId),
+            controlsContainer: document.getElementById(controlsId),
+            render: function() {
+                this.rows.forEach(row => row.style.display = 'none');
+                
+                const startIndex = (this.currentPage - 1) * this.rowsPerPage;
+                const endIndex = startIndex + this.rowsPerPage;
+                
+                this.filteredRows.slice(startIndex, endIndex).forEach(row => {
+                    row.style.display = '';
+                });
+                
+                this.updateUI();
+            },
+            updateUI: function() {
+                if (!this.infoContainer || !this.controlsContainer) return;
+                
+                if (this.filteredRows.length === 0) {
+                    this.infoContainer.innerText = 'Mostrando 0 registros';
+                    this.controlsContainer.innerHTML = '';
+                    return;
+                }
+                
+                const startNum = ((this.currentPage - 1) * this.rowsPerPage) + 1;
+                const endNum = Math.min(this.currentPage * this.rowsPerPage, this.filteredRows.length);
+                this.infoContainer.innerText = `Mostrando ${startNum} a ${endNum} de ${this.filteredRows.length} registros`;
+                
+                const totalPages = Math.ceil(this.filteredRows.length / this.rowsPerPage);
+                let html = '';
+                
+                // Prev
+                html += `<button class="btn btn-sm ${this.currentPage === 1 ? 'disabled text-muted' : 'text-dark'}" style="background:transparent; border:none;" data-page="${this.currentPage - 1}">&lt;</button>`;
+                
+                // Number logic (max 5 visible buttons)
+                let startPage = Math.max(1, this.currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + 4);
+                
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+                
+                if (startPage > 1) {
+                    html += `<button class="btn btn-sm mx-1 text-dark" style="background:transparent; border:none; padding:0;" disabled>...</button>`;
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                    if (i === this.currentPage) {
+                        html += `<button class="btn btn-sm mx-1" style="background-color: #16a34a; color: white; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; padding:0;" data-page="${i}">${i}</button>`;
+                    } else {
+                        html += `<button class="btn btn-sm mx-1 text-dark" style="background:transparent; border:none; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; padding:0;" data-page="${i}">${i}</button>`;
+                    }
+                }
+                
+                if (endPage < totalPages) {
+                    html += `<button class="btn btn-sm mx-1 text-dark" style="background:transparent; border:none; padding:0;" disabled>...</button>`;
+                }
+                
+                // Next
+                html += `<button class="btn btn-sm ${this.currentPage === totalPages ? 'disabled text-muted' : 'text-dark'}" style="background:transparent; border:none;" data-page="${this.currentPage + 1}">&gt;</button>`;
+                
+                this.controlsContainer.innerHTML = html;
+                
+                // Attach events
+                const btns = this.controlsContainer.querySelectorAll('button[data-page]');
+                btns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const page = parseInt(e.currentTarget.getAttribute('data-page'));
+                        if (page >= 1 && page <= totalPages) {
+                            this.currentPage = page;
+                            this.render();
+                        }
+                    });
+                });
+            }
+        };
+        
+        state.filteredRows = state.rows;
+        state.render();
+        return state;
+    }
+
+    const stateCompetencias = initTablePagination(tableCompetencias, 'paginationInfoCompetencias', 'paginationControlsCompetencias');
+    const stateResultados = initTablePagination(tableResultados, 'paginationInfoResultados', 'paginationControlsResultados');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            if (stateCompetencias) {
+                stateCompetencias.filteredRows = stateCompetencias.rows.filter(row => {
+                    return row.textContent.toLowerCase().includes(searchTerm);
+                });
+                stateCompetencias.currentPage = 1;
+                stateCompetencias.render();
+            }
+            
+            if (stateResultados) {
+                stateResultados.filteredRows = stateResultados.rows.filter(row => {
+                    return row.textContent.toLowerCase().includes(searchTerm);
+                });
+                stateResultados.currentPage = 1;
+                stateResultados.render();
+            }
+        });
+    }
 });
 
 function abrirModalEditarCompetencia(idCompetencia) {

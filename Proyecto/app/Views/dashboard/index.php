@@ -6908,7 +6908,7 @@
         }
 
         function sincronizarVistaAprendizResumen() {
-            const detalleHashes = ['#pills-apr-ficha', '#pills-apr-asist'];
+            const detalleHashes = ['#pills-apr-clases', '#pills-apr-ficha', '#pills-apr-asist'];
             const mostrandoDetalle = detalleHashes.includes(window.location.hash);
             const resumen = document.querySelector('.apr-overview');
             const detalle = document.getElementById('pills-tabContentApr');
@@ -6927,6 +6927,11 @@
         <!-- Pestañas Aprendiz -->
         <ul class="nav sga-nav-pills mb-5 gap-3 d-none" id="pills-tab-apr" role="tablist">
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-apr-clases-tab" data-bs-toggle="pill" data-bs-target="#pills-apr-clases" type="button" role="tab" aria-controls="pills-apr-clases" aria-selected="false">
+                    <i class="fa-solid fa-calendar-days me-1"></i> Mis Clases
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="pills-apr-ficha-tab" data-bs-toggle="pill" data-bs-target="#pills-apr-ficha" type="button" role="tab" aria-controls="pills-apr-ficha" aria-selected="true">
                     <i class="fa-solid fa-id-card me-1"></i> Mi Ficha y Avance
                 </button>
@@ -6940,6 +6945,442 @@
 
         <!-- Contenido de las Pestañas Aprendiz -->
         <div class="tab-content d-none" id="pills-tabContentApr">
+            
+            <!-- PESTAÑA NUEVA: MIS CLASES (CALENDARIO) -->
+            <div class="tab-pane fade" id="pills-apr-clases" role="tabpanel" aria-labelledby="pills-apr-clases-tab">
+                <style>
+                    #pills-apr-clases .apr-classes-hero,
+                    #pills-apr-clases .apr-calendar-toolbar {
+                        background: #ffffff;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                        border-radius: 18px;
+                        box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+                    }
+                    #pills-apr-clases .apr-classes-hero {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1.5rem;
+                        padding: 1.55rem 1.75rem;
+                        background:
+                            linear-gradient(128deg, rgba(240, 253, 244, 0.9) 0%, rgba(255, 255, 255, 0.94) 58%),
+                            #ffffff;
+                        overflow: hidden;
+                    }
+                    #pills-apr-clases .apr-classes-heading {
+                        display: flex;
+                        align-items: center;
+                        gap: 1.25rem;
+                        min-width: 0;
+                    }
+                    #pills-apr-clases .apr-classes-icon {
+                        width: 68px;
+                        height: 68px;
+                        border-radius: 50%;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex: 0 0 auto;
+                        background: linear-gradient(145deg, #16a34a, #008f3a);
+                        color: #ffffff;
+                        font-size: 2rem;
+                        box-shadow: 0 14px 28px rgba(22, 163, 74, 0.22);
+                    }
+                    #pills-apr-clases .apr-classes-title {
+                        margin: 0 0 0.35rem;
+                        color: #1f2937;
+                        font-size: 1.65rem;
+                        font-weight: 800;
+                        letter-spacing: 0;
+                    }
+                    #pills-apr-clases .apr-classes-subtitle {
+                        margin: 0;
+                        max-width: 390px;
+                        color: #64748b;
+                        font-size: 0.95rem;
+                        font-weight: 500;
+                        line-height: 1.45;
+                    }
+                    #pills-apr-clases .apr-calendar-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        flex: 0 0 auto;
+                    }
+                    #pills-apr-clases .apr-calendar-action-btn {
+                        min-height: 44px;
+                        border-radius: 10px;
+                        padding: 0 1.2rem;
+                        font-weight: 800;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.45rem;
+                        white-space: nowrap;
+                    }
+                    #pills-apr-clases .apr-calendar-action-btn.btn-outline-success {
+                        color: #15803d;
+                        border-color: rgba(22, 163, 74, 0.34);
+                        background: #ffffff;
+                    }
+                    #pills-apr-clases .apr-calendar-action-btn.btn-success {
+                        background: #16a34a;
+                        border-color: #16a34a;
+                        color: #ffffff;
+                        box-shadow: 0 10px 22px rgba(22, 163, 74, 0.2);
+                    }
+                    #pills-apr-clases .apr-calendar-toolbar {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 1.05rem 1.45rem;
+                    }
+                    #pills-apr-clases .programacion-month-controls {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.85rem;
+                    }
+                    #pills-apr-clases .programacion-nav-btn {
+                        width: 42px;
+                        height: 42px;
+                        border: 0;
+                        border-radius: 12px !important;
+                        background: transparent;
+                        color: #1f2937;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1rem;
+                        padding: 0;
+                    }
+                    #pills-apr-clases .programacion-nav-btn:hover {
+                        background: #f0fdf4;
+                        color: #15803d;
+                    }
+                    #pills-apr-clases .programacion-month-box {
+                        min-width: 172px;
+                        min-height: 42px;
+                        color: #1f2937;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.6rem;
+                        padding: 0 0.75rem;
+                        font-weight: 800;
+                        font-size: 0.95rem;
+                    }
+                    #pills-apr-clases .programacion-month-box i {
+                        color: #1f2937;
+                    }
+                    #pills-apr-clases .apr-calendar-card {
+                        overflow: hidden;
+                    }
+                    #pills-apr-clases .apr-calendar-scroll {
+                        width: 100%;
+                        overflow-x: auto;
+                        padding-bottom: 0.15rem;
+                    }
+                    #pills-apr-clases .apr-calendar-inner {
+                        min-width: 980px;
+                    }
+                    #gridDiasCalendarioApr {
+                        grid-auto-rows: 145px;
+                        align-items: stretch;
+                    }
+                    .calendar-session-card-apr {
+                        flex: 0 0 auto;
+                        min-width: 0;
+                        background: #f0fdf4;
+                        border-left: 3px solid #16a34a;
+                        padding: 0.4rem;
+                        border-radius: 6px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                        overflow: hidden;
+                        border: 1px solid rgba(0,0,0,0.04);
+                        border-left: 3px solid #16a34a;
+                        transition: all 0.2s ease;
+                    }
+                    .calendar-session-card-apr:hover {
+                        background: #dcfce7;
+                        border-color: rgba(0,0,0,0.08);
+                    }
+                    @media (max-width: 1199.98px) {
+                        #pills-apr-clases .apr-classes-hero {
+                            flex-direction: column;
+                            align-items: stretch;
+                        }
+                        #pills-apr-clases .apr-calendar-actions {
+                            justify-content: flex-start;
+                        }
+                    }
+                    @media (max-width: 767.98px) {
+                        #pills-apr-clases .apr-classes-hero {
+                            padding: 1.25rem;
+                        }
+                        #pills-apr-clases .apr-classes-heading {
+                            align-items: flex-start;
+                        }
+                        #pills-apr-clases .apr-classes-icon {
+                            width: 56px;
+                            height: 56px;
+                            font-size: 1.65rem;
+                        }
+                        #pills-apr-clases .apr-classes-title {
+                            font-size: 1.35rem;
+                        }
+                        #pills-apr-clases .apr-calendar-toolbar {
+                            padding: 1rem;
+                        }
+                        #pills-apr-clases .apr-calendar-actions {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                        }
+                        #pills-apr-clases .apr-calendar-actions .btn {
+                            width: 100%;
+                        }
+                        #pills-apr-clases .apr-calendar-card {
+                            padding: 1rem !important;
+                        }
+                        #pills-apr-clases .apr-calendar-inner {
+                            min-width: 860px;
+                        }
+                    }
+                </style>
+
+                <div class="apr-classes-hero mb-3">
+                    <div class="apr-classes-heading">
+                        <span class="apr-classes-icon" aria-hidden="true">
+                            <i class="fa-regular fa-calendar-days"></i>
+                        </span>
+                        <div>
+                            <h2 class="apr-classes-title">Mis clases</h2>
+                            <p class="apr-classes-subtitle">Consulta tu programación académica de forma rápida y organizada.</p>
+                        </div>
+                    </div>
+
+                    <div class="apr-calendar-actions">
+                        <button class="btn btn-outline-success apr-calendar-action-btn" onclick="imprimirHorarioAprendiz()">
+                            <i class="fa-solid fa-print"></i> Imprimir
+                        </button>
+                        <button class="btn btn-success apr-calendar-action-btn" onclick="imprimirHorarioAprendiz()">
+                            <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="apr-calendar-toolbar mb-4">
+                    <div class="programacion-month-controls">
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioApr(-1)" title="Mes anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="programacion-month-box">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <span id="nombreMesAnioApr"></span>
+                        </div>
+                        <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioApr(1)" title="Mes siguiente">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Calendario -->
+                <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4 apr-calendar-card" style="border: 1px solid rgba(0,0,0,0.06);" id="printHorarioAprContainer">
+                    
+                    <!-- Print Header (Oculto en pantalla) -->
+                    <div id="printHeaderHorarioApr" class="flex-column align-items-center mb-4 d-none" style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; border-bottom: 2px solid #39A900; padding-bottom: 10px; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <!-- Logo SENA -->
+                                <img src="public/assets/img/logo_sena.png" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
+                                <div>
+                                    <h2 style="color: #39A900; font-weight: 800; margin: 0; font-size: 24px;">SIGPA</h2>
+                                    <p style="margin: 0; color: #6b7280; font-size: 14px; font-weight: 500;">Sistema Integrado de Gestión Académica</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <h4 style="margin: 0; font-weight: 800; color: #1e3a8a; font-size: 18px;">Horario de Clases</h4>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #334155; margin-top: 2px;">Aprendiz: <?= htmlspecialchars($_SESSION['user_name'] ?? 'Aprendiz') ?></p>
+                                <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 2px;" id="printDateHorarioApr"></p>
+                            </div>
+                        </div>
+                        <h3 style="margin-bottom: 10px; font-weight: 800; color: #111827; text-transform: uppercase; font-size: 16px;" id="printMonthHorarioAprDisplay"></h3>
+                    </div>
+
+                    <div class="apr-calendar-scroll">
+                        <div class="apr-calendar-inner">
+                            <div class="calendar-days-grid mb-2">
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                            </div>
+                            <div class="calendar-days-grid" id="gridDiasCalendarioApr">
+                                <!-- Generado dinámicamente con JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    let programacionAprMain = <?= json_encode($programacion ?? []) ?>;
+                    if (!programacionAprMain || !Array.isArray(programacionAprMain)) {
+                        programacionAprMain = [];
+                    }
+                    const mesesNombresApr = {1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'};
+                    let currentMesHorarioApr = new Date().getMonth() + 1;
+                    let currentAnioHorarioApr = new Date().getFullYear();
+
+                    function renderizarCalendarioHorarioApr() {
+                        const grid = document.getElementById('gridDiasCalendarioApr');
+                        const labelMesAnio = document.getElementById('nombreMesAnioApr');
+                        if (!grid || !labelMesAnio) return;
+
+                        labelMesAnio.innerText = mesesNombresApr[currentMesHorarioApr] + ' ' + currentAnioHorarioApr;
+                        grid.innerHTML = '';
+
+                        const primerDiaObj = new Date(`${currentAnioHorarioApr}-${String(currentMesHorarioApr).padStart(2, '0')}-01T00:00:00`);
+                        const offset = primerDiaObj.getDay() === 0 ? 6 : primerDiaObj.getDay() - 1;
+                        const diasMes = new Date(currentAnioHorarioApr, currentMesHorarioApr, 0).getDate();
+                        const hoy = new Date();
+
+                        let prevMonthDays = new Date(currentAnioHorarioApr, currentMesHorarioApr - 1, 0).getDate();
+                        
+                        let html = '';
+                        // Días mes anterior
+                        for (let i = offset - 1; i >= 0; i--) {
+                            html += `<div class="calendar-cell other-month">
+                                        <div class="calendar-cell-header" style="border-bottom: none;"><span class="calendar-day-num">${prevMonthDays - i}</span></div>
+                                     </div>`;
+                        }
+
+                        // Días mes actual
+                        const strMes = String(currentMesHorarioApr).padStart(2, '0');
+                        for (let d = 1; d <= diasMes; d++) {
+                            const strDia = String(d).padStart(2, '0');
+                            const dateStr = `${currentAnioHorarioApr}-${strMes}-${strDia}`;
+                            const isToday = (d === hoy.getDate() && currentMesHorarioApr === (hoy.getMonth() + 1) && currentAnioHorarioApr === hoy.getFullYear());
+                            
+                            const sesionesDia = programacionAprMain.filter(p => p.fecha_inicio === dateStr).sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''));
+                            
+                            let numSesionesHtml = '';
+                            if (sesionesDia.length > 0) {
+                                const dateObj = new Date(`${dateStr}T00:00:00`);
+                                const todayDateOnly = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+                                const dotColor = dateObj < todayDateOnly ? '#eab308' : '#22c55e'; // yellow for past, green for future/today
+                                numSesionesHtml = `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${dotColor}; margin-top: 6px;"></div>`;
+                            }
+
+                            let sesionesHtml = '<div class="calendar-session-list">';
+                            sesionesDia.forEach(s => {
+                                const horaIniStr = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '';
+                                const horaFinStr = s.hora_fin ? s.hora_fin.substring(0, 5) : '';
+                                const ambienteNombre = s.ambiente_nombre || 'Sin ambiente';
+                                
+                                sesionesHtml += `
+                                    <div class="calendar-session-card-apr">
+                                        <div style="font-weight:700; color:#334155; font-size:0.7rem; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                                            <i class="fa-regular fa-clock text-secondary"></i> ${horaIniStr} - ${horaFinStr}
+                                        </div>
+                                        <div style="color:#e28743; font-weight:700; font-size:0.65rem; margin-bottom: 3px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Instructor">
+                                            <i class="fa-solid fa-user-tie"></i> ${s.instructor_nombre || 'Instructor'} ${s.instructor_apellido || ''}
+                                        </div>
+                                        <div style="color: #16a34a; font-weight: 700; font-size: 0.65rem; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <i class="fa-solid fa-location-dot"></i> ${ambienteNombre}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            sesionesHtml += '</div>';
+
+                            html += `
+                                <div class="calendar-cell ${isToday ? 'today' : ''}">
+                                    <div class="calendar-cell-header" style="border-bottom: none; padding-bottom: 0;">
+                                        <span class="calendar-day-num">${d}</span>
+                                        ${numSesionesHtml}
+                                    </div>
+                                    ${sesionesHtml}
+                                </div>
+                            `;
+                        }
+
+                        // Días mes siguiente
+                        const totalCells = offset + diasMes;
+                        const remainder = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
+                        for (let d = 1; d <= remainder; d++) {
+                            html += `<div class="calendar-cell other-month">
+                                        <div class="calendar-cell-header"><span class="calendar-day-num">${d}</span></div>
+                                     </div>`;
+                        }
+
+                        grid.innerHTML = html;
+                    }
+
+                    function navegarMesHorarioApr(dir) {
+                        currentMesHorarioApr += dir;
+                        if (currentMesHorarioApr > 12) {
+                            currentMesHorarioApr = 1;
+                            currentAnioHorarioApr++;
+                        } else if (currentMesHorarioApr < 1) {
+                            currentMesHorarioApr = 12;
+                            currentAnioHorarioApr--;
+                        }
+                        renderizarCalendarioHorarioApr();
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (document.getElementById('gridDiasCalendarioApr')) {
+                            renderizarCalendarioHorarioApr();
+                        }
+                    });
+
+                    document.getElementById('pills-apr-clases-tab')?.addEventListener('shown.bs.tab', function() {
+                        renderizarCalendarioHorarioApr();
+                    });
+
+                    function imprimirHorarioAprendiz() {
+                        const dateText = 'Generado: ' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+                        document.getElementById('printDateHorarioApr').innerText = dateText;
+                        document.getElementById('printMonthHorarioAprDisplay').innerText = document.getElementById('nombreMesAnioApr').innerText;
+                        
+                        document.getElementById('printHeaderHorarioApr').classList.remove('d-none');
+                        document.getElementById('printHeaderHorarioApr').classList.add('d-flex');
+                        
+                        // Añadir estilos temporales de impresión
+                        const style = document.createElement('style');
+                        style.id = 'tempPrintStyleApr';
+                        style.innerHTML = `
+                            @media print {
+                                body * { visibility: hidden; }
+                                #printHorarioAprContainer, #printHorarioAprContainer * { visibility: visible; }
+                                #printHorarioAprContainer {
+                                    position: absolute; left: 0; top: 0; width: 100%;
+                                    margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important;
+                                }
+                                #gridDiasCalendarioApr { grid-auto-rows: minmax(110px, auto) !important; }
+                                .calendar-cell { page-break-inside: avoid; height: auto !important; overflow: visible !important; border: 1px solid #e2e8f0 !important; }
+                                .calendar-session-list { max-height: none !important; overflow: visible !important; }
+                                @page { size: A4 landscape; margin: 10mm; }
+                                .calendar-session-card-apr { border: 1px solid #e2e8f0 !important; border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                .calendar-day-name { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fafbfc !important; }
+                            }
+                        `;
+                        document.head.appendChild(style);
+
+                        setTimeout(() => {
+                            window.print();
+                            document.getElementById('printHeaderHorarioApr').classList.add('d-none');
+                            document.getElementById('printHeaderHorarioApr').classList.remove('d-flex');
+                            document.getElementById('tempPrintStyleApr').remove();
+                        }, 200);
+                    }
+                </script>
+            </div>
             
             <!-- PESTAÑA 1: MI FICHA Y AVANCE -->
             <div class="tab-pane fade show active" id="pills-apr-ficha" role="tabpanel" aria-labelledby="pills-apr-ficha-tab">

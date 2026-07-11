@@ -196,6 +196,7 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
         'Aprendiz' => [
             'MENÚ PRINCIPAL' => [
                 ['dashboard/index', 'fa-house', 'Visión General'],
+                ['dashboard/index#pills-apr-clases', 'fa-calendar-days', 'Mis clases'],
                 ['dashboard/index#pills-apr-ficha', 'fa-id-card', 'Mi ficha académica'],
                 ['dashboard/index#pills-apr-asist', 'fa-chart-line', 'Mi asistencia']
             ],
@@ -257,6 +258,8 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
 <?php endif; ?>
     <?php 
     $currentRoute = $_GET['route'] ?? (isset($_SESSION['user_id']) ? 'dashboard/index' : 'auth/login');
+    // Se ha ocultado el botón genérico 'Volver Atrás' para evitar duplicidad con botones propios de cada vista
+    /*
     if ($currentRoute !== 'dashboard/index' && $currentRoute !== 'auth/login' && $currentRoute !== 'auth/index' && $currentRoute !== 'perfil/index'): 
     ?>
         <div class="mb-4">
@@ -264,37 +267,27 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
                 <i class="fa-solid fa-arrow-left me-2"></i> Volver Atrás
             </a>
         </div>
-    <?php endif; ?>
-
-    <!-- Alertas Flash con SweetAlert2 -->
+    <?php endif; 
+    */
+    ?>
+    <!-- Alertas Flash -->
     <?php if (isset($_SESSION['flash_success'])): ?>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Éxito!',
-                    text: '<?= addslashes($_SESSION['flash_success']); ?>',
-                    confirmButtonColor: '#39A900'
-                });
-            });
-        </script>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 mb-4" role="alert">
+            <i class="fa-solid fa-circle-check fs-4 me-3"></i>
+            <div><?= $_SESSION['flash_success']; ?></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
         <?php unset($_SESSION['flash_success']); ?>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['flash_error'])): ?>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No se pudo completar',
-                    text: '<?= addslashes($_SESSION['flash_error']); ?>',
-                    confirmButtonColor: '#d33'
-                });
-            });
-        </script>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 mb-4" role="alert">
+            <i class="fa-solid fa-triangle-exclamation fs-4 me-3"></i>
+            <div><?= $_SESSION['flash_error']; ?></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
         <?php unset($_SESSION['flash_error']); ?>
     <?php endif; ?>
-
 
     <!-- Renderizado del Contenido (Subvista) -->
     <?php require_once $contentView; ?>
