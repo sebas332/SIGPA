@@ -1685,74 +1685,108 @@
 <?php if ($current_role === 'Coordinador'): ?>
 <!-- Modal Crear Ambiente -->
 <div class="modal fade" id="modalCrearAmbiente" tabindex="-1" aria-labelledby="modalCrearAmbienteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-dark text-white p-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalCrearAmbienteLabel"><i class="fa-solid fa-building me-2 text-success"></i>Registrar Nuevo Ambiente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered amb-edit-modal">
+        <div class="modal-content">
+            <div class="modal-header amb-edit-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="amb-edit-header-icon" aria-hidden="true">
+                        <i class="fa-solid fa-building"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title amb-edit-title" id="modalCrearAmbienteLabel">Registrar Nuevo Ambiente</h5>
+                        <div class="amb-edit-subtitle">Crea un nuevo ambiente de formación en el sistema</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close amb-edit-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="<?= URLROOT; ?>/index.php?route=ambientes/create" method="POST" enctype="multipart/form-data">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
+                <div class="modal-body amb-edit-body">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label for="nombre" class="form-label fw-medium text-secondary">Nombre del Ambiente</label>
-                            <input type="text" class="form-control form-control-lg" id="nombre" name="nombre" placeholder="Ej. Laboratorio de Software 2" maxlength="15" required>
+                            <label for="nombre" class="amb-edit-label">
+                                <i class="fa-regular fa-clipboard"></i> Nombre del Ambiente
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="nombre" name="nombre" placeholder="Ej. Laboratorio de Software 2" maxlength="15" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="tipo" class="form-label fw-medium text-secondary">Tipo (Ej. Laboratorio)</label>
-                            <select class="form-select form-select-lg" id="tipo" name="tipo" onchange="toggleEspecialidad(this, 'especialidad_ambiente')" required>
+                            <label for="tipo" class="amb-edit-label">
+                                <i class="fa-solid fa-layer-group"></i> Tipo (Ej. Laboratorio)
+                            </label>
+                            <select class="form-select amb-edit-select" id="tipo" name="tipo" onchange="toggleEspecialidad(this, 'especialidad_ambiente')" required>
                                 <option value="" disabled selected>Seleccione un tipo</option>
                                 <option value="Convencional">Convencional</option>
                                 <option value="Especializado">Especializado</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="capacidad" class="form-label fw-medium text-secondary">Capacidad (Max 2 dígitos)</label>
-                            <input type="text" class="form-control form-control-lg" id="capacidad" name="capacidad" placeholder="Ej. 35" oninput="validarNumeros(this, 2)" required>
+                            <label for="capacidad" class="amb-edit-label">
+                                <i class="fa-solid fa-users"></i> Capacidad (Max 2 dígitos)
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="capacidad" name="capacidad" placeholder="Ej. 35" oninput="validarNumeros(this, 2)" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="computadores" class="form-label fw-medium text-secondary">Cantidad de Computadores</label>
-                            <input type="text" class="form-control form-control-lg" id="computadores" name="computadores" placeholder="Ej. 35" oninput="validarNumeros(this, 3)" required>
+                            <label for="computadores" class="amb-edit-label">
+                                <i class="fa-solid fa-desktop"></i> Cantidad de Computadores
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="computadores" name="computadores" placeholder="Ej. 35" oninput="validarNumeros(this, 3)" required>
                         </div>
                         <div class="col-md-4" id="div_especialidad_ambiente" style="display:none;">
-                            <label for="especialidad_ambiente" class="form-label fw-medium text-secondary">Especialidad del Ambiente</label>
-                            <input type="text" class="form-control form-control-lg" id="especialidad_ambiente" name="especialidad_ambiente" placeholder="Ej. Desarrollo de Software, Redes, SST">
+                            <label for="especialidad_ambiente" class="amb-edit-label">
+                                <i class="fa-solid fa-star"></i> Especialidad del Ambiente
+                            </label>
+                            <input type="text" class="form-control amb-edit-input" id="especialidad_ambiente" name="especialidad_ambiente" placeholder="Ej. Desarrollo, Redes">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-medium text-secondary d-block mt-2 mb-2">Fotos del Ambiente (Opcional)</label>
-                            <input type="file" class="form-control form-control-lg" name="fotos[]" multiple accept="image/*">
-                            <small class="text-muted">Puedes seleccionar varias imágenes a la vez.</small>
+                            <label class="amb-edit-label mb-2">
+                                <i class="fa-regular fa-image"></i> Fotos del Ambiente (Opcional)
+                            </label>
+                            <label class="amb-edit-upload">
+                                <div class="amb-edit-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                <div>
+                                    <div class="amb-edit-upload-title">Elegir archivos</div>
+                                    <div class="amb-edit-upload-subtitle">o arrastra y suelta imágenes aquí</div>
+                                </div>
+                                <div class="amb-edit-upload-pill" id="ambientes-crear-file-count">Sin archivos seleccionados</div>
+                                <input type="file" class="amb-edit-file-input" name="fotos[]" multiple accept="image/*" onchange="document.getElementById('ambientes-crear-file-count').textContent = this.files.length > 0 ? this.files.length + ' archivo(s) seleccionado(s)' : 'Sin archivos seleccionados';">
+                            </label>
+                            <div class="amb-edit-help">Puedes seleccionar varias imágenes.</div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-medium text-secondary d-block mb-3">Dotación e Instalaciones</label>
-                            <div class="d-flex flex-wrap gap-4 bg-light p-3 rounded-3 border border-secondary-subtle">
-                                <div class="form-check form-switch form-check-lg">
+                            <label class="amb-edit-label mb-3">
+                                <i class="fa-solid fa-screwdriver-wrench"></i> Dotación e Instalaciones
+                            </label>
+                            <div class="amb-edit-equipment">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="aire" name="aire" value="1" checked>
-                                    <label class="form-check-label fw-medium" for="aire">Aire Acondicionado</label>
+                                    <label class="form-check-label fw-medium" for="aire"><i class="fa-solid fa-snowflake text-success ms-1 me-1"></i> Aire Acond.</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="ventilador" name="ventilador" value="1">
-                                    <label class="form-check-label fw-medium" for="ventilador">Ventilador</label>
+                                    <label class="form-check-label fw-medium" for="ventilador"><i class="fa-solid fa-fan text-success ms-1 me-1"></i> Ventilador</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="tablero" name="tablero" value="1" checked>
-                                    <label class="form-check-label fw-medium" for="tablero">Tablero / Pizarra</label>
+                                    <label class="form-check-label fw-medium" for="tablero"><i class="fa-solid fa-chalkboard text-success ms-1 me-1"></i> Tablero</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="tv" name="tv" value="1" checked>
-                                    <label class="form-check-label fw-medium" for="tv">Televisor</label>
+                                    <label class="form-check-label fw-medium" for="tv"><i class="fa-solid fa-tv text-success ms-1 me-1"></i> Televisor</label>
                                 </div>
-                                <div class="form-check form-switch form-check-lg">
+                                <div class="form-check form-switch amb-edit-switch">
                                     <input class="form-check-input" type="checkbox" id="disponibilidad" name="disponibilidad" value="1" checked>
-                                    <label class="form-check-label fw-medium text-success" for="disponibilidad">Disponible de Inmediato</label>
+                                    <label class="form-check-label fw-bold" for="disponibilidad"><i class="fa-regular fa-circle-check text-success ms-1 me-1"></i> Disponible</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary fw-bold shadow-sm"><i class="fa-solid fa-floppy-disk me-2"></i> Guardar Ambiente</button>
+                <div class="modal-footer amb-edit-body border-top border-light-subtle d-flex justify-content-end" style="border-radius: 0 0 18px 18px; padding: 1.2rem 1.85rem;">
+                    <button type="button" class="btn btn-light border px-4 rounded-pill fw-bold" data-bs-dismiss="modal">
+                        <i class="fa-regular fa-circle-xmark me-2"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success px-4 rounded-pill fw-bold ms-2" style="background: #0b8e43; border-color: #0b8e43; padding: 0.6rem 1.4rem;">
+                        <i class="fa-solid fa-floppy-disk me-2"></i> Crear
+                    </button>
                 </div>
             </form>
         </div>

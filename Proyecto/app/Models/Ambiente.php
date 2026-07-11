@@ -95,4 +95,29 @@ class Ambiente {
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
+
+    /**
+     * Verifica si existe un ambiente con nombre similar (ignorando espacios y mayúsculas)
+     * @param string $nombre
+     * @param int|null $excludeId ID a excluir (para cuando se actualiza)
+     * @return bool
+     */
+    public function existeNombreSimilar($nombre, $excludeId = null) {
+        // Normalizamos el nombre: minúsculas y sin espacios
+        $nombreNormalizado = strtolower(str_replace(' ', '', $nombre));
+        
+        $sql = "SELECT id_numero_ambiente FROM ambientes WHERE REPLACE(LOWER(nombre), ' ', '') = :nombreNormalizado";
+        if ($excludeId !== null) {
+            $sql .= " AND id_numero_ambiente != :excludeId";
+        }
+        
+        $this->db->query($sql);
+        $this->db->bind(':nombreNormalizado', $nombreNormalizado);
+        if ($excludeId !== null) {
+            $this->db->bind(':excludeId', $excludeId);
+        }
+        
+        $resultado = $this->db->single();
+        return $resultado ? true : false;
+    }
 }

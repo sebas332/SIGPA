@@ -1,5 +1,31 @@
 [
     {
+        "id": "audit_6a51d40c4a2861.12015469",
+        "timestamp": "2026-07-11 00:26:36",
+        "usuario_id": 1,
+        "usuario_nombre": "Juan Esteban David Chavarria",
+        "usuario_login": "1000000000",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "ELIMINACIóN DE AMBIENTE",
+        "tabla": "ambientes",
+        "registro_id": "10",
+        "detalles": "Eliminó ambiente ID: 10"
+    },
+    {
+        "id": "audit_6a51d20526ecf0.09934015",
+        "timestamp": "2026-07-11 00:17:57",
+        "usuario_id": 1,
+        "usuario_nombre": "Juan Esteban David Chavarria",
+        "usuario_login": "1000000000",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "CREACIóN DE AMBIENTE",
+        "tabla": "ambientes",
+        "registro_id": "10",
+        "detalles": "Nombre: ambiente39, Tipo: Convencional"
+    },
+    {
         "id": "audit_6a51bf0fb66be2.51031423",
         "timestamp": "2026-07-10 22:57:03",
         "usuario_id": 1,

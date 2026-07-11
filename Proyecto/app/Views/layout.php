@@ -266,24 +266,35 @@ $current_role = $_SESSION['current_role'] ?? 'Aprendiz';
         </div>
     <?php endif; ?>
 
-    <!-- Alertas Flash -->
+    <!-- Alertas Flash con SweetAlert2 -->
     <?php if (isset($_SESSION['flash_success'])): ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 mb-4" role="alert">
-            <i class="fa-solid fa-circle-check fs-4 me-3"></i>
-            <div><?= $_SESSION['flash_success']; ?></div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: '<?= addslashes($_SESSION['flash_success']); ?>',
+                    confirmButtonColor: '#39A900'
+                });
+            });
+        </script>
         <?php unset($_SESSION['flash_success']); ?>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['flash_error'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 mb-4" role="alert">
-            <i class="fa-solid fa-triangle-exclamation fs-4 me-3"></i>
-            <div><?= $_SESSION['flash_error']; ?></div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo completar',
+                    text: '<?= addslashes($_SESSION['flash_error']); ?>',
+                    confirmButtonColor: '#d33'
+                });
+            });
+        </script>
         <?php unset($_SESSION['flash_error']); ?>
     <?php endif; ?>
+
 
     <!-- Renderizado del Contenido (Subvista) -->
     <?php require_once $contentView; ?>

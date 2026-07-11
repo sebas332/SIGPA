@@ -223,16 +223,30 @@ class AmbienteController extends BaseController {
                 'disponibilidad' => isset($_POST['disponibilidad']) ? 1 : 0
             ];
 
-            if ($this->ambienteModel->create($data)) {
-                $db = Database::getInstance();
-                $lastId = $db->lastInsertId();
-                $this->procesarFotos($lastId);
-                $_SESSION['flash_success'] = 'Ambiente registrado exitosamente.';
-                
-                // Auditoría de Creación de Ambiente
-                AuditLogger::log('Creación de Ambiente', 'ambientes', $lastId, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
-            } else {
-                $_SESSION['flash_error'] = 'Error al registrar el ambiente.';
+            if ($this->ambienteModel->existeNombreSimilar($data['nombre'])) {
+                $_SESSION['flash_error'] = 'El nombre del ambiente "' . htmlspecialchars($data['nombre']) . '" es muy similar a uno ya registrado. Por favor, elige otro nombre.';
+                $this->redirect('dashboard/index#pills-ambientes');
+                return;
+            }
+
+            try {
+                if ($this->ambienteModel->create($data)) {
+                    $db = Database::getInstance();
+                    $lastId = $db->lastInsertId();
+                    $this->procesarFotos($lastId);
+                    $_SESSION['flash_success'] = 'Ambiente registrado exitosamente.';
+                    
+                    // Auditoría de Creación de Ambiente
+                    AuditLogger::log('Creación de Ambiente', 'ambientes', $lastId, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
+                } else {
+                    $_SESSION['flash_error'] = 'Error al registrar el ambiente.';
+                }
+            } catch (\PDOException $e) {
+                if ($e->getCode() == 23000) { // Integrity constraint violation (duplicate key)
+                    $_SESSION['flash_error'] = 'El nombre del ambiente "' . htmlspecialchars($data['nombre']) . '" ya se encuentra registrado. Por favor, elige otro nombre.';
+                } else {
+                    $_SESSION['flash_error'] = 'Ocurrió un error en la base de datos al registrar el ambiente.';
+                }
             }
         }
         $this->redirect('dashboard/index#pills-ambientes');
@@ -327,27 +341,41 @@ class AmbienteController extends BaseController {
                 'disponibilidad' => isset($_POST['disponibilidad']) ? 1 : 0
             ];
 
-            if ($this->ambienteModel->update($id, $data)) {
-                if (!empty($_FILES['fotos']['name'][0])) {
-                    $fotosAntiguas = $this->fotoModel->getByAmbiente($id);
-                    foreach ($fotosAntiguas as $foto) {
-                        $basename = basename($foto->url);
-                        if (strpos($foto->url, 'uploads/ambientes') !== false) {
-                            $filePath = dirname(__DIR__, 2) . '/public/uploads/ambientes/' . $basename;
-                            if (file_exists($filePath)) {
-                                unlink($filePath);
+            if ($this->ambienteModel->existeNombreSimilar($data['nombre'], $id)) {
+                $_SESSION['flash_error'] = 'El nombre del ambiente "' . htmlspecialchars($data['nombre']) . '" es muy similar a otro ya registrado. Por favor, elige otro nombre.';
+                $this->redirect('dashboard/index#pills-ambientes');
+                return;
+            }
+
+            try {
+                if ($this->ambienteModel->update($id, $data)) {
+                    if (!empty($_FILES['fotos']['name'][0])) {
+                        $fotosAntiguas = $this->fotoModel->getByAmbiente($id);
+                        foreach ($fotosAntiguas as $foto) {
+                            $basename = basename($foto->url);
+                            if (strpos($foto->url, 'uploads/ambientes') !== false) {
+                                $filePath = dirname(__DIR__, 2) . '/public/uploads/ambientes/' . $basename;
+                                if (file_exists($filePath)) {
+                                    unlink($filePath);
+                                }
                             }
+                            $this->fotoModel->delete($foto->id_foto_ambiente);
                         }
-                        $this->fotoModel->delete($foto->id_foto_ambiente);
                     }
+                    $this->procesarFotos($id);
+                    $_SESSION['flash_success'] = 'Ambiente actualizado exitosamente.';
+                    
+                    // Auditoría de Actualización de Ambiente
+                    AuditLogger::log('Actualización de Ambiente', 'ambientes', $id, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
+                } else {
+                    $_SESSION['flash_error'] = 'Error al actualizar el ambiente.';
                 }
-                $this->procesarFotos($id);
-                $_SESSION['flash_success'] = 'Ambiente actualizado exitosamente.';
-                
-                // Auditoría de Actualización de Ambiente
-                AuditLogger::log('Actualización de Ambiente', 'ambientes', $id, 'Nombre: ' . $data['nombre'] . ', Tipo: ' . $data['tipo']);
-            } else {
-                $_SESSION['flash_error'] = 'Error al actualizar el ambiente.';
+            } catch (\PDOException $e) {
+                if ($e->getCode() == 23000) {
+                    $_SESSION['flash_error'] = 'El nombre del ambiente "' . htmlspecialchars($data['nombre']) . '" ya está en uso. Por favor, elige otro.';
+                } else {
+                    $_SESSION['flash_error'] = 'Ocurrió un error en la base de datos al actualizar el ambiente.';
+                }
             }
         }
         $this->redirect('dashboard/index#pills-ambientes');
