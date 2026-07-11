@@ -758,9 +758,10 @@ class FichaController extends BaseController {
 
             $response_raps = [];
             foreach ($raps as $rap) {
-                $horas_base = isset($rap->horas_base) ? (int)$rap->horas_base : 0;
+                // Si no existe horas_base, lo deducimos de las sesiones asignadas (sesiones * 6)
+                $horas_base = isset($rap->horas_base) ? (int)$rap->horas_base : (isset($rap->sesiones_asignadas) ? (int)$rap->sesiones_asignadas * 6 : 0);
                 $porcentaje = 100;
-                $sesiones = ceil($horas_base / 6);
+                $sesiones = isset($rap->sesiones_asignadas) ? (int)$rap->sesiones_asignadas : ceil($horas_base / 6);
                 
                 if (isset($config_map[$rap->id_resultado])) {
                     $porcentaje = (float)$config_map[$rap->id_resultado]->porcentaje_ajustado;
@@ -796,7 +797,7 @@ class FichaController extends BaseController {
             $id_competencia = $data['id_competencia'] ?? null;
             $raps = $data['raps'] ?? [];
 
-            if (!$numero_ficha || empty($raps)) {
+            if (!$numero_ficha || !$id_competencia || empty($raps)) {
                 echo json_encode(['status' => 'error', 'message' => 'Datos insuficientes para el ajuste.']);
                 exit;
             }
@@ -806,8 +807,8 @@ class FichaController extends BaseController {
 
             try {
                 $sql = "INSERT INTO ficha_resultado_config 
-                        (numero_ficha, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
-                        VALUES (:ficha, :id_resultado, :porcentaje, :horas, :sesiones)
+                        (numero_ficha, id_competencia, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
+                        VALUES (:ficha, :id_competencia, :id_resultado, :porcentaje, :horas, :sesiones)
                         ON DUPLICATE KEY UPDATE 
                         porcentaje_ajustado = VALUES(porcentaje_ajustado),
                         horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
@@ -820,6 +821,7 @@ class FichaController extends BaseController {
 
                     $db->query($sql);
                     $db->bind(':ficha', $numero_ficha);
+                    $db->bind(':id_competencia', $id_competencia);
                     $db->bind(':id_resultado', $rap['id_resultado']);
                     $db->bind(':porcentaje', $porcentaje_final);
                     $db->bind(':horas', $horas_finales);

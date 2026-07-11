@@ -526,6 +526,7 @@ if ($ficha->fecha_fin === '1970-01-01') {
                                                     <div class="d-flex align-items-center pe-3 border-start">
                                                         <button type="button" class="btn btn-sm btn-outline-warning fw-bold text-nowrap btn-modificar-competencia" 
                                                                 data-bs-toggle="modal" data-bs-target="#modalCompetencia"
+                                                                onclick="cargarDatosModalCompetencia(this)"
                                                                 data-id-competencia="<?= $comp->id_competencia; ?>"
                                                                 data-codigo="<?= htmlspecialchars($comp->codigo); ?>"
                                                                 data-nombre="<?= htmlspecialchars($comp->nombre); ?>"
@@ -602,6 +603,22 @@ if ($ficha->fecha_fin === '1970-01-01') {
 <!-- ==============================================
      MODALES DEL DETALLE
      ============================================== -->
+<style>
+    .ficha-create-dialog { max-width: 920px; }
+    .ficha-create-content { border: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 26px 70px rgba(15, 23, 42, 0.28); }
+    .ficha-create-header { background: linear-gradient(135deg, #046b31 0%, #0b8e43 62%, #119b4d 100%); color: #ffffff; border: 0; min-height: 112px; padding: 1.45rem 1.9rem; }
+    .ficha-create-header-icon { width: 64px; height: 64px; border-radius: 50%; background: #e3f7ea; color: #0b8e43; display: inline-flex; align-items: center; justify-content: center; font-size: 1.85rem; flex: 0 0 auto; margin-right: 1rem; }
+    .ficha-create-title { font-size: 1.55rem; font-weight: 800; line-height: 1.15; letter-spacing: 0; margin-bottom: 0; color: #ffffff; }
+    .ficha-create-subtitle { font-size: 0.95rem; color: #e3f7ea; font-weight: 500; opacity: 0.9; }
+    .ficha-create-close { background-color: rgba(255,255,255,0.1); border-radius: 50%; width: 38px; height: 38px; opacity: 1; transition: all 0.2s; filter: invert(1) grayscale(100%) brightness(200%); }
+    .ficha-create-close:hover { background-color: rgba(255,255,255,0.25); transform: rotate(90deg); }
+    .ficha-create-body { padding: 2.2rem; background-color: #f8fafc; }
+    .ficha-create-footer { padding: 1.4rem 2.2rem; background-color: #ffffff; border-top: 1px solid #e2e8f0; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; gap: 1rem; }
+    .ficha-create-cancel { border-radius: 30px; font-weight: 600; padding: 0.6rem 1.8rem; border: 1px solid #cbd5e1; color: #475569; background: white; transition: all 0.2s; }
+    .ficha-create-cancel:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
+    .ficha-create-save { border-radius: 30px; font-weight: 700; padding: 0.6rem 2.2rem; background: #0b8e43; color: white; border: none; box-shadow: 0 4px 15px rgba(11, 142, 67, 0.25); transition: all 0.3s; }
+    .ficha-create-save:hover { background: #046b31; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(11, 142, 67, 0.35); color: white; }
+</style>
 
 <?php if ($current_role === 'Coordinador'): ?>
 <!-- Modal Inscribir Aprendiz -->
@@ -639,12 +656,17 @@ if ($ficha->fecha_fin === '1970-01-01') {
 <!-- Modal Editar Ficha -->
 <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-labelledby="modalEditarFichaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-warning text-dark p-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalEditarFichaLabel">
-                    <i class="fa-solid fa-pen-to-square me-2"></i> Editar Datos de Ficha
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-content border-0 rounded-4 shadow-lg ficha-create-content">
+            <div class="modal-header ficha-create-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="ficha-create-header-icon" aria-hidden="true">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title ficha-create-title" id="modalEditarFichaLabel">Editar Datos de Ficha</h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ficha-create-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="<?= URLROOT; ?>/index.php?route=fichas/update" method="POST" id="form-editar-ficha-detail">
                 <input type="hidden" name="from_show" value="1">
@@ -703,9 +725,9 @@ if ($ficha->fecha_fin === '1970-01-01') {
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light">
-                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning fw-semibold px-4 py-2 text-dark"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
+                <div class="modal-footer ficha-create-footer">
+                    <button type="button" class="btn ficha-create-cancel" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i> Cancelar</button>
+                    <button type="submit" class="btn ficha-create-save"><i class="fa-solid fa-floppy-disk"></i> Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -717,12 +739,17 @@ if ($ficha->fecha_fin === '1970-01-01') {
 <!-- Modal Tabla de Control por Competencia -->
 <div class="modal fade" id="modalCompetencia" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-warning text-dark p-4 border-0">
-                <h5 class="modal-title fw-bold">
-                    <i class="fa-solid fa-layer-group me-2"></i> Tabla de Control: Ajuste de Competencia
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-content border-0 rounded-4 shadow-lg ficha-create-content">
+            <div class="modal-header ficha-create-header">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="ficha-create-header-icon" aria-hidden="true">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </span>
+                    <div>
+                        <h5 class="modal-title ficha-create-title">Tabla de Control: Ajuste de Competencia</h5>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ficha-create-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             
             <form action="<?= URLROOT; ?>/index.php?route=fichas/guardarAjusteMasivo" method="POST">
@@ -761,11 +788,9 @@ if ($ficha->fecha_fin === '1970-01-01') {
                     </div>
                 </div>
                 
-                <div class="modal-footer p-4 border-0 bg-white">
-                    <button type="button" class="btn btn-light rounded-pill px-4 border" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" id="btn_guardar_ajuste">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Ajustes
-                    </button>
+                <div class="modal-footer ficha-create-footer">
+                    <button type="button" class="btn ficha-create-cancel" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i> Cancelar</button>
+                    <button type="submit" class="btn ficha-create-save" id="btn_guardar_ajuste"><i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes</button>
                 </div>
             </form>
         </div>
@@ -782,53 +807,56 @@ let maximoSesionesPermitidas = 0;
 const HORAS_POR_SESION = 6;
 const numeroFichaGlobal = "<?= htmlspecialchars($ficha->numero_ficha); ?>";
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Escuchar el clic en el botón de la competencia
-    document.querySelectorAll('.btn-modificar-competencia').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            try {
-                const horasTotales = parseInt(this.getAttribute('data-horas-totales')) || 0;
-                const idCompetencia = this.getAttribute('data-id-competencia');
-                const codigoComp = this.getAttribute('data-codigo');
-                const nombreComp = this.getAttribute('data-nombre');
-
-                // Setear variables globales y UI inicial
-                maximoSesionesPermitidas = Math.ceil(horasTotales / HORAS_POR_SESION);
-                
-                document.getElementById('modal_id_competencia').value = idCompetencia;
-                document.getElementById('modal_nombre_competencia').textContent = nombreComp;
-                document.getElementById('modal_codigo_competencia').textContent = codigoComp;
-                document.getElementById('modal_horas_competencia').textContent = horasTotales + ' hrs';
-                document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
-
-                const tbody = document.getElementById('tabla_raps');
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fs-4 text-warning"></i> Cargando resultados de la competencia...</td></tr>';
-                document.getElementById('btn_guardar_ajuste').disabled = true;
-
-                // Petición AJAX para obtener los RAPs y sus ajustes
-                const response = await fetch(`<?= URLROOT; ?>/index.php?route=fichas/getAjustesCompetencia`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_competencia: idCompetencia, numero_ficha: numeroFichaGlobal })
-                });
-                
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    if (data.raps.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="fa-solid fa-circle-info me-2"></i>Esta competencia no tiene resultados de aprendizaje asociados.</td></tr>`;
-                    } else {
-                        renderizarTablaRaps(data.raps);
-                    }
-                } else {
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}</td></tr>`;
-                }
-            } catch (error) {
-                console.error('Error procesando el modal:', error);
-                document.getElementById('tabla_raps').innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error interno al cargar la información.</td></tr>`;
-            }
-        });
+window.cargarDatosModalCompetencia = async function(btn) {
+    if (!btn) return;
+    
+    // DEPURACIÓN VISUAL: Mostrar un toast para confirmar que el click funcionó
+    Swal.fire({
+        toast: true, position: 'top-end', icon: 'info', title: 'Conectando con servidor...', showConfirmButton: false, timer: 2000
     });
+    
+    try {
+        const horasTotales = parseInt(btn.getAttribute('data-horas-totales')) || 0;
+        const idCompetencia = btn.getAttribute('data-id-competencia');
+        const codigoComp = btn.getAttribute('data-codigo');
+        const nombreComp = btn.getAttribute('data-nombre');
+
+        // Setear variables globales y UI inicial
+        maximoSesionesPermitidas = Math.ceil(horasTotales / HORAS_POR_SESION);
+        
+        document.getElementById('modal_id_competencia').value = idCompetencia;
+        document.getElementById('modal_nombre_competencia').textContent = nombreComp;
+        document.getElementById('modal_codigo_competencia').textContent = codigoComp;
+        document.getElementById('modal_horas_competencia').textContent = horasTotales + ' hrs';
+        document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
+
+        const tbody = document.getElementById('tabla_raps');
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fs-4 text-warning"></i> Cargando resultados de la competencia...</td></tr>';
+        document.getElementById('btn_guardar_ajuste').disabled = true;
+
+        // Petición AJAX para obtener los RAPs y sus ajustes
+        const response = await fetch(`<?= URLROOT; ?>/index.php?route=fichas/getAjustesCompetencia`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_competencia: idCompetencia, numero_ficha: numeroFichaGlobal })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            if (data.raps.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="fa-solid fa-circle-info me-2"></i>Esta competencia no tiene resultados de aprendizaje asociados.</td></tr>`;
+            } else {
+                renderizarTablaRaps(data.raps);
+            }
+        } else {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}</td></tr>`;
+        }
+    } catch (error) {
+        console.error('Error procesando el modal:', error);
+        document.getElementById('tabla_raps').innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error interno al cargar la información.</td></tr>`;
+    }
+};
 
     // Evento de Guardado mediante Fetch
     const btnGuardarAjuste = document.getElementById('btn_guardar_ajuste');
@@ -890,7 +918,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-});
 
 function renderizarTablaRaps(raps) {
     const tbody = document.getElementById('tabla_raps');
@@ -937,26 +964,46 @@ window.recalcularFila = function(inputPorcentaje) {
 // Función Principal (Regla de Oro)
 window.calcularSesiones = function() {
     let sumaTotal = 0;
+    let algunCero = false;
     const btnGuardar = document.getElementById('btn_guardar_ajuste');
     const alertaError = document.getElementById('alerta_limite');
 
-    // Sumar todas las sesiones
+    // Sumar todas las sesiones y verificar mínimos
     document.querySelectorAll('.input-sesiones').forEach(input => {
-        sumaTotal += parseInt(input.value || 0);
-        input.classList.remove('is-invalid', 'text-danger');
+        const valor = parseInt(input.value || 0);
+        sumaTotal += valor;
+        
+        if (valor <= 0 || isNaN(valor)) {
+            algunCero = true;
+            input.classList.add('is-invalid', 'text-danger');
+        } else {
+            input.classList.remove('is-invalid', 'text-danger');
+        }
     });
 
-    // Validar regla estricta
-    if (sumaTotal > maximoSesionesPermitidas) {
+    // Validar regla estricta: Suma EXACTA al máximo Y ningún valor en 0
+    if (sumaTotal !== maximoSesionesPermitidas || algunCero) {
         alertaError.classList.remove('d-none');
         btnGuardar.disabled = true;
         
-        document.querySelectorAll('.input-sesiones').forEach(input => {
-            input.classList.add('is-invalid', 'text-danger');
-        });
+        // Personalizar el mensaje de alerta
+        if (algunCero) {
+            alertaError.innerHTML = '<i class="fa-solid fa-triangle-exclamation fs-5 me-2"></i> Error: Cada RAP debe tener al menos 1 sesión.';
+        } else if (sumaTotal < maximoSesionesPermitidas) {
+            alertaError.innerHTML = `<i class="fa-solid fa-triangle-exclamation fs-5 me-2"></i> Error: Faltan asignar sesiones (Suma: ${sumaTotal}, Límite: ${maximoSesionesPermitidas})`;
+            document.querySelectorAll('.input-sesiones').forEach(input => input.classList.add('is-invalid', 'text-danger'));
+        } else {
+            alertaError.innerHTML = `<i class="fa-solid fa-triangle-exclamation fs-5 me-2"></i> Error: Excede límite de sesiones (Suma: ${sumaTotal}, Límite: ${maximoSesionesPermitidas})`;
+            document.querySelectorAll('.input-sesiones').forEach(input => input.classList.add('is-invalid', 'text-danger'));
+        }
     } else {
         alertaError.classList.add('d-none');
         btnGuardar.disabled = false;
+        
+        // Limpiar todas las alertas rojas
+        document.querySelectorAll('.input-sesiones').forEach(input => {
+            input.classList.remove('is-invalid', 'text-danger');
+        });
     }
 }
 
@@ -1061,5 +1108,4 @@ window.calcularSesiones = function() {
             }
         });
     }
-});
 </script>
