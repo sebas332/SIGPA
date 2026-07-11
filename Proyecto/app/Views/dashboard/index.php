@@ -3699,9 +3699,7 @@
                                         <button type="button" id="detail-btn-edit" class="env-detail-btn env-detail-btn-primary">
                                             <i class="fa-solid fa-pen"></i> Editar Ambiente
                                         </button>
-                                        <a href="#" id="detail-btn-toggle-disp" class="env-detail-btn env-detail-btn-danger text-decoration-none">
-                                            <i class="fa-solid fa-power-off"></i> Desactivar Ambiente
-                                        </a>
+                                        <!-- Botón de desactivar ambiente removido por problemas lógicos -->
                                     <?php endif; ?>
                                     <a href="#" id="detail-btn-view-ficha" class="env-detail-btn env-detail-btn-secondary text-decoration-none">
                                         <i class="fa-regular fa-file-lines"></i> Ver Novedades
@@ -3881,11 +3879,10 @@
                             btnEdit.setAttribute('onclick', `editarAmbiente(${id}, '${nombre.replace(/'/g, "\\'")}', '${tipo}', ${capacidad}, ${computadores}, '${(especialidad || '').replace(/'/g, "\\'")}', ${aire}, ${ventilador}, ${tablero}, ${tv}, ${disponibilidad})`);
                         }
                         
+                        // Botón toggle removido
                         const btnToggle = document.getElementById('detail-btn-toggle-disp');
                         if (btnToggle) {
-                            btnToggle.href = `${urlRoot}/index.php?route=ambientes/toggleDisponibilidad&id=${id}`;
-                            btnToggle.innerHTML = disponibilidad == 1 ? '<i class="fa-solid fa-power-off"></i> Desactivar Ambiente' : '<i class="fa-solid fa-power-off"></i> Activar Ambiente';
-                            btnToggle.className = disponibilidad == 1 ? 'env-detail-btn env-detail-btn-danger text-decoration-none' : 'env-detail-btn env-detail-btn-primary text-decoration-none';
+                            btnToggle.remove();
                         }
                         
                         const btnFicha = document.getElementById('detail-btn-view-ficha');

@@ -1,5 +1,18 @@
 [
     {
+        "id": "audit_6a51bf0fb66be2.51031423",
+        "timestamp": "2026-07-10 22:57:03",
+        "usuario_id": 1,
+        "usuario_nombre": "Juan Esteban David Chavarria",
+        "usuario_login": "1000000000",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "DISPONIBILIDAD DE AMBIENTE",
+        "tabla": "ambientes",
+        "registro_id": "4",
+        "detalles": "Cambió disponibilidad a: No Disponible"
+    },
+    {
         "id": "audit_6a51b92d1307b5.23363786",
         "timestamp": "2026-07-10 22:31:57",
         "usuario_id": 1,
