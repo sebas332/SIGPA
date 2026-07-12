@@ -8079,29 +8079,20 @@
             <!-- PESTAÑA 1: MI FICHA Y AVANCE -->
             <div class="tab-pane fade show active" id="pills-apr-ficha" role="tabpanel" aria-labelledby="pills-apr-ficha-tab">
                 <?php
-                $aprProgramaFicha = (!empty($aprProgramaPrincipal) && $aprProgramaPrincipal !== 'Programa de Formación')
-                    ? $aprProgramaPrincipal
-                    : 'Análisis y Desarrollo de Software';
-                $aprInstructorLider = $aprProximaClase
-                    ? trim(($aprProximaClase->instructor_nombre ?? '') . ' ' . ($aprProximaClase->instructor_apellido ?? ''))
-                    : '';
-                $aprInstructorLider = $aprInstructorLider !== '' ? $aprInstructorLider : 'Darwin Cordero';
-                $aprJornadaFicha = $aprProximaClase->jornada ?? 'Tarde';
-                $aprCompetenciasFicha = [];
-
-                if (!empty($competencias)) {
-                    foreach ($competencias as $comp) {
-                        $programaComp = trim((string) ($comp->programa_nombre ?? ''));
-                        if ($programaComp === '' || strtolower($programaComp) === strtolower($aprProgramaFicha)) {
-                            $aprCompetenciasFicha[] = $comp;
-                        }
-                    }
+                if (isset($mi_ficha) && $mi_ficha) {
+                    $aprProgramaFicha = $mi_ficha->programa_nombre;
+                    $aprInstructorLider = trim($mi_ficha->instructor_nombre . ' ' . $mi_ficha->instructor_apellido);
+                    $aprJornadaFicha = $mi_ficha->jornada_nombre;
+                    $aprFichaNumero = $mi_ficha->numero_ficha;
+                } else {
+                    $aprProgramaFicha = (!empty($aprProgramaPrincipal) && $aprProgramaPrincipal !== 'Programa de Formación') ? $aprProgramaPrincipal : 'Sin programa asignado';
+                    $aprInstructorLider = 'Sin asignar';
+                    $aprJornadaFicha = 'No definida';
+                    $aprFichaNumero = '';
                 }
 
-                if (empty($aprCompetenciasFicha) && !empty($competencias)) {
-                    $aprCompetenciasFicha = $competencias;
-                }
-
+                $aprCompetenciasFicha = $competencias ?? [];
+                
                 $aprModuloIconos = ['fa-laptop', 'fa-code', 'fa-database', 'fa-gears', 'fa-network-wired'];
                 $aprModuloDescripciones = [
                     'Desarrolla soluciones de software de acuerdo con los requisitos y especificaciones técnicas establecidas.',
@@ -8109,9 +8100,7 @@
                     'Integra conocimientos técnicos y procedimentales para fortalecer tu ruta formativa.',
                     'Aplica actividades prácticas orientadas al cumplimiento de los resultados de aprendizaje.'
                 ];
-                ?>
-
-                <style>
+                ?>                <style>
                 .apr-ficha-breadcrumb {
                     display: flex;
                     align-items: center;
@@ -8503,8 +8492,13 @@
                             $sesionesModulo = (int) ($comp->total_sesiones ?? ($idx === 0 ? 60 : 48));
                             $iconoModulo = $aprModuloIconos[$idx % count($aprModuloIconos)];
                             $descripcionModulo = $aprModuloDescripciones[$idx % count($aprModuloDescripciones)];
+                            
+                            // Filtrar los RAPs correspondientes a esta competencia
+                            $rapsComp = array_filter($resultados ?? [], function($r) use ($comp) {
+                                return $r->id_competencia == $comp->id_competencia;
+                            });
                             ?>
-                            <div class="apr-module-row">
+                            <div class="apr-module-row" style="cursor: pointer; transition: all 0.2s ease;" data-bs-toggle="collapse" data-bs-target="#collapseCompApr<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseCompApr<?= $comp->id_competencia; ?>" onmouseover="this.style.borderColor='#39A900';" onmouseout="this.style.borderColor='#e8edf2';">
                                 <div class="apr-module-icon"><i class="fa-solid <?= $iconoModulo; ?>"></i></div>
                                 <div>
                                     <div class="apr-module-code">Código <?= htmlspecialchars($comp->codigo ?? 'N/A'); ?></div>
@@ -8517,11 +8511,30 @@
                                 <div class="apr-module-hours">
                                     <strong><?= $horasModulo; ?></strong>
                                     <span>Horas Totales</span>
-                                    <small><?= $sesionesModulo; ?> sesiones</small>
+                                    <small><?= count($rapsComp); ?> RAPs</small>
                                 </div>
                                 <button type="button" class="apr-module-arrow" aria-label="Ver módulo <?= $moduloNumero; ?>">
-                                    <i class="fa-solid fa-chevron-right"></i>
+                                    <i class="fa-solid fa-chevron-down"></i>
                                 </button>
+                            </div>
+                            
+                            <!-- Collapse con los RAPs -->
+                            <div class="collapse" id="collapseCompApr<?= $comp->id_competencia; ?>">
+                                <div class="card card-body border-0 shadow-sm mb-3 mt-1 p-3" style="background-color: #f8fafc; border-radius: 10px;">
+                                    <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-list-check me-2"></i>Resultados de Aprendizaje (RAP)</h6>
+                                    <?php if (empty($rapsComp)): ?>
+                                        <p class="text-muted small mb-0"><i class="fa-solid fa-circle-exclamation me-1"></i> No hay resultados de aprendizaje registrados para esta competencia.</p>
+                                    <?php else: ?>
+                                        <ul class="list-group list-group-flush" style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+                                            <?php foreach ($rapsComp as $rap): ?>
+                                                <li class="list-group-item d-flex flex-column bg-white py-3 border-bottom">
+                                                    <strong class="text-dark mb-1" style="font-size: 0.85rem;"><?= htmlspecialchars($rap->codigo ?? 'Sin Código'); ?></strong>
+                                                    <span class="text-secondary" style="font-size: 0.82rem; line-height: 1.5;"><?= htmlspecialchars($rap->descripcion ?? 'Sin descripción'); ?></span>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>

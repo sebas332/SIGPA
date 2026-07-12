@@ -1181,7 +1181,7 @@ foreach ($db->resultSet() as $r) {
                             <select class="form-select ficha-create-select" id="id_programa" name="id_programa" required>
                                 <option value="">Selecciona un programa...</option>
                                 <?php foreach ($programas as $prog): ?>
-                                    <option value="<?= $prog->id_programa; ?>"><?= htmlspecialchars($prog->nombre) . ' (' . $prog->codigo . ')'; ?></option>
+                                    <option value="<?= $prog->id_programa; ?>" data-tipo="<?= htmlspecialchars($prog->tipo_nombre ?? ''); ?>"><?= htmlspecialchars($prog->nombre) . ' (' . $prog->codigo . ')'; ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -1266,7 +1266,7 @@ foreach ($db->resultSet() as $r) {
                             <label for="edit_id_programa" class="form-label fw-semibold text-secondary">Programa de Formación</label>
                             <select class="form-select form-select-lg rounded-3" id="edit_id_programa" name="id_programa" required>
                                 <?php foreach ($programas as $prog): ?>
-                                    <option value="<?= $prog->id_programa; ?>"><?= htmlspecialchars($prog->nombre) . ' (' . $prog->codigo . ')'; ?></option>
+                                    <option value="<?= $prog->id_programa; ?>" data-tipo="<?= htmlspecialchars($prog->tipo_nombre ?? ''); ?>"><?= htmlspecialchars($prog->nombre) . ' (' . $prog->codigo . ')'; ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -1437,8 +1437,11 @@ document.addEventListener('DOMContentLoaded', function () {
         let countProductiva = 0;
         let countEgresada = 0;
 
+        const currentCardItems = document.querySelectorAll('.card-item');
+        const currentTableRows = document.querySelectorAll('.table-row-item');
+
         // Filtrar tarjetas
-        cardItems.forEach(card => {
+        currentCardItems.forEach(card => {
             const numero = card.getAttribute('data-numero').toLowerCase();
             const programa = card.getAttribute('data-programa').toLowerCase();
             const jornada = card.getAttribute('data-jornada');
@@ -1466,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Filtrar tabla (manteniendo coherencia)
-        tableRows.forEach(row => {
+        currentTableRows.forEach(row => {
             const numero = row.getAttribute('data-numero').toLowerCase();
             const programa = row.getAttribute('data-programa').toLowerCase();
             const jornada = row.getAttribute('data-jornada');
@@ -1505,6 +1508,159 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('stat-lectiva-count').innerText = countLectiva;
         document.getElementById('stat-iniciar-count').innerText = countPendiente;
+    }
+
+    function agregarFichaAlDOM(ficha) {
+        const hoy = new Date().toISOString().split('T')[0];
+        let estado = 'Lectiva';
+        let border_class = '';
+        
+        if (ficha.fecha_fin === '1970-01-01') {
+            estado = 'Cancelada'; border_class = 'border-cancelada';
+        } else if (hoy < ficha.fecha_inicio) {
+            estado = 'Pendiente'; border_class = 'border-pendiente';
+        } else if (hoy >= ficha.fecha_inicio && hoy < ficha.fecha_practicas) {
+            estado = 'Lectiva'; border_class = '';
+        } else if (hoy >= ficha.fecha_practicas && hoy <= ficha.fecha_fin) {
+            estado = 'Productiva'; border_class = 'border-productiva';
+        } else {
+            estado = 'Finalizada'; border_class = 'border-finalizada';
+        }
+
+        let porcentaje_vigencia = 0;
+        if (hoy >= ficha.fecha_inicio) {
+            const start = new Date(ficha.fecha_inicio).getTime();
+            const practicas = new Date(ficha.fecha_practicas).getTime();
+            const current = new Date(hoy).getTime();
+            
+            const total_dias = (practicas - start) / (1000 * 60 * 60 * 24);
+            if (total_dias > 0) {
+                const dias_transcurridos = (current - start) / (1000 * 60 * 60 * 24);
+                porcentaje_vigencia = Math.min(100, Math.max(0, Math.round((dias_transcurridos / total_dias) * 100)));
+            } else {
+                porcentaje_vigencia = 100;
+            }
+        }
+        
+        const tipo_programa = ficha.programa_nombre.toLowerCase().includes('técnico') ? 'Técnico' : 'Tecnólogo';
+        const inicialesInstructor = ficha.instructor_nombre.substring(0,1) + ficha.instructor_apellido.substring(0,1);
+        const urlFicha = `<?= URLROOT; ?>/index.php?route=fichas/show&id=${ficha.numero_ficha}`;
+
+        const cardHtml = `
+            <div class="col-12 col-md-6 col-lg-4 card-item"
+                 data-numero="${ficha.numero_ficha}"
+                 data-programa="${ficha.programa_nombre}"
+                 data-jornada="${ficha.jornada_nombre}"
+                 data-instructor="${ficha.instructor_nombre} ${ficha.instructor_apellido}"
+                 data-estado="${estado}"
+                 data-matriculados="0">
+                <div class="ficha-card ${border_class}">
+                    <div class="ficha-card-body">
+                        <div class="ficha-card-num-row">
+                            <div class="ficha-card-number"><span>NÚMERO DE FICHA</span> <br>#${ficha.numero_ficha}</div>
+                        </div>
+                        <div class="ficha-card-title">${ficha.programa_nombre}</div>
+                        <div class="ficha-card-meta">Cód: ${ficha.id_programa} • ${tipo_programa}</div>
+                        <div class="ficha-instructor-panel">
+                            <div class="avatar-initials">${inicialesInstructor}</div>
+                            <div class="instructor-info-text">
+                                <div class="instructor-label">Instructor Líder</div>
+                                <div class="instructor-name">${ficha.instructor_nombre} ${ficha.instructor_apellido}</div>
+                            </div>
+                        </div>
+                        <div class="ficha-info-grid">
+                            <div class="info-grid-item">
+                                <div class="info-grid-label">Jornada</div>
+                                <div class="info-grid-val">${ficha.jornada_nombre}</div>
+                            </div>
+                            <div class="info-grid-item">
+                                <div class="info-grid-label">Aprendices</div>
+                                <div class="info-grid-val">0 de ${ficha.cantidad_estudiantes}</div>
+                            </div>
+                        </div>
+                        <div class="vigencia-progress-section">
+                            <div class="vigencia-label-row">
+                                <span>Vigencia Lectiva</span>
+                                <span>${porcentaje_vigencia}% completado</span>
+                            </div>
+                            <div class="vigencia-progress-bar">
+                                <div class="vigencia-progress-fill" style="width: ${porcentaje_vigencia}%;"></div>
+                            </div>
+                        </div>
+                        <div class="vigencia-dates">
+                            <span>Inició: ${ficha.fecha_inicio}</span>
+                            <span>Finaliza: ${ficha.fecha_fin}</span>
+                        </div>
+                    </div>
+                    <div class="ficha-card-footer">
+                        <a href="${urlFicha}" class="view-details-link">
+                            <i class="fa-regular fa-eye"></i> Ver Ficha Completa
+                        </a>
+                        <div class="actions-btn-group">
+                            <button type="button" class="action-icon-btn btn-enroll btn-gestionar-aprendices" 
+                                    data-ficha="${ficha.numero_ficha}" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalGestionarAprendices" 
+                                    title="Matricular Aprendiz">
+                                <i class="fa-solid fa-user-plus text-success"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            
+        const tableRowHtml = `
+            <tr class="table-row-item" 
+                data-numero="${ficha.numero_ficha}"
+                data-programa="${ficha.programa_nombre}"
+                data-jornada="${ficha.jornada_nombre}"
+                data-instructor="${ficha.instructor_nombre} ${ficha.instructor_apellido}"
+                data-estado="${estado}"
+                data-matriculados="0">
+                <td class="ps-4 fw-bold">
+                    <a href="${urlFicha}" class="table-ficha-number">#${ficha.numero_ficha}</a>
+                </td>
+                <td>
+                    <div class="fw-bold text-dark">${ficha.programa_nombre}</div>
+                    <div class="text-muted small">Cód: ${ficha.id_programa}</div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-initials" style="width:28px; height:28px; font-size:0.75rem;">
+                            ${inicialesInstructor}
+                        </div>
+                        <div>
+                            <div class="fw-semibold text-dark" style="font-size:0.85rem;">${ficha.instructor_nombre} ${ficha.instructor_apellido}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="badge bg-light text-dark border px-3 py-2" style="font-size:0.75rem; border-radius:12px;">${ficha.jornada_nombre}</span></td>
+                <td class="fw-bold">0/${ficha.cantidad_estudiantes}</td>
+                <td class="text-muted small" style="line-height: 1.25;">
+                    <i class="fa-solid fa-calendar-day text-secondary me-1"></i> ${ficha.fecha_inicio}<br>
+                    <i class="fa-solid fa-flag-checkered text-secondary me-1"></i> ${ficha.fecha_fin}
+                </td>
+                <td class="text-end pe-4">
+                    <div class="d-flex justify-content-end gap-1">
+                        <a href="${urlFicha}" class="action-icon-btn" title="Ver Ficha">
+                            <i class="fa-regular fa-eye text-success"></i>
+                        </a>
+                        <?php if ($current_role === 'Coordinador'): ?>
+                        <button type="button" class="action-icon-btn btn-gestionar-aprendices" 
+                                data-ficha="${ficha.numero_ficha}" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalGestionarAprendices" 
+                                title="Matricular Aprendiz">
+                            <i class="fa-solid fa-user-plus text-success"></i>
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                </td>
+            </tr>`;
+
+        document.getElementById('view-cards-container').insertAdjacentHTML('beforeend', cardHtml);
+        const tbody = document.querySelector('#view-table-container tbody');
+        if(tbody) tbody.insertAdjacentHTML('beforeend', tableRowHtml);
     }
 
     // Carga inicial de estadísticas
@@ -1556,10 +1712,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (formCrearFicha) {
         formCrearFicha.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            if (btnSubmit.disabled) return; // Evitar doble envío
+            
             const formData = new FormData(this);
             formData.append('is_ajax', '1');
 
-            const btnSubmit = this.querySelector('button[type="submit"]');
             const btnHtml = btnSubmit.innerHTML;
             btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btnSubmit.disabled = true;
@@ -1576,14 +1735,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalCrearFicha'));
                     if (modalInst) modalInst.hide();
 
+                    agregarFichaAlDOM(result.data);
+                    runFilters();
+                    
+                    formCrearFicha.reset();
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Ficha Creada',
                         text: 'La ficha se ha registrado correctamente.',
-                        timer: 1500,
+                        timer: 2000,
                         showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
                     });
                 } else {
                     Swal.fire({
@@ -1607,10 +1769,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (formEditarFicha) {
         formEditarFicha.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            if (btnSubmit.disabled) return; // Evitar doble envío
+            
             const formData = new FormData(this);
             formData.append('is_ajax', '1');
 
-            const btnSubmit = this.querySelector('button[type="submit"]');
             const btnHtml = btnSubmit.innerHTML;
             btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btnSubmit.disabled = true;
@@ -1652,6 +1817,46 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // ==============================================
+    // AUTO-CALCULAR FECHAS PARA TECNÓLOGOS EN CREACIÓN Y EDICIÓN
+    // ==============================================
+    function setupDateCalculator(idInicio, idPracticas, idFin, idPrograma) {
+        const inputInicio = document.getElementById(idInicio);
+        const inputPracticas = document.getElementById(idPracticas);
+        const inputFin = document.getElementById(idFin);
+        const selectPrograma = document.getElementById(idPrograma);
+
+        if (!inputInicio || !inputPracticas || !inputFin || !selectPrograma) return;
+
+        function calcularFechas() {
+            const fechaInicio = inputInicio.value;
+            const selectedOption = selectPrograma.options[selectPrograma.selectedIndex];
+            
+            if (!selectedOption || !fechaInicio) return;
+            
+            const tipoPrograma = selectedOption.getAttribute('data-tipo');
+
+            if (tipoPrograma && tipoPrograma.includes('Tecnólogo')) {
+                let fecha = new Date(fechaInicio);
+                
+                let fechaPracticas = new Date(fecha);
+                fechaPracticas.setMonth(fechaPracticas.getMonth() + 21);
+                
+                let fechaFin = new Date(fecha);
+                fechaFin.setMonth(fechaFin.getMonth() + 27);
+
+                inputPracticas.value = fechaPracticas.toISOString().split('T')[0];
+                inputFin.value = fechaFin.toISOString().split('T')[0];
+            }
+        }
+
+        inputInicio.addEventListener('change', calcularFechas);
+        selectPrograma.addEventListener('change', calcularFechas);
+    }
+
+    setupDateCalculator('fecha_inicio', 'fecha_practicas', 'fecha_fin', 'id_programa');
+    setupDateCalculator('edit_fecha_inicio', 'edit_fecha_practicas', 'edit_fecha_fin', 'edit_id_programa');
 });
 
 // Función global que abre el modal de edición y carga la data

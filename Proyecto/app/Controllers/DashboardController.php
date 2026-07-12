@@ -147,7 +147,18 @@ class DashboardController extends BaseController {
         } elseif ($current_role === 'Aprendiz') {
             $data['programacion'] = $this->programacionModel->getByAprendiz($user_id);
             $data['asistencias'] = $this->asistenciaModel->getPorAprendiz($user_id);
-            $data['competencias'] = $this->competenciaModel->all();
+            
+            $fichasDelAprendiz = $this->fichaModel->getByAprendiz($user_id);
+            $mi_ficha = !empty($fichasDelAprendiz) ? $fichasDelAprendiz[0] : null;
+            $data['mi_ficha'] = $mi_ficha;
+
+            if ($mi_ficha) {
+                $data['competencias'] = $this->competenciaModel->getByPrograma($mi_ficha->id_programa);
+            } else {
+                $data['competencias'] = [];
+            }
+            
+            $data['resultados'] = $this->resultadoModel->all();
         }
 
         $data['excepciones'] = $this->novedadModel->getExcepcionesProgramacion();

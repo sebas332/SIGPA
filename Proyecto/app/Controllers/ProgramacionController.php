@@ -81,7 +81,15 @@ class ProgramacionController extends BaseController {
             // Forzar el id_dias basado en la fecha_inicio para que sea atómico (1=Lunes..7=Domingo)
             $data['id_dias'] = date('N', strtotime($data['fecha_inicio']));
 
-            // Validar conflictos
+            // 1. Validar coherencia con la jornada de la ficha
+            $jornadaError = $this->validarHorarioJornada($data['numero_ficha'], $data['hora_inicio'], $data['hora_fin']);
+            if ($jornadaError) {
+                $_SESSION['flash_error'] = $jornadaError;
+                $this->redirect('programacion/index');
+                return;
+            }
+
+            // 2. Validar conflictos
             $conflictMessage = $this->programacionModel->getConflictMessage($data);
             if ($conflictMessage) {
                 $_SESSION['flash_error'] = $conflictMessage;
@@ -268,7 +276,14 @@ class ProgramacionController extends BaseController {
                     'id_dias' => date('N', strtotime($fecha))
                 ];
 
-                // Validar conflictos para esta fecha específica
+                // 1. Validar coherencia con la jornada de la ficha
+                $jornadaError = $this->validarHorarioJornada($data['numero_ficha'], $data['hora_inicio'], $data['hora_fin']);
+                if ($jornadaError) {
+                    $errores_conflicto[] = "Error en {$fecha}: {$jornadaError}";
+                    continue;
+                }
+
+                // 2. Validar conflictos para esta fecha específica
                 $conflictMessage = $this->programacionModel->getConflictMessage($data);
                 if ($conflictMessage) {
                     $errores_conflicto[] = "Conflicto en {$fecha}: {$conflictMessage}";
@@ -355,7 +370,14 @@ class ProgramacionController extends BaseController {
         // Forzar el id_dias basado en la fecha_inicio para que sea atómico (1=Lunes..7=Domingo)
         $data['id_dias'] = date('N', strtotime($data['fecha_inicio']));
 
-        // Validar conflictos
+        // 1. Validar coherencia con la jornada de la ficha
+        $jornadaError = $this->validarHorarioJornada($data['numero_ficha'], $data['hora_inicio'], $data['hora_fin']);
+        if ($jornadaError) {
+            echo json_encode(['success' => false, 'message' => $jornadaError]);
+            exit;
+        }
+
+        // 2. Validar conflictos
         $conflictMessage = $this->programacionModel->getConflictMessage($data);
         if ($conflictMessage) {
             echo json_encode(['success' => false, 'message' => $conflictMessage]);
@@ -504,5 +526,48 @@ class ProgramacionController extends BaseController {
             echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
         exit;
+    }
+
+    /**
+     * Valida que el horario de la sesión esté dentro de la jornada de la ficha
+     */
+    private function validarHorarioJornada($numero_ficha, $hora_inicio, $hora_fin) {
+        $db = Database::getInstance();
+        $db->query("SELECT j.nombre, j.hora_inicio as j_inicio, j.hora_fin as j_fin 
+                    FROM fichas f 
+                    INNER JOIN jornada j ON f.id_jornada = j.id_jornada 
+                    WHERE f.numero_ficha = :ficha");
+        $db->bind(':ficha', $numero_ficha);
+        $jornadaInfo = $db->single();
+
+        if ($jornadaInfo) {
+            // Eliminar segundos si los hay para evitar fallos de formato
+            $hi = substr($hora_inicio, 0, 5); // "06:00"
+            $hf = substr($hora_fin, 0, 5);
+            $ji = substr($jornadaInfo->j_inicio, 0, 5);
+            $jf = substr($jornadaInfo->j_fin, 0, 5);
+            
+            // Convertir a minutos desde medianoche
+            $hi_mins = intval(substr($hi, 0, 2)) * 60 + intval(substr($hi, 3, 2));
+            $hf_mins = intval(substr($hf, 0, 2)) * 60 + intval(substr($hf, 3, 2));
+            $ji_mins = intval(substr($ji, 0, 2)) * 60 + intval(substr($ji, 3, 2));
+            $jf_mins = intval(substr($jf, 0, 2)) * 60 + intval(substr($jf, 3, 2));
+            
+            if ($jf_mins < $ji_mins) {
+                // Cruza medianoche
+                $valido_inicio = ($hi_mins >= $ji_mins || $hi_mins <= $jf_mins);
+                $valido_fin = ($hf_mins >= $ji_mins || $hf_mins <= $jf_mins);
+                
+                if (!$valido_inicio || !$valido_fin) {
+                    return "Incoherencia de Jornada: El horario ({$hi} a {$hf}) se sale de la jornada {$jornadaInfo->nombre} ({$ji} a {$jf}).";
+                }
+            } else {
+                // Normal
+                if ($hi_mins < $ji_mins || $hf_mins > $jf_mins) {
+                    return "Incoherencia de Jornada: El horario ({$hi} a {$hf}) se sale de la jornada {$jornadaInfo->nombre} ({$ji} a {$jf}).";
+                }
+            }
+        }
+        return null;
     }
 }

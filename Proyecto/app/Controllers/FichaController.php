@@ -240,6 +240,26 @@ class FichaController extends BaseController {
                 }
             }
 
+            // Automatización del cálculo de fechas para programas de tipo 'Tecnólogo'
+            if (!empty($id_programa) && !empty($fecha_inicio)) {
+                $programaInfo = $this->programaModel->find($id_programa);
+                if ($programaInfo && strcasecmp($programaInfo->tipo_nombre, 'Tecnólogo') === 0) {
+                    try {
+                        $dtInicio = new DateTime($fecha_inicio);
+                        
+                        $dtPracticas = clone $dtInicio;
+                        $dtPracticas->modify('+21 months');
+                        $fecha_practicas = $dtPracticas->format('Y-m-d');
+                        
+                        $dtFin = clone $dtInicio;
+                        $dtFin->modify('+27 months');
+                        $fecha_fin = $dtFin->format('Y-m-d');
+                    } catch (Exception $e) {
+                        $errors[] = "Formato de fecha de inicio inválido.";
+                    }
+                }
+            }
+
             if (empty($fecha_inicio) || empty($fecha_practicas) || empty($fecha_fin)) {
                 $errors[] = "Todas las fechas son obligatorias.";
             } else {
@@ -304,34 +324,51 @@ class FichaController extends BaseController {
     /**
      * Matricular un aprendiz en una ficha (Coordinador)
      */
-    public function inscribirAprendiz() {
+    public function asociarAprendices() {
         $this->requireRol('Coordinador');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            
             $numero_ficha = $_POST['numero_ficha'] ?? 0;
-            $id_usuario_aprendiz = $_POST['id_usuario_aprendiz'] ?? 0;
+            $aprendices_ids = $_POST['aprendices'] ?? [];
+
+            if (empty($aprendices_ids) || !$numero_ficha) {
+                echo json_encode(['success' => false, 'message' => 'Datos incompletos.']);
+                exit;
+            }
 
             // Validar existencia de la ficha
             $ficha = $this->fichaModel->find($numero_ficha);
             if (!$ficha) {
-                $_SESSION['flash_error'] = 'La ficha no existe.';
-                $this->redirect('dashboard/index#pills-fichas');
+                echo json_encode(['success' => false, 'message' => 'La ficha no existe.']);
+                exit;
             }
 
-            // Validar cupo
-            $aprendices = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha);
-            if (count($aprendices) >= $ficha->cantidad_estudiantes) {
-                $_SESSION['flash_error'] = 'No se pueden matricular más aprendices. Se ha alcanzado el límite de cupos autorizados (' . $ficha->cantidad_estudiantes . ').';
-                $this->redirect('fichas/show&id=' . $numero_ficha);
+            // Validar cupos
+            $actuales = $this->fichaAprendizModel->getAprendicesPorFicha($numero_ficha);
+            $cupos_disponibles = $ficha->cantidad_estudiantes - count($actuales);
+            
+            if (count($aprendices_ids) > $cupos_disponibles) {
+                echo json_encode(['success' => false, 'message' => "Cupos insuficientes. Intentas asociar " . count($aprendices_ids) . " pero solo quedan $cupos_disponibles cupos."]);
+                exit;
             }
 
-            if ($this->fichaAprendizModel->create($id_usuario_aprendiz, $numero_ficha)) {
-                // Auditoría de Matrícula de Aprendiz
-                AuditLogger::log('Matrícula de Aprendiz', 'ficha_aprendiz', $numero_ficha, 'Aprendiz ID: ' . $id_usuario_aprendiz);
-                $_SESSION['flash_success'] = 'Aprendiz matriculado exitosamente en la ficha.';
+            $exitos = 0;
+            foreach ($aprendices_ids as $id_aprendiz) {
+                if ($this->fichaAprendizModel->create($id_aprendiz, $numero_ficha)) {
+                    $exitos++;
+                }
+            }
+
+            if ($exitos > 0) {
+                if (class_exists('AuditLogger')) {
+                    AuditLogger::log('Matrícula Masiva', 'ficha_aprendiz', $numero_ficha, "Asociados $exitos aprendices");
+                }
+                echo json_encode(['success' => true, 'message' => "$exitos aprendiz(ces) asociados exitosamente."]);
             } else {
-                $_SESSION['flash_error'] = 'El aprendiz ya se encuentra matriculado en una ficha activa.';
+                echo json_encode(['success' => false, 'message' => 'No se pudo asociar a los aprendices seleccionados (posiblemente ya están matriculados en una ficha activa).']);
             }
-            $this->redirect('fichas/show&id=' . $numero_ficha);
+            exit;
         }
     }
 
@@ -807,8 +844,8 @@ class FichaController extends BaseController {
 
             try {
                 $sql = "INSERT INTO ficha_resultado_config 
-                        (numero_ficha, id_competencia, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
-                        VALUES (:ficha, :id_competencia, :id_resultado, :porcentaje, :horas, :sesiones)
+                        (numero_ficha, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
+                        VALUES (:ficha, :id_resultado, :porcentaje, :horas, :sesiones)
                         ON DUPLICATE KEY UPDATE 
                         porcentaje_ajustado = VALUES(porcentaje_ajustado),
                         horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
@@ -821,7 +858,6 @@ class FichaController extends BaseController {
 
                     $db->query($sql);
                     $db->bind(':ficha', $numero_ficha);
-                    $db->bind(':id_competencia', $id_competencia);
                     $db->bind(':id_resultado', $rap['id_resultado']);
                     $db->bind(':porcentaje', $porcentaje_final);
                     $db->bind(':horas', $horas_finales);

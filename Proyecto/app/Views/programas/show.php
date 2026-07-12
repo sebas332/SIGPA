@@ -566,9 +566,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const nombre = item.querySelector('.comp-nombre-asociar').textContent.toLowerCase();
                 const codigo = item.querySelector('.comp-codigo-asociar').textContent.toLowerCase();
                 if (nombre.includes(filter) || codigo.includes(filter)) {
-                    item.style.display = 'flex';
+                    item.classList.remove('d-none');
+                    item.classList.add('d-flex');
                 } else {
-                    item.style.display = 'none';
+                    item.classList.remove('d-flex');
+                    item.classList.add('d-none');
                 }
             });
         });

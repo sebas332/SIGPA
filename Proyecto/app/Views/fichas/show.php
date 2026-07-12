@@ -357,6 +357,13 @@ if ($ficha->fecha_fin === '1970-01-01') {
 <div class="detail-container container-fluid px-0">
 
 
+    <!-- Botón Volver Atrás -->
+    <div class="mb-3">
+        <a href="javascript:history.back()" class="btn-back-sena">
+            <i class="fa-solid fa-arrow-left"></i> Volver Atrás
+        </a>
+    </div>
+
     <!-- Encabezado Principal -->
     <div class="detail-header-card d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div>
@@ -425,8 +432,8 @@ if ($ficha->fecha_fin === '1970-01-01') {
                 <div class="panel-header d-flex justify-content-between align-items-center mb-4">
                     <div class="panel-title mb-0"><i class="fa-solid fa-user-graduate"></i> Aprendices Inscritos (<?= count($aprendices); ?>)</div>
                     <?php if ($current_role === 'Coordinador'): ?>
-                        <button type="button" class="btn-matricular-small" data-bs-toggle="modal" data-bs-target="#modalInscribirAprendiz">
-                            <i class="fa-solid fa-plus me-1"></i> Matricular Aprendiz
+                        <button type="button" class="btn-matricular-small" data-bs-toggle="modal" data-bs-target="#modalAsociarAprendices">
+                            <i class="fa-solid fa-plus me-1"></i> Asociar Aprendiz
                         </button>
                     <?php endif; ?>
                 </div>
@@ -435,8 +442,8 @@ if ($ficha->fecha_fin === '1970-01-01') {
                     <?php if (empty($aprendices)): ?>
                         <div class="p-5 text-center text-muted">
                             <i class="fa-solid fa-users-slash fa-3x mb-3 text-secondary"></i>
-                            <h6 class="fw-bold">No hay aprendices matriculados en esta ficha</h6>
-                            <p class="small mb-0">Utiliza la opción de matricular para registrar estudiantes en este grupo.</p>
+                            <h6 class="fw-bold">No hay aprendices asociados a esta ficha</h6>
+                            <p class="small mb-0">Utiliza la opción de asociar para registrar estudiantes en este grupo.</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($aprendices as $ap): 
@@ -530,7 +537,10 @@ if ($ficha->fecha_fin === '1970-01-01') {
                                                                 data-id-competencia="<?= $comp->id_competencia; ?>"
                                                                 data-codigo="<?= htmlspecialchars($comp->codigo); ?>"
                                                                 data-nombre="<?= htmlspecialchars($comp->nombre); ?>"
-                                                                data-horas-totales="<?= $comp->horas_totales; ?>">
+                                                                data-horas-totales="<?= $comp->horas_totales; ?>"
+                                                                data-resultados-totales="<?= $comp->resultados_totales; ?>"
+                                                                data-porcentaje="<?= $comp->porcentaje; ?>"
+                                                                data-horas-ejecutar="<?= $comp->horas_a_ejecutar; ?>">
                                                             <i class="fa-solid fa-sliders"></i> Modificar Competencia
                                                         </button>
                                                     </div>
@@ -621,34 +631,61 @@ if ($ficha->fecha_fin === '1970-01-01') {
 </style>
 
 <?php if ($current_role === 'Coordinador'): ?>
-<!-- Modal Inscribir Aprendiz -->
-<div class="modal fade" id="modalInscribirAprendiz" tabindex="-1" aria-labelledby="modalInscribirAprendizLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-            <div class="modal-header bg-dark text-white p-4 border-0">
-                <h5 class="modal-title fw-bold" id="modalInscribirAprendizLabel">
-                    <i class="fa-solid fa-user-plus me-2 text-success"></i> Matricular Aprendiz en Ficha
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <form action="<?= URLROOT; ?>/index.php?route=fichas/inscribirAprendiz" method="POST">
-                <div class="modal-body p-4">
-                    <input type="hidden" name="numero_ficha" value="<?= $ficha->numero_ficha; ?>">
-                    <div class="mb-3">
-                        <label for="id_usuario_aprendiz" class="form-label fw-semibold text-secondary">Seleccionar Aprendiz Candidato</label>
-                        <select class="form-select form-select-lg rounded-3" id="id_usuario_aprendiz" name="id_usuario_aprendiz" required>
-                            <option value="">Selecciona un aprendiz...</option>
-                            <?php foreach ($candidatos as $cand): ?>
-                                <option value="<?= $cand->id_usuario; ?>"><?= htmlspecialchars($cand->nombre . ' ' . $cand->apellido . ' (' . $cand->documento . ')'); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+<!-- Modal Asociar Aprendices -->
+<div class="modal fade" id="modalAsociarAprendices" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+            <div class="modal-header bg-white border-bottom p-4">
+                <div class="d-flex align-items-center">
+                    <div class="bg-success-subtle rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 48px; height: 48px;">
+                        <i class="fa-solid fa-users text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0">Asociar Aprendices</h5>
+                        <p class="mb-0 small text-secondary">Selecciona los aprendices a vincular con esta ficha.</p>
                     </div>
                 </div>
-                <div class="modal-footer p-4 border-0 bg-light">
-                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-sena-success px-4 py-2"><i class="fa-solid fa-check"></i> Inscribir Aprendiz</button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="mb-3">
+                    <div class="input-group input-group-lg shadow-sm rounded-3">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
+                        <input type="text" id="buscarAprendizInput" class="form-control border-start-0" placeholder="Buscar por nombre o documento...">
+                    </div>
                 </div>
-            </form>
+                
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush rounded-4" id="listaAprendicesAsociar" style="max-height: 40vh; overflow-y: auto;">
+                            <?php if (empty($candidatos)): ?>
+                                <li class="list-group-item p-4 text-center text-muted">
+                                    <i class="fa-solid fa-check-circle fs-3 mb-2 text-success"></i><br>
+                                    No hay aprendices disponibles para asociar.
+                                </li>
+                            <?php else: ?>
+                                <?php foreach($candidatos as $cand): ?>
+                                    <li class="list-group-item d-flex align-items-center p-3 aprendiz-item-asociar">
+                                        <input class="form-check-input me-3 fs-5 checkbox-aprendiz-asociar" type="checkbox" value="<?= $cand->id_usuario; ?>" id="cand_<?= $cand->id_usuario; ?>">
+                                        <label class="form-check-label w-100 cursor-pointer d-flex justify-content-between align-items-center" for="cand_<?= $cand->id_usuario; ?>">
+                                            <div>
+                                                <span class="fw-bold d-block text-dark aprendiz-nombre-asociar"><?= htmlspecialchars($cand->nombre . ' ' . $cand->apellido); ?></span>
+                                                <small class="text-secondary aprendiz-documento-asociar">Doc: <?= htmlspecialchars($cand->documento); ?> • <?= htmlspecialchars($cand->correo); ?></small>
+                                            </div>
+                                        </label>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-top p-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light fw-medium shadow-sm px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-medium shadow-sm px-4" id="btnGuardarAsociacionAprendices">
+                    <i class="fa-solid fa-save me-1"></i> Asociar Seleccionados
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -757,13 +794,21 @@ if ($ficha->fecha_fin === '1970-01-01') {
                     <input type="hidden" name="numero_ficha" value="<?= $ficha->numero_ficha; ?>">
                     <input type="hidden" name="id_competencia" id="modal_id_competencia">
                     
-                    <h5 class="fw-bold text-dark mb-1" id="modal_nombre_competencia"></h5>
-                    <div class="text-secondary small mb-4">
-                        <i class="fa-solid fa-barcode me-1"></i> Código: <strong id="modal_codigo_competencia"></strong>
-                        <span class="mx-2">|</span>
-                        <i class="fa-solid fa-clock me-1"></i> Total Horas: <strong id="modal_horas_competencia"></strong>
-                        <span class="mx-2">|</span>
-                        <i class="fa-solid fa-person-chalkboard me-1"></i> Límite de Sesiones: <strong id="modal_sesiones_competencia" class="text-primary fs-6"></strong>
+                    <h5 class="fw-bold text-dark mb-2" id="modal_nombre_competencia"></h5>
+                    <div class="text-secondary small mb-4 d-flex flex-wrap gap-2 align-items-center">
+                        <span><i class="fa-solid fa-barcode me-1"></i> Código: <strong id="modal_codigo_competencia"></strong></span>
+                        <span class="text-muted">|</span>
+                        <span><i class="fa-solid fa-clock me-1"></i> Horas Totales: <strong id="modal_horas_competencia"></strong></span>
+                        <span class="text-muted">|</span>
+                        <span><i class="fa-solid fa-list-check me-1"></i> RAPs: <strong id="modal_resultados_competencia"></strong></span>
+                        <span class="text-muted">|</span>
+                        <span><i class="fa-solid fa-percent me-1"></i> Porcentaje: 
+                            <input type="number" id="porcentaje_global" class="form-control form-control-sm d-inline-block fw-bold text-center" style="width: 75px; height: 26px; padding: 0.1rem;" min="1" max="100" value="100">%
+                        </span>
+                        <span class="text-muted">|</span>
+                        <span><i class="fa-solid fa-business-time me-1"></i> Horas a Ejecutar: <strong id="modal_horas_ejecutar_competencia"></strong></span>
+                        <span class="text-muted">|</span>
+                        <span class="bg-primary-subtle text-primary px-2 py-1 rounded fw-bold"><i class="fa-solid fa-person-chalkboard me-1"></i> Límite de Sesiones: <span id="modal_sesiones_competencia" class="fs-6"></span></span>
                     </div>
                     
                     <!-- Alerta de Error (Oculta por defecto) -->
@@ -776,9 +821,8 @@ if ($ficha->fecha_fin === '1970-01-01') {
                         <table class="table table-bordered table-hover align-middle mb-0">
                             <thead class="table-light text-center">
                                 <tr>
-                                    <th style="width: 50%; text-align: left;" class="ps-3">Nombre del RAP</th>
-                                    <th style="width: 25%;">% de Ejecución</th>
-                                    <th style="width: 25%;" class="pe-3">Sesiones Asignadas</th>
+                                    <th style="width: 70%; text-align: left;" class="ps-3">Nombre del RAP</th>
+                                    <th style="width: 30%;" class="pe-3">Sesiones Asignadas</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla_raps">
@@ -820,14 +864,24 @@ window.cargarDatosModalCompetencia = async function(btn) {
         const idCompetencia = btn.getAttribute('data-id-competencia');
         const codigoComp = btn.getAttribute('data-codigo');
         const nombreComp = btn.getAttribute('data-nombre');
+        const resultadosTotales = btn.getAttribute('data-resultados-totales') || 0;
+        const porcentaje = parseFloat(btn.getAttribute('data-porcentaje')) || 100;
+        const horasEjecutar = parseFloat(btn.getAttribute('data-horas-ejecutar')) || horasTotales;
 
         // Setear variables globales y UI inicial
-        maximoSesionesPermitidas = Math.ceil(horasTotales / HORAS_POR_SESION);
+        maximoSesionesPermitidas = Math.ceil(horasEjecutar / HORAS_POR_SESION);
         
         document.getElementById('modal_id_competencia').value = idCompetencia;
         document.getElementById('modal_nombre_competencia').textContent = nombreComp;
         document.getElementById('modal_codigo_competencia').textContent = codigoComp;
         document.getElementById('modal_horas_competencia').textContent = horasTotales + ' hrs';
+        document.getElementById('modal_resultados_competencia').textContent = resultadosTotales;
+        
+        const inputPorcentajeGlobal = document.getElementById('porcentaje_global');
+        inputPorcentajeGlobal.value = porcentaje;
+        inputPorcentajeGlobal.setAttribute('data-horas-totales', horasTotales);
+        
+        document.getElementById('modal_horas_ejecutar_competencia').textContent = horasEjecutar + ' hrs';
         document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
 
         const tbody = document.getElementById('tabla_raps');
@@ -870,6 +924,7 @@ window.cargarDatosModalCompetencia = async function(btn) {
             this.disabled = true;
 
             const idCompetencia = document.getElementById('modal_id_competencia').value;
+            const porcentajeGlobal = document.getElementById('porcentaje_global').value;
             
             const rapsData = [];
             document.querySelectorAll('#tabla_raps tr').forEach(tr => {
@@ -877,7 +932,7 @@ window.cargarDatosModalCompetencia = async function(btn) {
                     rapsData.push({
                         id_resultado: tr.querySelector('.rap-id').value,
                         horas_base: tr.querySelector('.rap-horas-base').value,
-                        porcentaje: tr.querySelector('.input-porcentaje').value,
+                        porcentaje: porcentajeGlobal,
                         sesiones: tr.querySelector('.input-sesiones').value
                     });
                 }
@@ -932,14 +987,8 @@ function renderizarTablaRaps(raps) {
                     <input type="hidden" class="rap-id" value="${rap.id_resultado}">
                     <input type="hidden" class="rap-horas-base" value="${rap.horas_base}">
                 </td>
-                <td>
-                    <div class="input-group input-group-sm w-75 mx-auto">
-                        <input type="number" class="form-control text-center input-porcentaje" value="${rap.porcentaje_ajustado}" min="1" max="100" oninput="recalcularFila(this)">
-                        <span class="input-group-text bg-light">%</span>
-                    </div>
-                </td>
                 <td class="pe-3">
-                    <input type="number" class="form-control text-center fw-bold input-sesiones shadow-sm" value="${rap.sesiones_asignadas_ajustadas}" min="1" oninput="calcularSesiones()">
+                    <input type="number" class="form-control text-center fw-bold input-sesiones shadow-sm mx-auto w-50" value="${rap.sesiones_asignadas_ajustadas}" min="1" oninput="calcularSesiones()">
                 </td>
             </tr>
         `;
@@ -949,16 +998,27 @@ function renderizarTablaRaps(raps) {
     calcularSesiones(); // Cálculo inicial
 }
 
-// Función que recalcula una fila si se cambia el porcentaje
-window.recalcularFila = function(inputPorcentaje) {
-    const tr = inputPorcentaje.closest('tr');
-    const horasBase = parseInt(tr.querySelector('.rap-horas-base').value);
-    const porcentaje = parseFloat(inputPorcentaje.value) || 0;
-    
-    const nuevasSesiones = Math.ceil((horasBase * (porcentaje / 100)) / HORAS_POR_SESION);
-    tr.querySelector('.input-sesiones').value = nuevasSesiones;
-    
-    calcularSesiones();
+// Evento para recalcular todo cuando cambia el porcentaje global
+const inputPorcentajeGlobal = document.getElementById('porcentaje_global');
+if (inputPorcentajeGlobal) {
+    inputPorcentajeGlobal.addEventListener('input', function() {
+        let porcentaje = parseFloat(this.value) || 0;
+        if (porcentaje < 0) porcentaje = 0;
+        if (porcentaje > 100) porcentaje = 100;
+        
+        const horasTotales = parseFloat(this.getAttribute('data-horas-totales')) || 0;
+        
+        // Recalcular horas a ejecutar y sesiones permitidas
+        const nuevasHorasEjecutar = Math.round(horasTotales * (porcentaje / 100) * 100) / 100;
+        maximoSesionesPermitidas = Math.ceil(nuevasHorasEjecutar / HORAS_POR_SESION);
+        
+        // Actualizar UI
+        document.getElementById('modal_horas_ejecutar_competencia').textContent = nuevasHorasEjecutar + ' hrs';
+        document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
+        
+        // Validar sesiones con el nuevo límite
+        calcularSesiones();
+    });
 }
 
 // Función Principal (Regla de Oro)
@@ -1106,6 +1166,72 @@ window.calcularSesiones = function() {
                 btnSubmit.innerHTML = btnHtml;
                 btnSubmit.disabled = false;
             }
+        });
+    }
+
+    // Buscador de aprendices en modal
+    const searchAprendizInput = document.getElementById('buscarAprendizInput');
+    if (searchAprendizInput) {
+        searchAprendizInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const items = document.querySelectorAll('.aprendiz-item-asociar');
+            items.forEach(item => {
+                const nombre = item.querySelector('.aprendiz-nombre-asociar').textContent.toLowerCase();
+                const doc = item.querySelector('.aprendiz-documento-asociar').textContent.toLowerCase();
+                if (nombre.includes(filter) || doc.includes(filter)) {
+                    item.classList.remove('d-none');
+                    item.classList.add('d-flex');
+                } else {
+                    item.classList.remove('d-flex');
+                    item.classList.add('d-none');
+                }
+            });
+        });
+    }
+
+    // Guardar Asociación de Aprendices Vía AJAX
+    const btnGuardarAsociacionAprendices = document.getElementById('btnGuardarAsociacionAprendices');
+    if (btnGuardarAsociacionAprendices) {
+        btnGuardarAsociacionAprendices.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('.checkbox-aprendiz-asociar:checked');
+            if (checkboxes.length === 0) {
+                Swal.fire('Atención', 'Selecciona al menos un aprendiz para asociar.', 'warning');
+                return;
+            }
+
+            const aprendicesIds = Array.from(checkboxes).map(cb => cb.value);
+            const numeroFicha = document.querySelector('input[name="numero_ficha_original"]').value;
+
+            const formData = new FormData();
+            formData.append('numero_ficha', numeroFicha);
+            aprendicesIds.forEach(id => formData.append('aprendices[]', id));
+
+            const btnOriginalText = this.innerHTML;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Asociando...';
+            this.disabled = true;
+
+            fetch('<?= URLROOT; ?>/index.php?route=fichas/asociarAprendices', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('¡Éxito!', data.message, 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                    this.innerHTML = btnOriginalText;
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'Ocurrió un error en la solicitud AJAX.', 'error');
+                this.innerHTML = btnOriginalText;
+                this.disabled = false;
+            });
         });
     }
 </script>
