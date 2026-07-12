@@ -1187,12 +1187,12 @@
                     <!-- Grid de Días -->
                     <div class="calendar-days-grid mb-2">
                         <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Domingo</div>
                     </div>
                     <div class="calendar-days-grid" id="gridDiasCalendarioAmbiente">
                         <!-- Generado dinámicamente con JS -->

@@ -17,7 +17,7 @@ class Asistencia {
      * @return array
      */
     public function getPorProgramacionYFecha($id_programacion, $fecha) {
-        $this->db->query("SELECT a.*, u.nombre, u.apellido, u.correo 
+        $this->db->query("SELECT a.*, u.nombre, u.apellido, u.correo, u.documento
                           FROM asistencia a 
                           INNER JOIN usuarios u ON a.id_usuario_aprendiz = u.id_usuario 
                           WHERE a.id_programacion = :id_programacion AND a.fecha_asistencia = :fecha 

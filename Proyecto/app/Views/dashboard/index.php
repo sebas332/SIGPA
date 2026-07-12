@@ -950,6 +950,40 @@
                     background-color: #f9fafb;
                     border-color: #d1d5db;
                 }
+                .vg-cal-month-controls {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1rem;
+                    margin: 0.2rem 0 1.1rem;
+                }
+                .vg-cal-nav-btn {
+                    width: 52px;
+                    height: 52px;
+                    border: 0;
+                    border-radius: 50%;
+                    background: #ffffff;
+                    color: #111827;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.25rem;
+                    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+                    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+                }
+                .vg-cal-nav-btn:hover {
+                    transform: translateY(-1px);
+                    background: #f8fafc;
+                    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
+                }
+                .vg-cal-month-label {
+                    min-width: 148px;
+                    text-align: center;
+                    color: #6b7280;
+                    font-size: 1.15rem;
+                    font-weight: 800;
+                    letter-spacing: 0;
+                }
                 
                 /* Agenda */
                 .vg-agenda-container {
@@ -1627,8 +1661,18 @@
                                     </div>
                                 </form>
                             </div>
+
+                            <div class="vg-cal-month-controls">
+                                <button type="button" class="vg-cal-nav-btn" onclick="navegarMesAmbientesVg(-1)" title="Mes anterior">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <div class="vg-cal-month-label" id="vg-calendar-month-label"><?= $mesNombres[$mesActual] . ' ' . $anioActual; ?></div>
+                                <button type="button" class="vg-cal-nav-btn" onclick="navegarMesAmbientesVg(1)" title="Mes siguiente">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
                             
-                            <div class="vg-cal-grid">
+                            <div class="vg-cal-grid" id="vg-calendar-grid">
                                 <div class="vg-cal-day-name">LUN</div>
                                 <div class="vg-cal-day-name">MAR</div>
                                 <div class="vg-cal-day-name">MIE</div>
@@ -1697,58 +1741,119 @@
                 
                 const currentMesVg = <?= (int)$mesActual ?>;
                 const currentAnioVg = <?= (int)$anioActual ?>;
+                let viewMesVg = currentMesVg;
+                let viewAnioVg = currentAnioVg;
 
-                function filtrarCalendarioLocal() {
+                function calcularDiasProgramadosVg(mes, anio) {
                     const selectAmbiente = document.getElementById('filtro_ambiente_select');
                     const filtroAmbiente = selectAmbiente ? selectAmbiente.value.trim() : '';
-
                     let maxVol = 1;
-                    let diasProgramados = {};
+                    const diasProgramados = {};
 
                     programacionDataVg.forEach(p => {
                         if (filtroAmbiente !== '' && (!p.ambiente_nombre || p.ambiente_nombre.trim() !== filtroAmbiente)) return;
-                        if (p.fecha_inicio) {
-                            const parts = p.fecha_inicio.split('-');
-                            if (parts.length === 3) {
-                                const y = parseInt(parts[0]);
-                                const m = parseInt(parts[1]);
-                                const d = parseInt(parts[2]);
-                                
-                                if (m === currentMesVg && y === currentAnioVg) {
-                                    if (!diasProgramados[d]) diasProgramados[d] = 0;
-                                    diasProgramados[d]++;
-                                    if (diasProgramados[d] > maxVol) maxVol = diasProgramados[d];
-                                }
-                            }
+                        if (!p.fecha_inicio) return;
+
+                        const parts = p.fecha_inicio.split('-');
+                        if (parts.length !== 3) return;
+
+                        const y = parseInt(parts[0], 10);
+                        const m = parseInt(parts[1], 10);
+                        const d = parseInt(parts[2], 10);
+
+                        if (m === mes && y === anio) {
+                            if (!diasProgramados[d]) diasProgramados[d] = 0;
+                            diasProgramados[d]++;
+                            if (diasProgramados[d] > maxVol) maxVol = diasProgramados[d];
                         }
                     });
 
-                    document.querySelectorAll('.vg-cal-cell:not(.muted)').forEach(cell => {
-                        const text = cell.textContent || cell.innerText;
-                        const d = parseInt(text.trim());
-                        
-                        let dot = cell.querySelector('.vg-dot');
-                        if (!dot) return;
-                        
-                        dot.className = 'vg-dot green'; 
-                        const vol = diasProgramados[d] || 0;
-                        
-                        if (vol > 0) {
-                            if (maxVol > 0 && vol > (maxVol * 0.66)) {
-                                dot.className = 'vg-dot red';
-                            } else {
-                                dot.className = 'vg-dot yellow';
-                            }
-                        }
-                    });
+                    return { diasProgramados, maxVol };
+                }
 
-                    const activeCell = document.querySelector('.vg-cal-cell.active');
-                    if (activeCell) {
-                        activeCell.click();
-                    } else {
-                        // Si no hay ninguna activa, forzamos actualizar la vista de hoy para reflejar el filtro
-                        verAgendaDia(new Date().getDate(), currentMesVg, currentAnioVg, null);
+                function obtenerDotClassVg(volumen, maxVol) {
+                    if (!volumen) return 'green';
+                    return (maxVol > 0 && volumen > (maxVol * 0.66)) ? 'red' : 'yellow';
+                }
+
+                function renderCalendarioAmbientesVg(activatePreferred = true) {
+                    const grid = document.getElementById('vg-calendar-grid');
+                    const label = document.getElementById('vg-calendar-month-label');
+                    if (!grid || !label) return;
+
+                    label.textContent = `${mesesNombresVg[viewMesVg]} ${viewAnioVg}`;
+                    const { diasProgramados, maxVol } = calcularDiasProgramadosVg(viewMesVg, viewAnioVg);
+
+                    let html = `
+                        <div class="vg-cal-day-name">LUN</div>
+                        <div class="vg-cal-day-name">MAR</div>
+                        <div class="vg-cal-day-name">MIE</div>
+                        <div class="vg-cal-day-name">JUE</div>
+                        <div class="vg-cal-day-name">VIE</div>
+                        <div class="vg-cal-day-name">SAB</div>
+                        <div class="vg-cal-day-name">DOM</div>
+                    `;
+
+                    const primerDia = new Date(viewAnioVg, viewMesVg - 1, 1);
+                    const primerDiaLocal = primerDia.getDay() === 0 ? 7 : primerDia.getDay();
+                    const diasMesAnterior = new Date(viewAnioVg, viewMesVg - 1, 0).getDate();
+
+                    for (let i = 1; i < primerDiaLocal; i++) {
+                        const diaMostrar = diasMesAnterior - (primerDiaLocal - i) + 1;
+                        html += `<div class="vg-cal-cell muted">${diaMostrar}<div class="vg-dot yellow"></div></div>`;
                     }
+
+                    const diasTotal = new Date(viewAnioVg, viewMesVg, 0).getDate();
+                    const hoy = new Date();
+                    let activeDay = null;
+
+                    if (viewMesVg === (hoy.getMonth() + 1) && viewAnioVg === hoy.getFullYear()) {
+                        activeDay = hoy.getDate();
+                    } else {
+                        const diasConProgramacion = Object.keys(diasProgramados).map(Number).sort((a, b) => a - b);
+                        activeDay = diasConProgramacion[0] || 1;
+                    }
+
+                    for (let d = 1; d <= diasTotal; d++) {
+                        const activeClass = (d === activeDay) ? 'active' : '';
+                        const dotClass = obtenerDotClassVg(diasProgramados[d] || 0, maxVol);
+                        html += `<div class="vg-cal-cell ${activeClass}" style="cursor: pointer;" onclick="verAgendaDia(${d}, ${viewMesVg}, ${viewAnioVg}, this)">${d}<div class="vg-dot ${dotClass}"></div></div>`;
+                    }
+
+                    let celdasUsadas = (primerDiaLocal - 1) + diasTotal;
+                    let diasSiguiente = 1;
+                    while (celdasUsadas < 42) {
+                        html += `<div class="vg-cal-cell muted">${diasSiguiente}<div class="vg-dot green"></div></div>`;
+                        diasSiguiente++;
+                        celdasUsadas++;
+                        if (celdasUsadas % 7 === 0 && celdasUsadas >= 35) break;
+                    }
+
+                    grid.innerHTML = html;
+                    if (activatePreferred) {
+                        const activeCell = grid.querySelector('.vg-cal-cell.active');
+                        if (activeCell) {
+                            activeCell.click();
+                        } else {
+                            verAgendaDia(activeDay || 1, viewMesVg, viewAnioVg, null);
+                        }
+                    }
+                }
+
+                function navegarMesAmbientesVg(dir) {
+                    viewMesVg += dir;
+                    if (viewMesVg > 12) {
+                        viewMesVg = 1;
+                        viewAnioVg++;
+                    } else if (viewMesVg < 1) {
+                        viewMesVg = 12;
+                        viewAnioVg--;
+                    }
+                    renderCalendarioAmbientesVg(true);
+                }
+
+                function filtrarCalendarioLocal() {
+                    renderCalendarioAmbientesVg(true);
                 }
 
                 function verAgendaDia(dia, mes, anio, elementoDia) {
@@ -1858,6 +1963,10 @@
                         `;
                     }
                 }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    renderCalendarioAmbientesVg(true);
+                });
                 </script>
                 
                 <div class="row g-4 mb-5">
@@ -2721,12 +2830,12 @@
                 <div class="card bg-white border-0 shadow-sm rounded-4 p-4 mb-4" id="cardCalendario" style="border: 1px solid rgba(0,0,0,0.06);">
                     <div class="calendar-days-grid mb-2">
                         <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Domingo</div>
                     </div>
                     <div class="calendar-days-grid" id="gridDiasCalendario">
                         <!-- Generado dinámicamente con JS -->
@@ -3792,12 +3901,12 @@
                                 <!-- Grid de Días -->
                                 <div class="calendar-days-grid mb-2">
                                     <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                                    <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                                    <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                                    <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                                            <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                                    <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                                    <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Martes</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Miércoles</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Jueves</div>
+                                            <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Viernes</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Sábado</div>
+                                    <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Domingo</div>
                                 </div>
                                 <div class="calendar-days-grid" id="gridDiasCalendarioAmbiente">
                                     <!-- Generado dinámicamente con JS -->
@@ -5124,57 +5233,164 @@
                         background: #e0f2fe;
                         border-color: rgba(0,0,0,0.08);
                     }
-                    .programacion-control-card {
+                    #pills-inst-horario .inst-schedule-hero,
+                    #pills-inst-horario .inst-schedule-toolbar {
                         background: #ffffff;
                         border: 1px solid rgba(15, 23, 42, 0.08);
-                        border-radius: 24px;
+                        border-radius: 18px;
                         box-shadow: 0 16px 45px rgba(15, 23, 42, 0.06);
+                    }
+                    #pills-inst-horario .inst-schedule-hero {
                         display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 1.5rem;
+                        padding: 1.55rem 1.75rem;
+                        background:
+                            linear-gradient(128deg, rgba(240, 253, 244, 0.9) 0%, rgba(255, 255, 255, 0.94) 58%),
+                            #ffffff;
+                        overflow: hidden;
+                    }
+                    #pills-inst-horario .inst-schedule-heading {
+                        display: flex;
+                        align-items: center;
+                        gap: 1.25rem;
+                        min-width: 0;
+                    }
+                    #pills-inst-horario .inst-schedule-icon {
+                        width: 68px;
+                        height: 68px;
+                        border-radius: 50%;
+                        display: inline-flex;
+                        align-items: center;
                         justify-content: center;
-                        align-items: center;
-                        padding: 1.35rem 1.45rem;
-                        position: relative;
+                        flex: 0 0 auto;
+                        background: linear-gradient(145deg, #16a34a, #008f3a);
+                        color: #ffffff;
+                        font-size: 2rem;
+                        box-shadow: 0 14px 28px rgba(22, 163, 74, 0.22);
                     }
-                    .programacion-month-controls {
+                    #pills-inst-horario .inst-schedule-title {
+                        margin: 0 0 0.35rem;
+                        color: #1f2937;
+                        font-size: 1.65rem;
+                        font-weight: 800;
+                        letter-spacing: 0;
+                    }
+                    #pills-inst-horario .inst-schedule-subtitle {
+                        margin: 0;
+                        max-width: 430px;
+                        color: #64748b;
+                        font-size: 0.95rem;
+                        font-weight: 500;
+                        line-height: 1.45;
+                    }
+                    #pills-inst-horario .inst-schedule-actions {
                         display: flex;
                         align-items: center;
-                        gap: 0.65rem;
+                        gap: 0.75rem;
+                        flex: 0 0 auto;
                     }
-                    .programacion-nav-btn {
+                    #pills-inst-horario .inst-schedule-action-btn {
+                        min-height: 44px;
+                        border-radius: 10px;
+                        padding: 0 1.2rem;
+                        font-weight: 800;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.45rem;
+                        white-space: nowrap;
+                    }
+                    #pills-inst-horario .inst-schedule-action-btn.btn-outline-success {
+                        color: #15803d;
+                        border-color: rgba(22, 163, 74, 0.34);
+                        background: #ffffff;
+                    }
+                    #pills-inst-horario .inst-schedule-action-btn.btn-success {
+                        background: #16a34a;
+                        border-color: #16a34a;
+                        color: #ffffff;
+                        box-shadow: 0 10px 22px rgba(22, 163, 74, 0.2);
+                    }
+                    #pills-inst-horario .inst-schedule-toolbar {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 1.05rem 1.45rem;
+                    }
+                    #pills-inst-horario .programacion-month-controls {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.85rem;
+                    }
+                    #pills-inst-horario .programacion-nav-btn {
                         width: 42px;
                         height: 42px;
-                        border: 1px solid #dfe6ee;
+                        border: 0;
                         border-radius: 12px !important;
-                        background: #ffffff;
-                        color: #0f8f2f;
+                        background: transparent;
+                        color: #1f2937;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 0.95rem;
+                        font-size: 1rem;
                         padding: 0;
                     }
-                    .programacion-nav-btn:hover {
+                    #pills-inst-horario .programacion-nav-btn:hover {
                         background: #f0fdf4;
-                        border-color: #c7e9d2;
-                        color: #087329;
+                        color: #15803d;
                     }
-                    .programacion-month-box {
+                    #pills-inst-horario .programacion-month-box {
                         min-width: 172px;
                         min-height: 42px;
-                        border: 1px solid #dfe6ee;
-                        border-radius: 12px;
-                        background: #ffffff;
-                        color: #111827;
+                        color: #1f2937;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 0.65rem;
-                        padding: 0 0.9rem;
+                        gap: 0.6rem;
+                        padding: 0 0.75rem;
                         font-weight: 800;
-                        font-size: 0.9rem;
+                        font-size: 0.95rem;
                     }
-                    .programacion-month-box i {
-                        color: #0f8f2f;
+                    #pills-inst-horario .programacion-month-box i {
+                        color: #1f2937;
+                    }
+                    @media (max-width: 1199.98px) {
+                        #pills-inst-horario .inst-schedule-hero {
+                            flex-direction: column;
+                            align-items: stretch;
+                        }
+                        #pills-inst-horario .inst-schedule-actions {
+                            justify-content: flex-start;
+                        }
+                    }
+                    @media (max-width: 767.98px) {
+                        #pills-inst-horario .inst-schedule-hero {
+                            padding: 1.25rem;
+                        }
+                        #pills-inst-horario .inst-schedule-heading {
+                            align-items: flex-start;
+                        }
+                        #pills-inst-horario .inst-schedule-icon {
+                            width: 56px;
+                            height: 56px;
+                            font-size: 1.65rem;
+                        }
+                        #pills-inst-horario .inst-schedule-title {
+                            font-size: 1.35rem;
+                        }
+                        #pills-inst-horario .inst-schedule-toolbar {
+                            padding: 1rem;
+                        }
+                        #pills-inst-horario .inst-schedule-actions {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                        }
+                        #pills-inst-horario .inst-schedule-actions .btn {
+                            width: 100%;
+                        }
                     }
 
                     /* Estilos para Imprimir y Exportar a PDF */
@@ -5213,7 +5429,7 @@
                         }
                         @page {
                             size: A4 landscape;
-                            margin: 10mm;
+                            margin: 4mm;
                         }
                         #printHeaderHorario {
                             display: flex !important;
@@ -5233,8 +5449,29 @@
                     }
                 </style>
 
-                <div class="programacion-control-card mb-4">
-                    <div class="programacion-month-controls mx-auto">
+                <div class="inst-schedule-hero mb-3">
+                    <div class="inst-schedule-heading">
+                        <span class="inst-schedule-icon" aria-hidden="true">
+                            <i class="fa-regular fa-calendar-days"></i>
+                        </span>
+                        <div>
+                            <h2 class="inst-schedule-title">Mi horario</h2>
+                            <p class="inst-schedule-subtitle">Consulta tu programación académica de forma rápida y organizada.</p>
+                        </div>
+                    </div>
+
+                    <div class="inst-schedule-actions">
+                        <button class="btn btn-outline-success inst-schedule-action-btn" onclick="imprimirHorarioInstructor()">
+                            <i class="fa-solid fa-print"></i> Imprimir
+                        </button>
+                        <button class="btn btn-success inst-schedule-action-btn" onclick="imprimirHorarioInstructor()">
+                            <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inst-schedule-toolbar mb-4">
+                    <div class="programacion-month-controls">
                         <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioInst2(-1)" title="Mes anterior">
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
@@ -5244,15 +5481,6 @@
                         </div>
                         <button type="button" class="btn programacion-nav-btn" onclick="navegarMesHorarioInst2(1)" title="Mes siguiente">
                             <i class="fa-solid fa-chevron-right"></i>
-                        </button>
-                    </div>
-
-                    <div style="position: absolute; right: 1.45rem; display: flex; gap: 0.5rem;" class="d-none d-lg-flex">
-                        <button class="btn btn-outline-success" onclick="imprimirHorarioInstructor()" style="border-radius: 8px; font-weight: 600; color: #39A900; border-color: #39A900;">
-                            <i class="fa-solid fa-print me-1"></i> Imprimir
-                        </button>
-                        <button class="btn btn-success" onclick="imprimirHorarioInstructor()" style="background-color: #39A900; border-color: #39A900; border-radius: 8px; font-weight: 600;">
-                            <i class="fa-solid fa-file-pdf me-1"></i> Exportar PDF
                         </button>
                     </div>
                 </div>
@@ -5265,7 +5493,7 @@
                         <div style="display: flex; justify-content: space-between; width: 100%; border-bottom: 2px solid #39A900; padding-bottom: 10px; margin-bottom: 15px;">
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <!-- Logo SENA -->
-                                <img src="public/assets/img/logo_sena.png" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
+                                <img src="<?= ASSETROOT; ?>/logo-sena.svg" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
                                 <div>
                                     <h2 style="color: #39A900; font-weight: 800; margin: 0; font-size: 24px;">SIGPA</h2>
                                     <p style="margin: 0; color: #6b7280; font-size: 14px; font-weight: 500;">Sistema Integrado de Gestión Académica</p>
@@ -5282,12 +5510,12 @@
 
                     <div class="calendar-days-grid mb-2">
                         <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                        <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Martes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Miércoles</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Jueves</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Viernes</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Sábado</div>
+                        <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Domingo</div>
                     </div>
                     <div class="calendar-days-grid" id="gridDiasCalendarioInst">
                         <!-- Generado dinámicamente con JS -->
@@ -5417,9 +5645,140 @@
                         const dateText = 'Generado: ' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
                         document.getElementById('printDateHorario').innerText = dateText;
                         document.getElementById('printMonthHorarioDisplay').innerText = document.getElementById('nombreMesAnioInst').innerText;
+
+                        const previousTitle = document.title;
+                        document.title = 'Horario Instructor - ' + document.getElementById('nombreMesAnioInst').innerText;
+
+                        const oldStyle = document.getElementById('tempPrintStyleInst');
+                        if (oldStyle) oldStyle.remove();
+
+                        const style = document.createElement('style');
+                        style.id = 'tempPrintStyleInst';
+                        style.innerHTML = `
+                            @media print {
+                                * {
+                                    -webkit-print-color-adjust: exact !important;
+                                    print-color-adjust: exact !important;
+                                    box-sizing: border-box !important;
+                                }
+                                html, body {
+                                    width: 100% !important;
+                                    min-width: 0 !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    background: #ffffff !important;
+                                    font-family: 'Inter', Arial, sans-serif !important;
+                                }
+                                body * { visibility: hidden; }
+                                #printHorarioContainer,
+                                #printHorarioContainer * { visibility: visible; }
+                                #printHorarioContainer {
+                                    position: absolute !important;
+                                    inset: 0 auto auto 0 !important;
+                                    width: 100% !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    border: 0 !important;
+                                    border-radius: 0 !important;
+                                    box-shadow: none !important;
+                                    background: #ffffff !important;
+                                }
+                                #printHeaderHorario {
+                                    display: flex !important;
+                                    margin: 0 0 3mm !important;
+                                    padding: 0 0 2mm !important;
+                                }
+                                #printHeaderHorario img { height: 38px !important; }
+                                #printHeaderHorario h2 { font-size: 17px !important; }
+                                #printHeaderHorario h4 { font-size: 13px !important; }
+                                #printHeaderHorario p { font-size: 9px !important; }
+                                #printHeaderHorario h3,
+                                #printMonthHorarioDisplay {
+                                    margin: 1mm 0 0 !important;
+                                    color: #0f172a !important;
+                                    font-size: 11px !important;
+                                    letter-spacing: 0.4px !important;
+                                }
+                                #gridDiasCalendarioInst,
+                                #printHorarioContainer > .calendar-days-grid {
+                                    display: grid !important;
+                                    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+                                    gap: 1.7mm !important;
+                                    width: 100% !important;
+                                }
+                                #gridDiasCalendarioInst {
+                                    grid-auto-rows: 20mm !important;
+                                }
+                                .calendar-day-name {
+                                    min-height: 6mm !important;
+                                    padding: 1.4mm 1mm !important;
+                                    border-radius: 2mm !important;
+                                    background: #f8fafc !important;
+                                    border: 1px solid #e5e7eb !important;
+                                    font-size: 6.8px !important;
+                                    line-height: 1.2 !important;
+                                }
+                                .calendar-cell {
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                    min-height: 0 !important;
+                                    height: 20mm !important;
+                                    padding: 1.4mm !important;
+                                    overflow: hidden !important;
+                                    border: 1px solid #dbe3ee !important;
+                                    border-radius: 2mm !important;
+                                    box-shadow: none !important;
+                                    background: #ffffff !important;
+                                    gap: 0.8mm !important;
+                                }
+                                .calendar-cell.today {
+                                    border: 1.5px solid #16a34a !important;
+                                    background: #f7fff9 !important;
+                                }
+                                .calendar-cell.other-month {
+                                    background: #f8fafc !important;
+                                    opacity: 0.75 !important;
+                                }
+                                .calendar-cell-header {
+                                    border-bottom: 0 !important;
+                                    padding-bottom: 0.5mm !important;
+                                }
+                                .calendar-day-num {
+                                    font-size: 8px !important;
+                                    color: #0f172a !important;
+                                }
+                                .calendar-session-list {
+                                    max-height: none !important;
+                                    overflow: hidden !important;
+                                    gap: 0.8mm !important;
+                                    padding-right: 0 !important;
+                                }
+                                .calendar-session-card-inst {
+                                    border: 1px solid #dbeafe !important;
+                                    border-left: 1.4mm solid #3b82f6 !important;
+                                    border-radius: 1.4mm !important;
+                                    background: #eff6ff !important;
+                                    padding: 1mm !important;
+                                    font-size: 6.5px !important;
+                                    box-shadow: none !important;
+                                }
+                                .calendar-session-card-inst * {
+                                    font-size: 6.5px !important;
+                                    line-height: 1.05 !important;
+                                }
+                                @page {
+                                    size: A4 landscape;
+                                    margin: 4mm;
+                                }
+                            }
+                        `;
+                        document.head.appendChild(style);
                         
                         setTimeout(() => {
                             window.print();
+                            document.title = previousTitle;
+                            const tempStyle = document.getElementById('tempPrintStyleInst');
+                            if (tempStyle) tempStyle.remove();
                         }, 200);
                     }
                 </script>
@@ -5545,8 +5904,46 @@
                     .asi-action-btn.success:hover { background: #dcfce7; }
                     .asi-action-btn.danger  { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
                     .asi-action-btn.danger:hover  { background: #fee2e2; }
+                    .asi-action-btn.info { border-color: #bfdbfe; color: #1d4ed8; background: #eff6ff; }
+                    .asi-action-btn.info:hover { background: #dbeafe; }
+                    .asi-action-btn:disabled {
+                        opacity: .55;
+                        cursor: not-allowed;
+                        background: #f9fafb;
+                        border-color: #e5e7eb;
+                        color: #9ca3af;
+                    }
                     .asi-action-btn.neutral { border-color: #e5e7eb; color: #6b7280; background: #fff; }
                     .asi-action-btn.neutral:hover { background: #f9fafb; }
+
+                    .asi-readonly-row {
+                        display: grid;
+                        grid-template-columns: 42px minmax(0, 1fr) 120px 110px;
+                        gap: .75rem;
+                        align-items: center;
+                        padding: .8rem .95rem;
+                        border: 1px solid #eef2f7;
+                        border-radius: 12px;
+                        margin-bottom: .5rem;
+                        background: #fff;
+                    }
+                    .asi-readonly-status {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 96px;
+                        min-height: 30px;
+                        border-radius: 999px;
+                        font-size: .75rem;
+                        font-weight: 800;
+                    }
+                    .asi-readonly-status.ok { background: #dcfce7; color: #15803d; }
+                    .asi-readonly-status.no { background: #fee2e2; color: #dc2626; }
+                    @media(max-width:767px) {
+                        .asi-readonly-row { grid-template-columns: 34px minmax(0, 1fr); }
+                        .asi-readonly-row > div:nth-child(3),
+                        .asi-readonly-row > div:nth-child(4) { grid-column: 2; }
+                    }
 
                     /* Save button */
                     .asi-save-btn {
@@ -5704,6 +6101,9 @@
                                     <i class="fa-solid fa-bolt text-warning me-2"></i> Acciones Rápidas
                                 </h6>
                                 <div class="d-grid gap-2">
+                                    <button type="button" class="asi-action-btn info" id="btnVerPlanillaGuardada" onclick="verPlanillaGuardada()" disabled>
+                                        <i class="fa-regular fa-eye"></i> Ver planilla guardada
+                                    </button>
                                     <button type="button" class="asi-action-btn success" onclick="marcarTodos('presente')">
                                         <i class="fa-solid fa-check"></i> Marcar todos como asistieron
                                     </button>
@@ -5748,11 +6148,126 @@
                     <!-- ⑤ JS LOGIC (unchanged) -->
                     <script>
                         const aprendicesPorProgramacion = <?= isset($aprendicesPorProgramacion) ? $aprendicesPorProgramacion : '{}'; ?>;
+                        const asistenciasPorProgramacion = <?= isset($asistenciasPorProgramacion) ? $asistenciasPorProgramacion : '{}'; ?>;
                         const listaContainer = document.getElementById('listaAprendicesContainer');
                         const selectProgramacion = document.getElementById('id_programacion_select');
                         const fechaAsistenciaInput = document.getElementById('fecha_asistencia_input');
                         const buscador = document.getElementById('buscadorAprendices');
+                        const btnVerPlanillaGuardada = document.getElementById('btnVerPlanillaGuardada');
                         let currentAprendices = [];
+                        let currentAsistenciasGuardadas = [];
+
+                        function asiEscape(value, fallback = '-') {
+                            const text = (value === null || value === undefined || value === '') ? fallback : String(value);
+                            return text
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#039;');
+                        }
+
+                        function getAsistenciasGuardadas(idProg, fecha) {
+                            if (!idProg || !fecha) return [];
+                            return (asistenciasPorProgramacion[idProg] && asistenciasPorProgramacion[idProg][fecha])
+                                ? asistenciasPorProgramacion[idProg][fecha]
+                                : [];
+                        }
+
+                        function actualizarBotonVerPlanilla(idProg, fecha) {
+                            currentAsistenciasGuardadas = getAsistenciasGuardadas(idProg, fecha);
+                            if (!btnVerPlanillaGuardada) return;
+                            btnVerPlanillaGuardada.disabled = currentAsistenciasGuardadas.length === 0;
+                            btnVerPlanillaGuardada.innerHTML = currentAsistenciasGuardadas.length > 0
+                                ? `<i class="fa-regular fa-eye"></i> Ver planilla guardada (${currentAsistenciasGuardadas.length})`
+                                : `<i class="fa-regular fa-eye"></i> Ver planilla guardada`;
+                        }
+
+                        function renderizarVistaSoloLectura(asistencias) {
+                            if (!asistencias || asistencias.length === 0) {
+                                listaContainer.innerHTML = `<div class="text-center py-5 text-muted"><p class="fw-bold text-dark mb-1">No hay planilla guardada para esta sesión.</p><p class="small mb-0">Cuando guardes asistencia, podrás visualizarla aquí.</p></div>`;
+                                return;
+                            }
+
+                            let html = `
+                                <div class="alert alert-info border-0 rounded-3 small fw-semibold mb-3" style="background:#eff6ff;color:#1d4ed8;">
+                                    <i class="fa-regular fa-eye me-1"></i> Vista de solo lectura. Esta planilla ya fue guardada y aquí no se puede editar.
+                                </div>`;
+                            asistencias.forEach((a, index) => {
+                                const asistio = String(a.asistio) === '1';
+                                html += `
+                                    <div class="asi-readonly-row">
+                                        <div class="asi-row-num">${index + 1}</div>
+                                        <div>
+                                            <strong class="d-block text-dark">${asiEscape(a.nombre)} ${asiEscape(a.apellido)}</strong>
+                                            <small class="text-muted">${asiEscape(a.observacion, 'Sin observación')}</small>
+                                        </div>
+                                        <div class="text-muted small fw-semibold">${asiEscape(a.documento, 'N/A')}</div>
+                                        <div><span class="asi-readonly-status ${asistio ? 'ok' : 'no'}">${asistio ? 'Asistió' : 'No asistió'}</span></div>
+                                    </div>`;
+                            });
+                            listaContainer.innerHTML = html;
+                        }
+
+                        function verPlanillaGuardada() {
+                            const option = selectProgramacion.options[selectProgramacion.selectedIndex];
+                            const fecha = fechaAsistenciaInput ? fechaAsistenciaInput.value : '';
+                            if (!currentAsistenciasGuardadas || currentAsistenciasGuardadas.length === 0) {
+                                Swal.fire('Sin registros', 'No hay una planilla guardada para esta sesión y fecha.', 'info');
+                                return;
+                            }
+
+                            const presentes = currentAsistenciasGuardadas.filter(a => String(a.asistio) === '1').length;
+                            const ausentes = currentAsistenciasGuardadas.length - presentes;
+                            const rows = currentAsistenciasGuardadas.map((a, index) => {
+                                const asistio = String(a.asistio) === '1';
+                                return `
+                                    <tr>
+                                        <td class="text-muted fw-bold">${index + 1}</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">${asiEscape(a.nombre)} ${asiEscape(a.apellido)}</div>
+                                            <div class="small text-muted">${asiEscape(a.documento, 'N/A')}</div>
+                                        </td>
+                                        <td><span class="badge rounded-pill ${asistio ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${asistio ? 'Asistió' : 'No asistió'}</span></td>
+                                        <td class="small text-muted">${asiEscape(a.observacion, 'Sin observación')}</td>
+                                    </tr>`;
+                            }).join('');
+
+                            Swal.fire({
+                                title: `<strong class="text-dark"><i class="fa-regular fa-eye text-success me-2"></i>Planilla guardada</strong>`,
+                                html: `
+                                    <div class="text-start">
+                                        <div class="d-flex flex-wrap gap-2 mb-3 small">
+                                            <span class="badge bg-secondary">Fecha: ${asiEscape(fecha)}</span>
+                                            <span class="badge bg-success">Asistieron: ${presentes}</span>
+                                            <span class="badge bg-danger">No asistieron: ${ausentes}</span>
+                                        </div>
+                                        <div class="small text-muted mb-3">
+                                            <strong>Sesión:</strong> ${asiEscape(option ? option.textContent.trim() : 'Sesión seleccionada')}
+                                        </div>
+                                        <div class="table-responsive" style="max-height:420px;overflow:auto;">
+                                            <table class="table table-sm align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Aprendiz</th>
+                                                        <th>Estado</th>
+                                                        <th>Observación</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>${rows}</tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                `,
+                                width: 860,
+                                confirmButtonText: 'Cerrar',
+                                confirmButtonColor: '#39A900',
+                                customClass: {
+                                    popup: 'rounded-4 border-0 shadow-lg'
+                                }
+                            });
+                        }
 
                         function renderizarKPIs() {
                             const total = currentAprendices.length;
@@ -5786,6 +6301,7 @@
                         selectProgramacion.addEventListener('change', function () {
                             const idProg = this.value;
                             listaContainer.innerHTML = '';
+                            actualizarBotonVerPlanilla('', '');
 
                             if (!idProg || !aprendicesPorProgramacion[idProg] || aprendicesPorProgramacion[idProg].length === 0) {
                                 currentAprendices = [];
@@ -5810,26 +6326,35 @@
                                 document.getElementById('info-hora').innerText = '-';
                                 document.getElementById('info-jor').innerText = '-';
                                 if (fechaAsistenciaInput) fechaAsistenciaInput.value = '<?= date('Y-m-d'); ?>';
+                                actualizarBotonVerPlanilla(idProg, fechaAsistenciaInput ? fechaAsistenciaInput.value : '');
                                 return;
                             }
 
                             const option = this.options[this.selectedIndex];
                             const fechaSesion = option.getAttribute('data-fecha');
                             const fechaActual = '<?= date('Y-m-d') ?>';
-
-                            if (fechaSesion !== fechaActual) {
-                                Swal.fire('Acceso Denegado', 'La asistencia solo puede tomarse en la fecha exacta de la sesión (' + fechaSesion + ').', 'warning');
-                                this.value = '';
-                                const evt = new Event('change');
-                                this.dispatchEvent(evt);
-                                return;
-                            }
+                            actualizarBotonVerPlanilla(idProg, fechaSesion);
 
                             document.getElementById('info-prog').innerText = option.getAttribute('data-desc') || 'Programa Técnico';
                             document.getElementById('info-amb').innerText = option.getAttribute('data-amb') ? `Ambiente ${option.getAttribute('data-amb')}` : 'Sin Asignar';
                             document.getElementById('info-hora').innerText = option.getAttribute('data-hora') || '00:00 - 00:00';
                             document.getElementById('info-jor').innerText = option.getAttribute('data-jornada') || 'Diurna';
                             if (fechaAsistenciaInput) fechaAsistenciaInput.value = fechaSesion || '<?= date('Y-m-d'); ?>';
+
+                            if (fechaSesion !== fechaActual) {
+                                if (currentAsistenciasGuardadas.length > 0) {
+                                    currentAprendices = [];
+                                    renderizarVistaSoloLectura(currentAsistenciasGuardadas);
+                                    renderizarKPIs();
+                                    Swal.fire('Solo lectura', 'Esta sesión no corresponde a hoy. Puedes visualizar la planilla guardada, pero no editarla.', 'info');
+                                } else {
+                                    Swal.fire('Acceso Denegado', 'La asistencia solo puede tomarse en la fecha exacta de la sesión (' + fechaSesion + ').', 'warning');
+                                    this.value = '';
+                                    const evt = new Event('change');
+                                    this.dispatchEvent(evt);
+                                }
+                                return;
+                            }
 
                             currentAprendices = aprendicesPorProgramacion[idProg];
                             renderizarListaAsistencia(currentAprendices);
@@ -7194,7 +7719,7 @@
                         <div style="display: flex; justify-content: space-between; width: 100%; border-bottom: 2px solid #39A900; padding-bottom: 10px; margin-bottom: 15px;">
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <!-- Logo SENA -->
-                                <img src="public/assets/img/logo_sena.png" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
+                                <img src="<?= ASSETROOT; ?>/logo-sena.svg" alt="SENA" style="height: 55px;" onerror="this.style.display='none'">
                                 <div>
                                     <h2 style="color: #39A900; font-weight: 800; margin: 0; font-size: 24px;">SIGPA</h2>
                                     <p style="margin: 0; color: #6b7280; font-size: 14px; font-weight: 500;">Sistema Integrado de Gestión Académica</p>
@@ -7213,12 +7738,12 @@
                         <div class="apr-calendar-inner">
                             <div class="calendar-days-grid mb-2">
                                 <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Lunes</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #7c3aed; color: #581c87;">Martes</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #2563eb; color: #1e3a8a;">Miércoles</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #d97706; color: #78350f;">Jueves</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #ec4899; color: #701a75;">Viernes</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #6b7280; color: #374151;">Sábado</div>
-                                <div class="calendar-day-name" style="border-left: 4px solid #f97316; color: #7c2d12;">Domingo</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Martes</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Miércoles</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Jueves</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Viernes</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Sábado</div>
+                                <div class="calendar-day-name" style="border-left: 4px solid #39A900; color: #1e3a8a;">Domingo</div>
                             </div>
                             <div class="calendar-days-grid" id="gridDiasCalendarioApr">
                                 <!-- Generado dinámicamente con JS -->
@@ -7281,9 +7806,10 @@
                                 const horaIniStr = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '';
                                 const horaFinStr = s.hora_fin ? s.hora_fin.substring(0, 5) : '';
                                 const ambienteNombre = s.ambiente_nombre || 'Sin ambiente';
+                                const sessionIndex = programacionAprMain.indexOf(s);
                                 
                                 sesionesHtml += `
-                                    <div class="calendar-session-card-apr">
+                                    <div class="calendar-session-card-apr" style="cursor:pointer;" onclick="mostrarDetalleClaseApr(${sessionIndex}, event)" title="Ver detalle de formación">
                                         <div style="font-weight:700; color:#334155; font-size:0.7rem; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
                                             <i class="fa-regular fa-clock text-secondary"></i> ${horaIniStr} - ${horaFinStr}
                                         </div>
@@ -7321,6 +7847,55 @@
                         grid.innerHTML = html;
                     }
 
+                    function aprDetalleSafe(value, fallback = 'No registrado') {
+                        const text = (value === null || value === undefined || value === '') ? fallback : String(value);
+                        return text
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                    }
+
+                    function mostrarDetalleClaseApr(index, event) {
+                        if (event) event.stopPropagation();
+                        const s = programacionAprMain[index];
+                        if (!s) return;
+
+                        const horaInicio = s.hora_inicio ? s.hora_inicio.substring(0, 5) : '--:--';
+                        const horaFin = s.hora_fin ? s.hora_fin.substring(0, 5) : '--:--';
+                        const instructor = `${s.instructor_nombre || ''} ${s.instructor_apellido || ''}`.trim() || 'Instructor';
+                        const resultado = `${s.ra_codigo ? '[' + s.ra_codigo + '] ' : ''}${s.ra_descripcion || 'Resultado de aprendizaje no registrado'}`;
+
+                        Swal.fire({
+                            title: `
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width:42px;height:42px;background:#159947;">
+                                        <i class="fa-solid fa-clock"></i>
+                                    </span>
+                                    <strong class="text-dark">Detalle de Formación</strong>
+                                </div>
+                            `,
+                            html: `
+                                <div class="text-start px-3 pt-2 pb-1" style="font-size:1rem; color:#5f6368; line-height:1.35;">
+                                    <p class="mb-2"><strong class="text-dark">Ficha:</strong> <span class="badge rounded-pill bg-secondary">#${aprDetalleSafe(s.numero_ficha, 'N/A')}</span></p>
+                                    <p class="mb-2"><strong class="text-dark">Instructor:</strong> ${aprDetalleSafe(instructor)}</p>
+                                    <p class="mb-2"><strong class="text-dark">Ambiente:</strong> ${aprDetalleSafe(s.ambiente_nombre)}</p>
+                                    <p class="mb-2"><strong class="text-dark">Horario:</strong> ${aprDetalleSafe(s.nombre_dia, 'Día')} (${aprDetalleSafe(horaInicio)} - ${aprDetalleSafe(horaFin)})</p>
+                                    <p class="mb-2"><strong class="text-dark">Competencia:</strong> ${aprDetalleSafe(s.competencia_nombre)}</p>
+                                    <p class="mb-0"><strong class="text-dark">Resultado:</strong> ${aprDetalleSafe(resultado)}</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Cerrar',
+                            confirmButtonColor: '#39A900',
+                            width: 560,
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg',
+                                confirmButton: 'fw-bold px-4 py-2'
+                            }
+                        });
+                    }
+
                     function navegarMesHorarioApr(dir) {
                         currentMesHorarioApr += dir;
                         if (currentMesHorarioApr > 12) {
@@ -7350,33 +7925,152 @@
                         
                         document.getElementById('printHeaderHorarioApr').classList.remove('d-none');
                         document.getElementById('printHeaderHorarioApr').classList.add('d-flex');
+
+                        const previousTitle = document.title;
+                        document.title = 'Horario Aprendiz - ' + document.getElementById('nombreMesAnioApr').innerText;
                         
                         // Añadir estilos temporales de impresión
+                        const oldStyle = document.getElementById('tempPrintStyleApr');
+                        if (oldStyle) oldStyle.remove();
+
                         const style = document.createElement('style');
                         style.id = 'tempPrintStyleApr';
                         style.innerHTML = `
                             @media print {
-                                body * { visibility: hidden; }
-                                #printHorarioAprContainer, #printHorarioAprContainer * { visibility: visible; }
-                                #printHorarioAprContainer {
-                                    position: absolute; left: 0; top: 0; width: 100%;
-                                    margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important;
+                                * {
+                                    -webkit-print-color-adjust: exact !important;
+                                    print-color-adjust: exact !important;
+                                    box-sizing: border-box !important;
                                 }
-                                #gridDiasCalendarioApr { grid-auto-rows: minmax(110px, auto) !important; }
-                                .calendar-cell { page-break-inside: avoid; height: auto !important; overflow: visible !important; border: 1px solid #e2e8f0 !important; }
-                                .calendar-session-list { max-height: none !important; overflow: visible !important; }
-                                @page { size: A4 landscape; margin: 10mm; }
-                                .calendar-session-card-apr { border: 1px solid #e2e8f0 !important; border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                .calendar-day-name { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fafbfc !important; }
+                                html, body {
+                                    width: 100% !important;
+                                    min-width: 0 !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    background: #ffffff !important;
+                                    font-family: 'Inter', Arial, sans-serif !important;
+                                }
+                                body * { visibility: hidden; }
+                                #printHorarioAprContainer,
+                                #printHorarioAprContainer * { visibility: visible; }
+                                #printHorarioAprContainer {
+                                    position: absolute !important;
+                                    inset: 0 auto auto 0 !important;
+                                    width: 100% !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    border: 0 !important;
+                                    border-radius: 0 !important;
+                                    box-shadow: none !important;
+                                    background: #ffffff !important;
+                                }
+                                #printHeaderHorarioApr {
+                                    display: flex !important;
+                                    margin: 0 0 3mm !important;
+                                    padding: 0 0 2mm !important;
+                                }
+                                #printHeaderHorarioApr img { height: 38px !important; }
+                                #printHeaderHorarioApr h2 { font-size: 17px !important; }
+                                #printHeaderHorarioApr h4 { font-size: 13px !important; }
+                                #printHeaderHorarioApr p { font-size: 9px !important; }
+                                #printHeaderHorarioApr h3,
+                                #printMonthHorarioAprDisplay {
+                                    margin: 1mm 0 0 !important;
+                                    color: #0f172a !important;
+                                    font-size: 11px !important;
+                                    letter-spacing: 0.4px !important;
+                                }
+                                #printHorarioAprContainer .apr-calendar-scroll {
+                                    overflow: visible !important;
+                                    width: 100% !important;
+                                    padding: 0 !important;
+                                }
+                                #printHorarioAprContainer .apr-calendar-inner {
+                                    min-width: 0 !important;
+                                    width: 100% !important;
+                                }
+                                #gridDiasCalendarioApr,
+                                #printHorarioAprContainer .apr-calendar-inner > .calendar-days-grid {
+                                    display: grid !important;
+                                    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+                                    gap: 1.7mm !important;
+                                    width: 100% !important;
+                                }
+                                #gridDiasCalendarioApr {
+                                    grid-auto-rows: 20mm !important;
+                                }
+                                .calendar-day-name {
+                                    min-height: 6mm !important;
+                                    padding: 1.4mm 1mm !important;
+                                    border-radius: 2mm !important;
+                                    background: #f8fafc !important;
+                                    border: 1px solid #e5e7eb !important;
+                                    font-size: 6.8px !important;
+                                    line-height: 1.2 !important;
+                                }
+                                .calendar-cell {
+                                    page-break-inside: avoid !important;
+                                    break-inside: avoid !important;
+                                    min-height: 0 !important;
+                                    height: 20mm !important;
+                                    padding: 1.4mm !important;
+                                    overflow: hidden !important;
+                                    border: 1px solid #dbe3ee !important;
+                                    border-radius: 2mm !important;
+                                    box-shadow: none !important;
+                                    background: #ffffff !important;
+                                    gap: 0.8mm !important;
+                                }
+                                .calendar-cell.today {
+                                    border: 1.5px solid #16a34a !important;
+                                    background: #f7fff9 !important;
+                                }
+                                .calendar-cell.other-month {
+                                    background: #f8fafc !important;
+                                    opacity: 0.75 !important;
+                                }
+                                .calendar-cell-header {
+                                    border-bottom: 0 !important;
+                                    padding-bottom: 0.5mm !important;
+                                }
+                                .calendar-day-num {
+                                    font-size: 8px !important;
+                                    color: #0f172a !important;
+                                }
+                                .calendar-session-list {
+                                    max-height: none !important;
+                                    overflow: hidden !important;
+                                    gap: 0.8mm !important;
+                                    padding-right: 0 !important;
+                                }
+                                .calendar-session-card-apr {
+                                    border: 1px solid #bbf7d0 !important;
+                                    border-left: 1.4mm solid #16a34a !important;
+                                    border-radius: 1.4mm !important;
+                                    background: #f0fdf4 !important;
+                                    padding: 1mm !important;
+                                    font-size: 6.5px !important;
+                                    box-shadow: none !important;
+                                }
+                                .calendar-session-card-apr * {
+                                    font-size: 6.5px !important;
+                                    line-height: 1.05 !important;
+                                }
+                                @page {
+                                    size: A4 landscape;
+                                    margin: 4mm;
+                                }
                             }
                         `;
                         document.head.appendChild(style);
 
                         setTimeout(() => {
                             window.print();
+                            document.title = previousTitle;
                             document.getElementById('printHeaderHorarioApr').classList.add('d-none');
                             document.getElementById('printHeaderHorarioApr').classList.remove('d-flex');
-                            document.getElementById('tempPrintStyleApr').remove();
+                            const tempStyle = document.getElementById('tempPrintStyleApr');
+                            if (tempStyle) tempStyle.remove();
                         }, 200);
                     }
                 </script>

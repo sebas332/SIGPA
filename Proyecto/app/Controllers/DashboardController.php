@@ -134,11 +134,15 @@ class DashboardController extends BaseController {
             
             // Cargar aprendices agrupados por la sesión programada (ficha correspondiente) en formato JSON
             $aprendicesPorProgramacion = [];
+            $asistenciasPorProgramacion = [];
             $fichaAprendizModel = $this->model('FichaAprendiz');
             foreach ($data['programacion'] as $prog) {
                 $aprendicesPorProgramacion[$prog->id_programacion] = $fichaAprendizModel->getAprendicesPorFicha($prog->numero_ficha);
+                $fechaSesion = $prog->fecha_inicio ?? date('Y-m-d');
+                $asistenciasPorProgramacion[$prog->id_programacion][$fechaSesion] = $this->asistenciaModel->getPorProgramacionYFecha($prog->id_programacion, $fechaSesion);
             }
             $data['aprendicesPorProgramacion'] = json_encode($aprendicesPorProgramacion);
+            $data['asistenciasPorProgramacion'] = json_encode($asistenciasPorProgramacion);
 
         } elseif ($current_role === 'Aprendiz') {
             $data['programacion'] = $this->programacionModel->getByAprendiz($user_id);
