@@ -438,17 +438,24 @@ function initModalCompetenciaCompleta() {
                         <i class="fa-solid fa-trash pointer-events-none"></i>
                     </button>
                     <div class="row g-2 align-items-center pe-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold text-secondary small mb-1">Código RAP</label>
                             <input type="text" class="form-control form-control-sm" name="raps[${index}][codigo]" placeholder="Ej. RA-01" required>
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold text-secondary small mb-1">Sesiones Asignadas (Vacío para automático)</label>
-                            <input type="number" class="form-control form-control-sm rap-sesiones" name="raps[${index}][sesiones_asignadas]" placeholder="Sugerido: 0" min="0">
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold text-secondary small mb-1">Sesiones Asignadas</label>
+                            <input type="number" class="form-control form-control-sm rap-sesiones" name="raps[${index}][sesiones_asignadas]" placeholder="Vacío = Automático" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-secondary small mb-1">Equivalencia en Horas</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control rap-equivalencia fw-bold text-primary bg-light" readonly value="0 hrs">
+                                <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-clock"></i></span>
+                            </div>
                         </div>
                         <div class="col-12 mt-2">
                             <label class="form-label fw-bold text-secondary small mb-1">Descripción del Resultado</label>
-                            <textarea class="form-control form-control-sm" name="raps[${index}][descripcion]" rows="2" placeholder="Ej. Construir las tablas con llaves foráneas..." required></textarea>
+                            <textarea class="form-control form-control-sm" name="raps[${index}][descripcion]" rows="2" placeholder="Ej. Construir las tablas..." required></textarea>
                         </div>
                     </div>
                 </div>
@@ -480,6 +487,14 @@ function initModalCompetenciaCompleta() {
     container.addEventListener('input', function(e) {
         if(e.target.classList.contains('rap-sesiones')) {
             calculateOverall();
+            
+            // Actualizar Equivalencia en Horas
+            const card = e.target.closest('.rap-card');
+            const equivalenciaInput = card.querySelector('.rap-equivalencia');
+            if (equivalenciaInput) {
+                const sesiones = parseInt(e.target.value) || 0;
+                equivalenciaInput.value = (sesiones * 6) + ' hrs';
+            }
         }
     });
 

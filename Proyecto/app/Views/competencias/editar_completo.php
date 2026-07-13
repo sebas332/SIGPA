@@ -72,17 +72,21 @@
                                     <div class="rap-item-edit p-3 border rounded-3 bg-light position-relative">
                                         <input type="hidden" name="raps[<?= $index; ?>][id_resultado]" value="<?= $ra->id_resultado; ?>">
                                         <div class="row g-3 align-items-end">
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-bold text-secondary small mb-1">Código RAP</label>
                                                 <input type="text" class="form-control form-control-sm" name="raps[<?= $index; ?>][codigo]" value="<?= htmlspecialchars($ra->codigo); ?>" required>
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-5">
                                                 <label class="form-label fw-bold text-secondary small mb-1">Descripción</label>
                                                 <input type="text" class="form-control form-control-sm" name="raps[<?= $index; ?>][descripcion]" value="<?= htmlspecialchars($ra->descripcion); ?>">
                                             </div>
                                             <div class="col-md-2">
                                                 <label class="form-label fw-bold text-secondary small mb-1">Sesiones</label>
                                                 <input type="number" class="form-control form-control-sm rap-sesiones-edit" name="raps[<?= $index; ?>][sesiones_asignadas]" value="<?= htmlspecialchars($ra->sesiones_asignadas); ?>">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label fw-bold text-secondary small mb-1">Equivalencia</label>
+                                                <input type="text" class="form-control form-control-sm rap-equivalencia-edit fw-bold text-primary bg-light" readonly value="<?= (isset($ra->sesiones_asignadas) ? ((int)$ra->sesiones_asignadas * 6) : 0); ?> hrs">
                                             </div>
                                             <div class="col-md-1 text-end">
                                                 <button type="button" class="btn btn-outline-danger btn-sm btn-remove-rap-edit" title="Eliminar RAP">
@@ -176,17 +180,21 @@
             <div class="rap-item-edit p-3 border rounded-3 bg-light position-relative">
                 <input type="hidden" name="raps[${rapIndexEdit}][id_resultado]" value="">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold text-secondary small mb-1">Código RAP</label>
                         <input type="text" class="form-control form-control-sm" name="raps[${rapIndexEdit}][codigo]" placeholder="Ej. RAP1" required>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <label class="form-label fw-bold text-secondary small mb-1">Descripción</label>
                         <input type="text" class="form-control form-control-sm" name="raps[${rapIndexEdit}][descripcion]" placeholder="Descripción del RAP">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold text-secondary small mb-1">Sesiones</label>
                         <input type="number" class="form-control form-control-sm rap-sesiones-edit" name="raps[${rapIndexEdit}][sesiones_asignadas]" placeholder="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-secondary small mb-1">Equivalencia</label>
+                        <input type="text" class="form-control form-control-sm rap-equivalencia-edit fw-bold text-primary bg-light" readonly value="0 hrs">
                     </div>
                     <div class="col-md-1 text-end">
                         <button type="button" class="btn btn-outline-danger btn-sm btn-remove-rap-edit" title="Eliminar RAP">
@@ -210,6 +218,14 @@
         container.addEventListener('input', function(e) {
             if(e.target.classList.contains('rap-sesiones-edit')) {
                 calcularSumatoriaRaps();
+                
+                // Actualizar Equivalencia en Horas
+                const card = e.target.closest('.rap-item-edit');
+                const equivalenciaInput = card.querySelector('.rap-equivalencia-edit');
+                if (equivalenciaInput) {
+                    const sesiones = parseInt(e.target.value) || 0;
+                    equivalenciaInput.value = (sesiones * 6) + ' hrs';
+                }
             }
         });
     }

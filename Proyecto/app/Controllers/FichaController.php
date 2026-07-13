@@ -869,33 +869,20 @@ class FichaController extends BaseController {
 
             try {
                 $sql = "INSERT INTO ficha_resultado_config 
-                        (numero_ficha, id_resultado, porcentaje_ajustado, horas_a_ejecutar_ajustadas, sesiones_asignadas_ajustadas) 
-                        VALUES (:ficha, :id_resultado, :porcentaje, :horas, :sesiones)
+                        (numero_ficha, id_resultado, porcentaje_ajustado, sesiones_asignadas_ajustadas) 
+                        VALUES (:ficha, :id_resultado, :porcentaje, :sesiones)
                         ON DUPLICATE KEY UPDATE 
                         porcentaje_ajustado = VALUES(porcentaje_ajustado),
-                        horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
                         sesiones_asignadas_ajustadas = VALUES(sesiones_asignadas_ajustadas)";
-
-                // Calcular horas base por defecto a partir de la competencia
-                $competencia = $this->competenciaModel->find($id_competencia);
-                $raps_db = $this->resultadoModel->getByCompetencia($id_competencia);
-                $horas_base_default = ($competencia && count($raps_db) > 0) ? ($competencia->horas_totales / count($raps_db)) : 0;
 
                 foreach ($raps as $rap) {
                     $sesiones_finales = (int)$rap['sesiones'];
                     $porcentaje_final = (float)$rap['porcentaje'];
-                    
-                    // Si horas_base viene en 0, usar el default calculado
-                    $horas_base = (float)($rap['horas_base'] ?? 0);
-                    if ($horas_base <= 0) $horas_base = $horas_base_default;
-                    
-                    $horas_finales = $horas_base * ($porcentaje_final / 100);
 
                     $db->query($sql);
                     $db->bind(':ficha', $numero_ficha);
                     $db->bind(':id_resultado', $rap['id_resultado']);
                     $db->bind(':porcentaje', $porcentaje_final);
-                    $db->bind(':horas', $horas_finales);
                     $db->bind(':sesiones', $sesiones_finales);
                     $db->execute();
                 }
