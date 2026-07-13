@@ -3661,11 +3661,6 @@
                                                                 <i class="fa-solid fa-triangle-exclamation text-warning"></i> Novedades
                                                             </a>
                                                         </li>
-                                                        <li>
-                                                            <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/toggleDisponibilidad&id=<?= $amb->id_numero_ambiente; ?>">
-                                                                <i class="fa-solid fa-power-off text-muted"></i> Cambiar disponibilidad
-                                                            </a>
-                                                        </li>
                                                     </ul>
                                                 </div>
                                             </div>
@@ -11507,10 +11502,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Función compartida para manejar submit
     async function handleAjaxForm(e, formElement, isEdit) {
         e.preventDefault(); 
+        
+        const btnSubmit = formElement.querySelector('button[type="submit"]');
+        if (btnSubmit.disabled) return; // Evitar doble envío (double-click)
+        
         const formData = new FormData(formElement);
         formData.append('is_ajax', '1'); 
         
-        const btnSubmit = formElement.querySelector('button[type="submit"]');
         const btnHtml = btnSubmit.innerHTML;
         btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
         btnSubmit.disabled = true;
@@ -11602,6 +11600,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         </td>
                     `;
                     tbody.appendChild(newRow);
+                    
+                    // Actualizar selects de Programación dinámicamente
+                    const selectModalFicha = document.getElementById('modal_numero_ficha');
+                    if (selectModalFicha) {
+                        const opt = document.createElement('option');
+                        opt.value = d.numero_ficha;
+                        opt.textContent = `Ficha ${d.numero_ficha}`;
+                        selectModalFicha.appendChild(opt);
+                    }
+                    
+                    const selectFiltroFicha = document.getElementById('filtroFicha');
+                    if (selectFiltroFicha) {
+                        const opt = document.createElement('option');
+                        opt.value = d.numero_ficha;
+                        opt.textContent = `Ficha ${d.numero_ficha}`;
+                        selectFiltroFicha.appendChild(opt);
+                    }
                     
                     const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalCrearFicha'));
                     if (modalInst) modalInst.hide();

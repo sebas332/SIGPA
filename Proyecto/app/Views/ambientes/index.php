@@ -947,11 +947,6 @@
                                                     <i class="fa-solid fa-triangle-exclamation text-warning"></i> Novedades
                                                 </a>
                                             </li>
-                                            <li>
-                                                <a class="dropdown-item small d-flex align-items-center gap-2" href="<?= URLROOT; ?>/index.php?route=ambientes/toggleDisponibilidad&id=<?= $amb->id_numero_ambiente; ?>">
-                                                    <i class="fa-solid fa-power-off text-muted"></i> Cambiar disponibilidad
-                                                </a>
-                                            </li>
                                         </ul>
                                     </div>
                                 </div>

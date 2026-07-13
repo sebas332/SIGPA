@@ -256,13 +256,37 @@ class ProgramacionController extends BaseController {
         }
 
         $db = Database::getInstance();
+        
+        $id_resultado = $input['id_resultado'] ?? 0;
+        if ($id_resultado) {
+            $db->query("SELECT sesiones_asignadas FROM resultado_aprendizaje WHERE id_resultado = :id");
+            $db->bind(':id', $id_resultado);
+            $ra_info = $db->single();
+            
+            if ($ra_info && $ra_info->sesiones_asignadas > 0) {
+                $sesiones_requeridas = (int)$ra_info->sesiones_asignadas;
+                $sesiones_generadas = count($fechas);
+                
+                if ($sesiones_generadas !== $sesiones_requeridas) {
+                    echo json_encode(['status' => 'error', 'message' => "Este Resultado de Aprendizaje exige exactamente {$sesiones_requeridas} sesiones, pero has generado {$sesiones_generadas} en el formulario."]);
+                    exit;
+                }
+            }
+        }
         $id_lote = bin2hex(random_bytes(8)); // UUID corto para el lote
 
         try {
             $db->beginTransaction();
 
-            $errores_conflicto = [];
             $sesiones_creadas = 0;
+
+            // 1. Validar coherencia con la jornada de la ficha ANTES de procesar (es igual para todo el lote)
+            $jornadaError = $this->validarHorarioJornada($input['numero_ficha'], $input['hora_inicio'], $input['hora_fin']);
+            if ($jornadaError) {
+                $db->rollBack();
+                echo json_encode(['status' => 'error', 'message' => $jornadaError]);
+                exit;
+            }
 
             foreach ($fechas as $fecha) {
                 $data = [
@@ -276,18 +300,12 @@ class ProgramacionController extends BaseController {
                     'id_dias' => date('N', strtotime($fecha))
                 ];
 
-                // 1. Validar coherencia con la jornada de la ficha
-                $jornadaError = $this->validarHorarioJornada($data['numero_ficha'], $data['hora_inicio'], $data['hora_fin']);
-                if ($jornadaError) {
-                    $errores_conflicto[] = "Error en {$fecha}: {$jornadaError}";
-                    continue;
-                }
-
                 // 2. Validar conflictos para esta fecha específica
                 $conflictMessage = $this->programacionModel->getConflictMessage($data);
                 if ($conflictMessage) {
-                    $errores_conflicto[] = "Conflicto en {$fecha}: {$conflictMessage}";
-                    continue; // Skip or we could abort entire batch. Let's abort entire batch for atomic integrity.
+                    $db->rollBack();
+                    echo json_encode(['status' => 'error', 'message' => "Conflicto el {$fecha}: {$conflictMessage}"]);
+                    exit;
                 }
 
                 // Insert manual logic or use model's create
@@ -314,15 +332,6 @@ class ProgramacionController extends BaseController {
                     throw new Exception("Error al insertar la fecha {$fecha}");
                 }
                 $sesiones_creadas++;
-            }
-
-            if (!empty($errores_conflicto)) {
-                $db->rollBack();
-                echo json_encode([
-                    'status' => 'error', 
-                    'message' => 'Lote revertido por conflictos de horario. Detalles: ' . implode(" | ", $errores_conflicto)
-                ]);
-                exit;
             }
 
             $db->commit();
@@ -559,12 +568,12 @@ class ProgramacionController extends BaseController {
                 $valido_fin = ($hf_mins >= $ji_mins || $hf_mins <= $jf_mins);
                 
                 if (!$valido_inicio || !$valido_fin) {
-                    return "Incoherencia de Jornada: El horario ({$hi} a {$hf}) se sale de la jornada {$jornadaInfo->nombre} ({$ji} a {$jf}).";
+                    return "Horario inválido: La jornada {$jornadaInfo->nombre} solo permite clases de {$ji} a {$jf}.";
                 }
             } else {
                 // Normal
                 if ($hi_mins < $ji_mins || $hf_mins > $jf_mins) {
-                    return "Incoherencia de Jornada: El horario ({$hi} a {$hf}) se sale de la jornada {$jornadaInfo->nombre} ({$ji} a {$jf}).";
+                    return "Horario inválido: La jornada {$jornadaInfo->nombre} solo permite clases de {$ji} a {$jf}.";
                 }
             }
         }
