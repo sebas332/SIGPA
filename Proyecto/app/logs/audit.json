@@ -1,5 +1,31 @@
 [
     {
+        "id": "audit_6a555d88d25a48.83432897",
+        "timestamp": "2026-07-13 16:50:00",
+        "usuario_id": 1,
+        "usuario_nombre": "Juan Esteban David Chavarria",
+        "usuario_login": "1000000000",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "AJUSTE MASIVO FETCH",
+        "tabla": "ficha_resultado_config",
+        "registro_id": "3063365",
+        "detalles": "Ajustados 3 RAPs"
+    },
+    {
+        "id": "audit_6a555c238a88a2.05936858",
+        "timestamp": "2026-07-13 16:44:03",
+        "usuario_id": 1,
+        "usuario_nombre": "Juan Esteban David Chavarria",
+        "usuario_login": "1000000000",
+        "rol": "Coordinador",
+        "ip": "::1",
+        "accion": "CREACIóN DE FICHA",
+        "tabla": "fichas",
+        "registro_id": "3559897",
+        "detalles": "Programa ID: 5, Cupos: 30"
+    },
+    {
         "id": "audit_6a5555b664baf7.42576003",
         "timestamp": "2026-07-13 16:16:38",
         "usuario_id": 1,

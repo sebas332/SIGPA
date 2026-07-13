@@ -901,6 +901,17 @@ window.cargarDatosModalCompetencia = async function(btn) {
             if (data.raps.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4"><i class="fa-solid fa-circle-info me-2"></i>Esta competencia no tiene resultados de aprendizaje asociados.</td></tr>`;
             } else {
+                // Ajustar UI (Cabecera) según lo guardado en base de datos
+                const savedPorcentaje = parseFloat(data.raps[0].porcentaje_ajustado) || 100;
+                inputPorcentajeGlobal.value = savedPorcentaje;
+                
+                // Recalcular Horas a Ejecutar y Límite de Sesiones
+                const nuevasHorasEjecutar = Math.round(horasTotales * (savedPorcentaje / 100) * 100) / 100;
+                maximoSesionesPermitidas = Math.ceil(nuevasHorasEjecutar / HORAS_POR_SESION);
+                
+                document.getElementById('modal_horas_ejecutar_competencia').textContent = nuevasHorasEjecutar + ' hrs';
+                document.getElementById('modal_sesiones_competencia').textContent = maximoSesionesPermitidas;
+                
                 renderizarTablaRaps(data.raps);
             }
         } else {

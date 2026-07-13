@@ -735,10 +735,26 @@ class FichaController extends BaseController {
                         horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
                         sesiones_asignadas_ajustadas = VALUES(sesiones_asignadas_ajustadas)";
 
+                // Calcular horas base por defecto a partir de la competencia
+                $id_comp = $_POST['id_competencia'] ?? 0;
+                $horas_base_default = 0;
+                if ($id_comp > 0) {
+                    $competencia = $this->competenciaModel->find($id_comp);
+                    $raps_db = $this->resultadoModel->getByCompetencia($id_comp);
+                    if ($competencia && count($raps_db) > 0) {
+                        $horas_base_default = $competencia->horas_totales / count($raps_db);
+                    }
+                }
+
                 foreach ($raps as $rap) {
                     $sesiones_finales = (int)$rap['sesiones'];
                     $porcentaje_final = (float)$rap['porcentaje'];
-                    $horas_finales = (int)$rap['horas_base'] * ($porcentaje_final / 100);
+                    
+                    // Si horas_base viene en 0, usar el default calculado
+                    $horas_base = (float)($rap['horas_base'] ?? 0);
+                    if ($horas_base <= 0) $horas_base = $horas_base_default;
+                    
+                    $horas_finales = $horas_base * ($porcentaje_final / 100);
 
                     $db->query($sql);
                     $db->bind(':ficha', $numero_ficha);
@@ -782,6 +798,8 @@ class FichaController extends BaseController {
             }
 
             $raps = $this->resultadoModel->getByCompetencia($id_competencia);
+            $competencia = $this->competenciaModel->find($id_competencia);
+            $horas_base_default = ($competencia && count($raps) > 0) ? ($competencia->horas_totales / count($raps)) : 0;
             
             $db = Database::getInstance();
             $db->query("SELECT id_resultado, porcentaje_ajustado, sesiones_asignadas_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha");
@@ -795,10 +813,17 @@ class FichaController extends BaseController {
 
             $response_raps = [];
             foreach ($raps as $rap) {
-                // Si no existe horas_base, lo deducimos de las sesiones asignadas (sesiones * 6)
-                $horas_base = isset($rap->horas_base) ? (int)$rap->horas_base : (isset($rap->sesiones_asignadas) ? (int)$rap->sesiones_asignadas * 6 : 0);
+                // Si no existe horas_base, lo deducimos de sesiones_asignadas o del promedio de la competencia
+                if (isset($rap->horas_base) && $rap->horas_base > 0) {
+                    $horas_base = (float)$rap->horas_base;
+                } elseif (isset($rap->sesiones_asignadas) && $rap->sesiones_asignadas > 0) {
+                    $horas_base = (int)$rap->sesiones_asignadas * 6;
+                } else {
+                    $horas_base = $horas_base_default;
+                }
+
                 $porcentaje = 100;
-                $sesiones = isset($rap->sesiones_asignadas) ? (int)$rap->sesiones_asignadas : ceil($horas_base / 6);
+                $sesiones = isset($rap->sesiones_asignadas) && $rap->sesiones_asignadas > 0 ? (int)$rap->sesiones_asignadas : ceil($horas_base / 6);
                 
                 if (isset($config_map[$rap->id_resultado])) {
                     $porcentaje = (float)$config_map[$rap->id_resultado]->porcentaje_ajustado;
@@ -851,10 +876,20 @@ class FichaController extends BaseController {
                         horas_a_ejecutar_ajustadas = VALUES(horas_a_ejecutar_ajustadas),
                         sesiones_asignadas_ajustadas = VALUES(sesiones_asignadas_ajustadas)";
 
+                // Calcular horas base por defecto a partir de la competencia
+                $competencia = $this->competenciaModel->find($id_competencia);
+                $raps_db = $this->resultadoModel->getByCompetencia($id_competencia);
+                $horas_base_default = ($competencia && count($raps_db) > 0) ? ($competencia->horas_totales / count($raps_db)) : 0;
+
                 foreach ($raps as $rap) {
                     $sesiones_finales = (int)$rap['sesiones'];
                     $porcentaje_final = (float)$rap['porcentaje'];
-                    $horas_finales = (int)$rap['horas_base'] * ($porcentaje_final / 100);
+                    
+                    // Si horas_base viene en 0, usar el default calculado
+                    $horas_base = (float)($rap['horas_base'] ?? 0);
+                    if ($horas_base <= 0) $horas_base = $horas_base_default;
+                    
+                    $horas_finales = $horas_base * ($porcentaje_final / 100);
 
                     $db->query($sql);
                     $db->bind(':ficha', $numero_ficha);
