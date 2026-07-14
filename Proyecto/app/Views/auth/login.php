@@ -468,11 +468,21 @@ footer {
                     </div>
                     <div class="mb-3">
                         <label for="resetNewPassword" class="form-label small fw-bold text-muted mb-1">Nueva contraseña</label>
-                        <input type="password" class="form-control rounded-3" id="resetNewPassword" name="contrasena" placeholder="Nueva contraseña" autocomplete="new-password" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control rounded-3" style="border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;" id="resetNewPassword" name="contrasena" placeholder="Nueva contraseña" autocomplete="new-password" required pattern="(?=[A-ZÑÁÉÍÓÚ])(?=.*\d)(?=.*[!@#$%^&amp;*(),.?&quot;:{}|&lt;&gt;[\]\\/_\-+=~'`;]).{8,30}" title="La contraseña debe iniciar con mayúscula, tener de 8 a 30 caracteres, e incluir un número y un carácter especial.">
+                            <button class="btn btn-outline-secondary bg-white" type="button" id="toggleResetNewPassword" tabindex="-1" style="border-radius: 0 0.5rem 0.5rem 0; border-color: #dee2e6;">
+                                <i class="fa-regular fa-eye" id="iconResetNewPassword"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="resetConfirmPassword" class="form-label small fw-bold text-muted mb-1">Confirmar contraseña</label>
-                        <input type="password" class="form-control rounded-3" id="resetConfirmPassword" name="contrasena_confirm" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control rounded-3" style="border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;" id="resetConfirmPassword" name="contrasena_confirm" placeholder="Repite la contraseña" autocomplete="new-password" required>
+                            <button class="btn btn-outline-secondary bg-white" type="button" id="toggleResetConfirmPassword" tabindex="-1" style="border-radius: 0 0.5rem 0.5rem 0; border-color: #dee2e6;">
+                                <i class="fa-regular fa-eye" id="iconResetConfirmPassword"></i>
+                            </button>
+                        </div>
                         <div id="resetPasswordFeedback" class="feedback-text text-muted mt-1 px-1">Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.</div>
                     </div>
                     <div class="d-grid">
@@ -502,7 +512,7 @@ footer {
   })
 })()
 
-// Control del Toggle de Contraseña
+// Control del Toggle de Contraseña Principal
 const togglePasswordBtn = document.getElementById('togglePasswordBtn');
 const passwordInput = document.getElementById('password');
 const togglePasswordIcon = document.getElementById('togglePasswordIcon');
@@ -519,6 +529,25 @@ if (togglePasswordBtn && passwordInput && togglePasswordIcon) {
         }
     });
 }
+
+function setupEyeToggle(btnId, inputId, iconId) {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if(btn && input && icon) {
+        btn.addEventListener('click', function() {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            if (type === 'text') {
+                icon.className = 'fa-regular fa-eye-slash text-secondary';
+            } else {
+                icon.className = 'fa-regular fa-eye text-secondary';
+            }
+        });
+    }
+}
+setupEyeToggle('toggleResetNewPassword', 'resetNewPassword', 'iconResetNewPassword');
+setupEyeToggle('toggleResetConfirmPassword', 'resetConfirmPassword', 'iconResetConfirmPassword');
 
 // Validación en tiempo real para el documento
 const usernameInput = document.getElementById('username');
@@ -625,27 +654,31 @@ function validateResetPasswordFields() {
     const confirm = resetConfirmPassword.value;
     const rulesFailed = [];
 
-    if (pass.length < 8) rulesFailed.push("Mínimo 8 caracteres.");
-    if (!/[A-Z]/.test(pass)) rulesFailed.push("Una mayúscula.");
-    if (!/[a-z]/.test(pass)) rulesFailed.push("Una minúscula.");
-    if (!/[0-9]/.test(pass)) rulesFailed.push("Un número.");
-    if (!/[!@#$%^&*(),.?":{}|<>_\-\[\]]/.test(pass)) rulesFailed.push("Un carácter especial.");
-    if (pass !== confirm) rulesFailed.push("Las contraseñas deben coincidir.");
+    if (pass.length < 8 || pass.length > 30) rulesFailed.push("Tener entre 8 y 30 caracteres.");
+    if (!/^[A-ZÑÁÉÍÓÚ]/.test(pass)) rulesFailed.push("Iniciar con mayúscula.");
+    if (!/[0-9]/.test(pass)) rulesFailed.push("Contener al menos un número.");
+    if (!/[!@#$%^&*(),.?":{}|<>[\]\\/_\-+=~`';]/.test(pass)) rulesFailed.push("Contener un carácter especial.");
+    
+    if (confirm !== "" && pass !== confirm) rulesFailed.push("Las contraseñas no coinciden.");
 
-    if (pass === "" || confirm === "") {
-        resetPasswordFeedback.textContent = "Mínimo 8 caracteres, mayúscula, minúscula, número y carácter especial.";
+    if (pass === "") {
+        resetPasswordFeedback.innerHTML = "Requisitos: Iniciar en mayúscula, 8-30 caracteres, un número y un carácter especial.";
         resetPasswordFeedback.className = "feedback-text text-muted mt-1 px-1";
+        resetNewPassword.setCustomValidity("Campo requerido");
         return false;
     }
 
     if (rulesFailed.length > 0) {
-        resetPasswordFeedback.textContent = rulesFailed.join(" ");
-        resetPasswordFeedback.className = "feedback-text text-danger mt-1 px-1";
+        resetPasswordFeedback.innerHTML = "<span class='text-danger d-block mb-1' style='font-size: 0.78rem;'><i class='fa-solid fa-circle-xmark'></i> " + rulesFailed.join("</span><span class='text-danger d-block mb-1' style='font-size: 0.78rem;'><i class='fa-solid fa-circle-xmark'></i> ") + "</span>";
+        resetPasswordFeedback.className = "feedback-text mt-1 px-1";
+        resetNewPassword.setCustomValidity("Inválida");
         return false;
     }
 
-    resetPasswordFeedback.textContent = "Contraseña válida.";
-    resetPasswordFeedback.className = "feedback-text text-success mt-1 px-1";
+    resetPasswordFeedback.innerHTML = "<span class='text-success' style='font-size: 0.78rem;'><i class='fa-solid fa-circle-check'></i> Contraseña válida y segura.</span>";
+    resetPasswordFeedback.className = "feedback-text mt-1 px-1";
+    resetNewPassword.setCustomValidity("");
+    resetConfirmPassword.setCustomValidity("");
     return true;
 }
 

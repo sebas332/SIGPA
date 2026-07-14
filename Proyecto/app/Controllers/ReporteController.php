@@ -188,6 +188,8 @@ class ReporteController extends BaseController {
         $pdf->SetDrawColor(220, 220, 220);
 
         $fill = false;
+        $lineHeight = 5;
+
         foreach ($resultados as $row) {
             if ($fill) {
                 $pdf->SetFillColor(245, 250, 245);
@@ -195,11 +197,86 @@ class ReporteController extends BaseController {
                 $pdf->SetFillColor(255, 255, 255);
             }
 
-            foreach ($config['columns'] as $col) {
+            // Calcular altura máxima de la fila
+            $maxLines = 1;
+            $textData = [];
+            foreach ($config['columns'] as $index => $col) {
                 $valor = $this->obtenerValorCampoPDF($tipo_reporte, $row, $col['field']);
-                $pdf->Cell($col['width'], 8, utf8_decode($valor), 1, 0, $col['align'], true);
+                $valorDecoded = utf8_decode($valor);
+                $textData[$index] = $valorDecoded;
+                
+                $maxWidth = $col['width'] - 2;
+                $lines = 1;
+                $currLine = '';
+                $words = explode(' ', $valorDecoded);
+                foreach ($words as $word) {
+                    $testLine = $currLine === '' ? $word : $currLine . ' ' . $word;
+                    if ($pdf->GetStringWidth($testLine) > $maxWidth && $currLine !== '') {
+                        $lines++;
+                        $currLine = $word;
+                    } else {
+                        $currLine = $testLine;
+                    }
+                }
+                
+                // Fallback de seguridad si una palabra es inmensa
+                if ($lines === 1 && $pdf->GetStringWidth($valorDecoded) > $maxWidth) {
+                    $lines = ceil($pdf->GetStringWidth($valorDecoded) / $maxWidth);
+                }
+                
+                if ($lines > $maxLines) {
+                    $maxLines = $lines;
+                }
             }
-            $pdf->Ln();
+
+            $h = ($lineHeight * $maxLines) + 2; // + padding
+            
+            // Salto de página manual si se desborda
+            if ($pdf->GetY() + $h > 185) { 
+                $pdf->AddPage();
+                
+                // Redibujar cabeceras
+                $pdf->SetFont('Arial', 'B', 9);
+                $pdf->SetFillColor(57, 169, 0);
+                $pdf->SetTextColor(255, 255, 255);
+                $pdf->SetDrawColor(40, 120, 0);
+                $pdf->SetLineWidth(0.3);
+                foreach ($config['columns'] as $col) {
+                    $pdf->Cell($col['width'], 9, utf8_decode($col['title']), 1, 0, 'C', true);
+                }
+                $pdf->Ln();
+                
+                // Restaurar estado
+                $pdf->SetFont('Arial', '', 8.5);
+                $pdf->SetTextColor(50, 50, 50);
+                $pdf->SetDrawColor(220, 220, 220);
+                if ($fill) {
+                    $pdf->SetFillColor(245, 250, 245);
+                } else {
+                    $pdf->SetFillColor(255, 255, 255);
+                }
+            }
+
+            $currY = $pdf->GetY();
+            
+            foreach ($config['columns'] as $i => $col) {
+                $w = $col['width'];
+                $currX = $pdf->GetX();
+                
+                // Dibujar celda (fondo y bordes)
+                $pdf->Rect($currX, $currY, $w, $h, 'DF');
+                
+                // Calcular posición Y para centrar verticalmente si se desea,
+                // o simplemente un pequeño margen superior.
+                $textY = $currY + (($h - ($lineHeight * $maxLines)) / 2);
+                if ($textY < $currY + 1) $textY = $currY + 1; // Mínimo margen
+                
+                $pdf->SetXY($currX, $textY);
+                $pdf->MultiCell($w, $lineHeight, $textData[$i], 0, $col['align']);
+                
+                $pdf->SetXY($currX + $w, $currY);
+            }
+            $pdf->Ln($h);
             $fill = !$fill;
         }
 

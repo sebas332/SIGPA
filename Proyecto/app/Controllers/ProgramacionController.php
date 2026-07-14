@@ -258,15 +258,31 @@ class ProgramacionController extends BaseController {
         $db = Database::getInstance();
         
         $id_resultado = $input['id_resultado'] ?? 0;
+        $numero_ficha_val = $input['numero_ficha'] ?? '';
         if ($id_resultado) {
-            $db->query("SELECT sesiones_asignadas FROM resultado_aprendizaje WHERE id_resultado = :id");
-            $db->bind(':id', $id_resultado);
-            $ra_info = $db->single();
+            // Priorizar el valor ajustado por ficha (ficha_resultado_config)
+            $sesiones_requeridas = 0;
+            if ($numero_ficha_val) {
+                $db->query("SELECT sesiones_asignadas_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha AND id_resultado = :id");
+                $db->bind(':ficha', $numero_ficha_val);
+                $db->bind(':id', $id_resultado);
+                $config = $db->single();
+                if ($config && $config->sesiones_asignadas_ajustadas > 0) {
+                    $sesiones_requeridas = (int)$config->sesiones_asignadas_ajustadas;
+                }
+            }
+            // Fallback al valor base si no hay config ajustada
+            if ($sesiones_requeridas <= 0) {
+                $db->query("SELECT sesiones_asignadas FROM resultado_aprendizaje WHERE id_resultado = :id");
+                $db->bind(':id', $id_resultado);
+                $ra_info = $db->single();
+                if ($ra_info && $ra_info->sesiones_asignadas > 0) {
+                    $sesiones_requeridas = (int)$ra_info->sesiones_asignadas;
+                }
+            }
             
-            if ($ra_info && $ra_info->sesiones_asignadas > 0) {
-                $sesiones_requeridas = (int)$ra_info->sesiones_asignadas;
+            if ($sesiones_requeridas > 0) {
                 $sesiones_generadas = count($fechas);
-                
                 if ($sesiones_generadas !== $sesiones_requeridas) {
                     echo json_encode(['status' => 'error', 'message' => "Este Resultado de Aprendizaje exige exactamente {$sesiones_requeridas} sesiones, pero has generado {$sesiones_generadas} en el formulario."]);
                     exit;

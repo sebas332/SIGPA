@@ -152,12 +152,76 @@ class DashboardController extends BaseController {
             $mi_ficha = !empty($fichasDelAprendiz) ? $fichasDelAprendiz[0] : null;
             $data['mi_ficha'] = $mi_ficha;
 
+            $progreso_raps = [];
+            $total_sesiones_requeridas = 0;
+            $total_horas_requeridas = 0;
+            $sesiones_realizadas = 0;
+            $horas_realizadas = 0;
+
             if ($mi_ficha) {
+                // 1. Obtener programacion de esa ficha en particular (para sacar el progreso real)
+                $programacion_ficha = $this->programacionModel->getByFicha($mi_ficha->numero_ficha);
+                foreach ($programacion_ficha as $prog) {
+                    $id_ra = (int) $prog->id_resultado_aprendizaje;
+                    if (!isset($progreso_raps[$id_ra])) {
+                        $progreso_raps[$id_ra] = [
+                            'sesiones_realizadas' => (int)($prog->sesiones_realizadas ?? 0),
+                            'total_sesiones' => (int)($prog->total_sesiones ?? 0),
+                            'horas_realizadas' => (int)($prog->horas_realizadas ?? 0),
+                            'total_horas' => (int)($prog->total_horas ?? 0)
+                        ];
+                        $sesiones_realizadas += $progreso_raps[$id_ra]['sesiones_realizadas'];
+                        $horas_realizadas += $progreso_raps[$id_ra]['horas_realizadas'];
+                    }
+                }
+
                 $data['competencias'] = $this->competenciaModel->getByPrograma($mi_ficha->id_programa);
+                
+                // 2. Obtener config
+                $db = Database::getInstance();
+                $db->query("SELECT id_resultado, sesiones_asignadas_ajustadas, horas_a_ejecutar_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha");
+                $db->bind(':ficha', $mi_ficha->numero_ficha);
+                $configs_raw = $db->resultSet();
+                $config_ra_sesiones = [];
+                $config_ra_horas = [];
+                foreach($configs_raw as $c) {
+                    $config_ra_sesiones[$c->id_resultado] = $c->sesiones_asignadas_ajustadas;
+                    $config_ra_horas[$c->id_resultado] = $c->horas_a_ejecutar_ajustadas;
+                }
+
+                $data['resultados_programa'] = [];
+                foreach ($data['competencias'] as $comp) {
+                    $ras = $this->resultadoModel->getByCompetencia($comp->id_competencia);
+                    foreach($ras as $ra) {
+                        $ra->sesiones_requeridas = $config_ra_sesiones[$ra->id_resultado] ?? $ra->sesiones_asignadas ?? 0;
+                        $ra->sesiones_realizadas = $progreso_raps[$ra->id_resultado]['sesiones_realizadas'] ?? 0;
+                        $ra->sesiones_pendientes = max(0, $ra->sesiones_requeridas - $ra->sesiones_realizadas);
+                        
+                        $ra->horas_requeridas = $config_ra_horas[$ra->id_resultado] ?? ($ra->sesiones_requeridas * 6);
+                        $ra->horas_realizadas = $progreso_raps[$ra->id_resultado]['horas_realizadas'] ?? 0;
+                        $ra->horas_pendientes = max(0, $ra->horas_requeridas - $ra->horas_realizadas);
+                        
+                        $total_sesiones_requeridas += $ra->sesiones_requeridas;
+                        $total_horas_requeridas += $ra->horas_requeridas;
+                    }
+                    $data['resultados_programa'][$comp->id_competencia] = $ras;
+                }
             } else {
                 $data['competencias'] = [];
+                $data['resultados_programa'] = [];
             }
             
+            $data['total_sesiones_requeridas'] = $total_sesiones_requeridas;
+            $data['sesiones_realizadas'] = $sesiones_realizadas;
+            $data['sesiones_pendientes'] = max(0, $total_sesiones_requeridas - $sesiones_realizadas);
+            $data['porcentaje_avance'] = $total_sesiones_requeridas > 0 ? round(($sesiones_realizadas / $total_sesiones_requeridas) * 100) : 0;
+            
+            $data['total_horas_requeridas'] = $total_horas_requeridas;
+            $data['horas_realizadas'] = $horas_realizadas;
+            $data['horas_pendientes'] = max(0, $total_horas_requeridas - $horas_realizadas);
+            $data['porcentaje_avance_horas'] = $total_horas_requeridas > 0 ? round(($horas_realizadas / $total_horas_requeridas) * 100) : 0;
+            
+            $data['progreso_raps'] = $progreso_raps;
             $data['resultados'] = $this->resultadoModel->all();
         }
 

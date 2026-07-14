@@ -956,15 +956,6 @@ foreach ($db->resultSet() as $r) {
                                     <a href="<?= URLROOT; ?>/index.php?route=fichas/show&id=<?= $f->numero_ficha; ?>" class="action-icon-btn" title="Ver Ficha">
                                         <i class="fa-regular fa-eye text-success"></i>
                                     </a>
-                                    <?php if ($current_role === 'Coordinador'): ?>
-                                        <button type="button" class="action-icon-btn btn-gestionar-aprendices" 
-                                                data-ficha="<?= $f->numero_ficha; ?>" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#modalGestionarAprendices" 
-                                                title="Matricular Aprendiz">
-                                            <i class="fa-solid fa-user-plus text-success"></i>
-                                        </button>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -1645,15 +1636,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         <a href="${urlFicha}" class="action-icon-btn" title="Ver Ficha">
                             <i class="fa-regular fa-eye text-success"></i>
                         </a>
-                        <?php if ($current_role === 'Coordinador'): ?>
-                        <button type="button" class="action-icon-btn btn-gestionar-aprendices" 
-                                data-ficha="${ficha.numero_ficha}" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#modalGestionarAprendices" 
-                                title="Matricular Aprendiz">
-                            <i class="fa-solid fa-user-plus text-success"></i>
-                        </button>
-                        <?php endif; ?>
                     </div>
                 </td>
             </tr>`;

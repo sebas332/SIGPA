@@ -2890,9 +2890,9 @@
                                                 </td>
                                                 <?php if ($current_role === 'Coordinador'): ?>
                                                     <td class="text-end pe-4">
-                                                        <a href="<?= URLROOT; ?>/index.php?route=programacion/delete&id=<?= $prog->id_programacion; ?>" class="btn btn-outline-danger btn-sm shadow-sm" onclick="return confirm('¿Seguro que deseas eliminar esta programación?');" data-bs-toggle="tooltip" title="Eliminar Programación">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm shadow-sm" onclick="eliminarProgramacionAjax(<?= $prog->id_programacion; ?>)" data-bs-toggle="tooltip" title="Eliminar Programación">
                                                             <i class="fa-solid fa-trash-can"></i>
-                                                        </a>
+                                                        </button>
                                                     </td>
                                                 <?php endif; ?>
                                             </tr>
@@ -6835,7 +6835,7 @@
                                 <div class="col-12 col-lg-5">
                                     <label class="nov-field-label" for="nov_fecha">Fecha del Reporte <span class="nov-required">*</span></label>
                                     <div class="nov-field-wrap">
-                                        <input type="date" name="fecha_reporte" id="nov_fecha" class="nov-input nov-date-input" value="<?= date('Y-m-d'); ?>" required>
+                                        <input type="date" name="fecha_reporte" id="nov_fecha" class="nov-input nov-date-input" value="<?= date('Y-m-d'); ?>" min="<?= date('Y-m-d'); ?>" max="<?= date('Y-m-d'); ?>" required>
                                         <span class="nov-date-icon"><i class="fa-regular fa-calendar"></i></span>
                                     </div>
                                 </div>
@@ -8475,68 +8475,140 @@
                 </section>
 
                 <section class="apr-modules-card">
-                    <h3 class="apr-modules-title">Competencias y Módulos de Formación</h3>
-                    <div class="apr-modules-subtitle">Consulta las competencias y módulos que componen tu programa de formación.</div>
+                    <style>
+                        .progress-box {
+                            background-color: #f8fafc;
+                            border-radius: 12px;
+                            padding: 1.25rem;
+                            border: 1px solid #f1f5f9;
+                            margin-bottom: 1.5rem;
+                        }
+                        .progress-number-row {
+                            display: grid;
+                            grid-template-columns: 1fr 1fr 1fr;
+                            gap: 0.8rem;
+                            margin-bottom: 1.25rem;
+                            text-align: center;
+                        }
+                        .progress-num-item {
+                            background: #ffffff;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 8px;
+                            padding: 0.6rem 0.5rem;
+                        }
+                        .progress-num-val {
+                            font-size: 1.25rem;
+                            font-weight: 700;
+                            color: #0f172a;
+                        }
+                        .progress-num-lbl {
+                            font-size: 0.65rem;
+                            font-weight: 700;
+                            color: #64748b;
+                            letter-spacing: 0.5px;
+                            text-transform: uppercase;
+                            margin-top: 0.1rem;
+                        }
+                    </style>
 
-                    <?php if (empty($aprCompetenciasFicha)): ?>
-                        <div class="text-center text-muted py-4">
-                            <i class="fa-regular fa-folder-open fa-2x mb-2"></i>
-                            <p class="fw-bold mb-0">No hay competencias registradas para esta ficha.</p>
+                    <h3 class="apr-modules-title mb-4"><i class="fa-solid fa-chart-line text-success me-2"></i> Resumen de Avance y Competencias</h3>
+                    
+                    <div class="row g-4">
+                        <div class="col-12 col-md-4">
+                            <div class="progress-box">
+                                <div class="progress-number-row">
+                                    <div class="progress-num-item" title="Sesiones totales exigidas por el programa">
+                                        <div class="progress-num-val" style="color:var(--sena-primary);"><?= $total_sesiones_requeridas ?? 0; ?></div>
+                                        <div class="progress-num-lbl">Req. Programa</div>
+                                        <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $total_horas_requeridas ?? 0; ?> hrs</div>
+                                    </div>
+                                    <div class="progress-num-item" title="Sesiones ya dictadas (asistencia tomada)">
+                                        <div class="progress-num-val" style="color:#059669;"><?= $sesiones_realizadas ?? 0; ?></div>
+                                        <div class="progress-num-lbl">Realizadas</div>
+                                        <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $horas_realizadas ?? 0; ?> hrs</div>
+                                    </div>
+                                    <div class="progress-num-item" title="Sesiones que faltan para terminar la formación">
+                                        <div class="progress-num-val" style="color:#ea580c;"><?= $sesiones_pendientes ?? 0; ?></div>
+                                        <div class="progress-num-lbl">Faltantes</div>
+                                        <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $horas_pendientes ?? 0; ?> hrs</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Barra de progreso -->
+                                <div class="mt-4 mb-2 d-flex justify-content-between font-semibold align-items-center" style="font-size:0.82rem; color:#475569;">
+                                    <span>Avance del Currículo</span>
+                                    <span><span style="color:var(--sena-primary); font-weight:bold;"><?= $sesiones_realizadas ?? 0; ?></span> / <?= $total_sesiones_requeridas ?? 0; ?> ses (<?= $porcentaje_avance ?? 0; ?>%)</span>
+                                </div>
+                                <div class="progress" style="height: 8px; border-radius: 4px; background-color:#e2e8f0; overflow:hidden;">
+                                    <div class="progress-bar" role="progressbar" style="width: <?= $porcentaje_avance ?? 0; ?>%; background-color: var(--sena-primary); border-radius:4px;" aria-valuenow="<?= $porcentaje_avance ?? 0; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
                         </div>
-                    <?php else: ?>
-                        <?php foreach ($aprCompetenciasFicha as $idx => $comp): ?>
-                            <?php
-                            $moduloNumero = $idx + 1;
-                            $horasModulo = (int) ($comp->horas_totales ?? ($idx === 0 ? 340 : 240));
-                            $sesionesModulo = (int) ($comp->total_sesiones ?? ($idx === 0 ? 60 : 48));
-                            $iconoModulo = $aprModuloIconos[$idx % count($aprModuloIconos)];
-                            $descripcionModulo = $aprModuloDescripciones[$idx % count($aprModuloDescripciones)];
-                            
-                            // Filtrar los RAPs correspondientes a esta competencia
-                            $rapsComp = array_filter($resultados ?? [], function($r) use ($comp) {
-                                return $r->id_competencia == $comp->id_competencia;
-                            });
-                            ?>
-                            <div class="apr-module-row" style="cursor: pointer; transition: all 0.2s ease;" data-bs-toggle="collapse" data-bs-target="#collapseCompApr<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseCompApr<?= $comp->id_competencia; ?>" onmouseover="this.style.borderColor='#39A900';" onmouseout="this.style.borderColor='#e8edf2';">
-                                <div class="apr-module-icon"><i class="fa-solid <?= $iconoModulo; ?>"></i></div>
-                                <div>
-                                    <div class="apr-module-code">Código <?= htmlspecialchars($comp->codigo ?? 'N/A'); ?></div>
-                                    <p class="apr-module-name">
-                                        <?= htmlspecialchars($comp->nombre ?? 'Competencia de formación'); ?>
-                                        <span class="apr-module-badge">Módulo <?= $moduloNumero; ?></span>
-                                    </p>
-                                    <p class="apr-module-desc"><?= htmlspecialchars($descripcionModulo); ?></p>
+
+                        <!-- Competencias y Resultados del Programa -->
+                        <div class="col-12 col-md-8 border-md-start px-md-4">
+                            <?php if (empty($competencias)): ?>
+                                <div class="alert alert-light text-center border text-muted">
+                                    <i class="fa-solid fa-folder-open mb-2 fs-4"></i><br>
+                                    No hay competencias asociadas a este programa.
                                 </div>
-                                <div class="apr-module-hours">
-                                    <strong><?= $horasModulo; ?></strong>
-                                    <span>Horas Totales</span>
-                                    <small><?= count($rapsComp); ?> RAPs</small>
+                            <?php else: ?>
+                                <div class="accordion accordion-flush shadow-sm border rounded-3" id="accordionCompetenciasFicha">
+                                    <?php foreach ($competencias as $index => $comp): ?>
+                                        <div class="accordion-item bg-white border-bottom">
+                                            <h2 class="accordion-header" id="headingComp_<?= $comp->id_competencia; ?>">
+                                                <div class="d-flex bg-white">
+                                                    <button class="accordion-button collapsed fw-bold text-dark p-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComp_<?= $comp->id_competencia; ?>" aria-expanded="false" aria-controls="collapseComp_<?= $comp->id_competencia; ?>" style="font-size: 0.9rem;">
+                                                        <i class="fa-solid fa-bookmark text-success me-2"></i> <?= htmlspecialchars($comp->codigo); ?> - <?= htmlspecialchars($comp->nombre); ?>
+                                                        <span class="badge bg-light text-dark border ms-3"><?= $comp->horas_totales; ?> hrs</span>
+                                                    </button>
+                                                </div>
+                                            </h2>
+                                            <div id="collapseComp_<?= $comp->id_competencia; ?>" class="accordion-collapse collapse" aria-labelledby="headingComp_<?= $comp->id_competencia; ?>" data-bs-parent="#accordionCompetenciasFicha">
+                                                <div class="accordion-body p-3 bg-light">
+                                                    <?php 
+                                                    $raps = $resultados_programa[$comp->id_competencia] ?? [];
+                                                    if (empty($raps)): ?>
+                                                        <div class="text-danger small"><i class="fa-solid fa-triangle-exclamation"></i> Sin resultados de aprendizaje</div>
+                                                    <?php else: ?>
+                                                        <ul class="list-group list-group-flush rounded-3 border">
+                                                            <?php foreach ($raps as $ra): 
+                                                                $pct_ra = $ra->sesiones_requeridas > 0 ? round(($ra->sesiones_realizadas / $ra->sesiones_requeridas) * 100) : 0;
+                                                            ?>
+                                                                <li class="list-group-item d-flex flex-column bg-white">
+                                                                    <div class="d-flex justify-content-between align-items-start">
+                                                                        <span class="fw-bold text-primary small pe-2"><?= htmlspecialchars($ra->codigo); ?></span>
+                                                                        <span class="badge bg-light text-dark border d-flex flex-column align-items-end gap-1" style="font-size: 0.7rem;">
+                                                                            <span>
+                                                                                <span class="text-success fw-bold" title="Sesiones Realizadas"><?= $ra->sesiones_realizadas ?></span> / <?= $ra->sesiones_requeridas ?> Ses Req.
+                                                                            </span>
+                                                                            <span class="text-muted" style="font-size: 0.65rem;">
+                                                                                <span class="text-success fw-bold" title="Horas Realizadas"><?= $ra->horas_realizadas ?></span> / <?= $ra->horas_requeridas ?> Hrs Req.
+                                                                            </span>
+                                                                            <?php if($ra->sesiones_pendientes > 0 || $ra->horas_pendientes > 0): ?>
+                                                                                <span class="text-danger bg-danger-subtle px-1 rounded mt-1" title="Faltantes">Faltan <?= $ra->sesiones_pendientes ?> Ses (<?= $ra->horas_pendientes ?> Hrs)</span>
+                                                                            <?php else: ?>
+                                                                                <span class="text-success bg-success-subtle px-1 rounded mt-1"><i class="fa-solid fa-check"></i> Completo</span>
+                                                                            <?php endif; ?>
+                                                                        </span>
+                                                                    </div>
+                                                                    <span class="text-secondary small mt-1"><?= htmlspecialchars($ra->descripcion); ?></span>
+                                                                    
+                                                                    <div class="progress mt-2" style="height: 4px; border-radius: 2px; background-color: #f1f5f9;">
+                                                                        <div class="progress-bar <?= $pct_ra >= 100 ? 'bg-success' : 'bg-primary' ?>" role="progressbar" style="width: <?= min(100, $pct_ra); ?>%;" aria-valuenow="<?= $pct_ra; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                    </div>
+                                                                </li>
+                                                            <?php endforeach; ?>
+                                                        </ul>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
-                                <button type="button" class="apr-module-arrow" aria-label="Ver módulo <?= $moduloNumero; ?>">
-                                    <i class="fa-solid fa-chevron-down"></i>
-                                </button>
-                            </div>
-                            
-                            <!-- Collapse con los RAPs -->
-                            <div class="collapse" id="collapseCompApr<?= $comp->id_competencia; ?>">
-                                <div class="card card-body border-0 shadow-sm mb-3 mt-1 p-3" style="background-color: #f8fafc; border-radius: 10px;">
-                                    <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-list-check me-2"></i>Resultados de Aprendizaje (RAP)</h6>
-                                    <?php if (empty($rapsComp)): ?>
-                                        <p class="text-muted small mb-0"><i class="fa-solid fa-circle-exclamation me-1"></i> No hay resultados de aprendizaje registrados para esta competencia.</p>
-                                    <?php else: ?>
-                                        <ul class="list-group list-group-flush" style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-                                            <?php foreach ($rapsComp as $rap): ?>
-                                                <li class="list-group-item d-flex flex-column bg-white py-3 border-bottom">
-                                                    <strong class="text-dark mb-1" style="font-size: 0.85rem;"><?= htmlspecialchars($rap->codigo ?? 'Sin Código'); ?></strong>
-                                                    <span class="text-secondary" style="font-size: 0.82rem; line-height: 1.5;"><?= htmlspecialchars($rap->descripcion ?? 'Sin descripción'); ?></span>
-                                                </li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </section>
 
             </div>
@@ -12940,9 +13012,9 @@ function renderizarLista() {
                 </td>
                 ${currentRole === 'Coordinador' ? `
                     <td class="text-end pe-4">
-                        <a href="${urlRoot}/index.php?route=programacion/delete&id=${prog.id_programacion}" class="btn btn-outline-danger btn-sm shadow-sm" onclick="return confirm('¿Seguro que deseas eliminar esta programación?');" data-bs-toggle="tooltip" title="Eliminar Programación">
+                        <button type="button" class="btn btn-outline-danger btn-sm shadow-sm" onclick="eliminarProgramacionAjax(${prog.id_programacion})" data-bs-toggle="tooltip" title="Eliminar Programación">
                             <i class="fa-solid fa-trash-can"></i>
-                        </a>
+                        </button>
                     </td>
                 ` : ''}
             </tr>

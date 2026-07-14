@@ -486,24 +486,27 @@ if ($ficha->fecha_fin === '1970-01-01') {
                     <div class="col-12 col-md-4">
                         <div class="progress-box">
                             <div class="progress-number-row">
-                                <div class="progress-num-item">
-                                    <div class="progress-num-val"><?= $total_sesiones_programadas; ?></div>
-                                    <div class="progress-num-lbl">Sesiones Prog.</div>
+                                <div class="progress-num-item" title="Sesiones totales exigidas por el programa">
+                                    <div class="progress-num-val" style="color:var(--sena-primary);"><?= $total_sesiones_requeridas; ?></div>
+                                    <div class="progress-num-lbl">Req. Programa</div>
+                                    <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $total_horas_requeridas; ?> hrs</div>
                                 </div>
-                                <div class="progress-num-item">
-                                    <div class="progress-num-val" style="color:var(--sena-primary);"><?= $sesiones_realizadas; ?></div>
+                                <div class="progress-num-item" title="Sesiones ya dictadas (asistencia tomada)">
+                                    <div class="progress-num-val" style="color:#059669;"><?= $sesiones_realizadas; ?></div>
                                     <div class="progress-num-lbl">Realizadas</div>
+                                    <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $horas_realizadas; ?> hrs</div>
                                 </div>
-                                <div class="progress-num-item">
+                                <div class="progress-num-item" title="Sesiones que faltan para terminar la formación">
                                     <div class="progress-num-val" style="color:#ea580c;"><?= $sesiones_pendientes; ?></div>
-                                    <div class="progress-num-lbl">Pendientes</div>
+                                    <div class="progress-num-lbl">Faltantes</div>
+                                    <div class="text-muted fw-bold" style="font-size: 0.65rem; margin-top: 0.2rem;"><?= $horas_pendientes; ?> hrs</div>
                                 </div>
                             </div>
                             
                             <!-- Barra de progreso -->
                             <div class="mt-4 mb-2 d-flex justify-content-between font-semibold align-items-center" style="font-size:0.82rem; color:#475569;">
-                                <span>Progreso de Horas</span>
-                                <span><span style="color:var(--sena-primary); font-weight:bold;"><?= $horas_realizadas; ?></span> / <?= $total_horas_programadas; ?> hrs (<?= $porcentaje_avance; ?>%)</span>
+                                <span>Avance del Currículo</span>
+                                <span><span style="color:var(--sena-primary); font-weight:bold;"><?= $sesiones_realizadas; ?></span> / <?= $total_sesiones_requeridas; ?> ses (<?= $porcentaje_avance; ?>%)</span>
                             </div>
                             <div class="progress" style="height: 8px; border-radius: 4px; background-color:#e2e8f0; overflow:hidden;">
                                 <div class="progress-bar" role="progressbar" style="width: <?= $porcentaje_avance; ?>%; background-color: var(--sena-primary); border-radius:4px;" aria-valuenow="<?= $porcentaje_avance; ?>" aria-valuemin="0" aria-valuemax="100"></div>
@@ -556,28 +559,30 @@ if ($ficha->fecha_fin === '1970-01-01') {
                                                 <?php else: ?>
                                                     <ul class="list-group list-group-flush rounded-3 border">
                                                         <?php foreach ($raps as $ra): 
-                                                            $prog_ra = $progreso_raps[$ra->id_resultado] ?? null;
-                                                            $pct_ra = $prog_ra && $prog_ra['total_sesiones'] > 0 ? round(($prog_ra['sesiones_realizadas'] / $prog_ra['total_sesiones']) * 100) : 0;
+                                                            $pct_ra = $ra->sesiones_requeridas > 0 ? round(($ra->sesiones_realizadas / $ra->sesiones_requeridas) * 100) : 0;
                                                         ?>
                                                             <li class="list-group-item d-flex flex-column bg-white">
                                                                 <div class="d-flex justify-content-between align-items-start">
                                                                     <span class="fw-bold text-primary small pe-2"><?= htmlspecialchars($ra->codigo); ?></span>
-                                                                    <?php if ($prog_ra): ?>
-                                                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">
-                                                                            <span class="text-success"><?= $prog_ra['sesiones_realizadas'] ?></span>/<?= $prog_ra['total_sesiones'] ?> Ses 
-                                                                            (<span class="text-success"><?= $prog_ra['horas_realizadas'] ?></span>/<?= $prog_ra['total_horas'] ?> hrs)
+                                                                    <span class="badge bg-light text-dark border d-flex flex-column align-items-end gap-1" style="font-size: 0.7rem;">
+                                                                        <span>
+                                                                            <span class="text-success fw-bold" title="Sesiones Realizadas"><?= $ra->sesiones_realizadas ?></span> / <?= $ra->sesiones_requeridas ?> Ses Req.
                                                                         </span>
-                                                                    <?php else: ?>
-                                                                        <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">Sin iniciar</span>
-                                                                    <?php endif; ?>
+                                                                        <span class="text-muted" style="font-size: 0.65rem;">
+                                                                            <span class="text-success fw-bold" title="Horas Realizadas"><?= $ra->horas_realizadas ?></span> / <?= $ra->horas_requeridas ?> Hrs Req.
+                                                                        </span>
+                                                                        <?php if($ra->sesiones_pendientes > 0 || $ra->horas_pendientes > 0): ?>
+                                                                            <span class="text-danger bg-danger-subtle px-1 rounded mt-1" title="Faltantes">Faltan <?= $ra->sesiones_pendientes ?> Ses (<?= $ra->horas_pendientes ?> Hrs)</span>
+                                                                        <?php else: ?>
+                                                                            <span class="text-success bg-success-subtle px-1 rounded mt-1"><i class="fa-solid fa-check"></i> Completo</span>
+                                                                        <?php endif; ?>
+                                                                    </span>
                                                                 </div>
                                                                 <span class="text-secondary small mt-1"><?= htmlspecialchars($ra->descripcion); ?></span>
                                                                 
-                                                                <?php if ($prog_ra): ?>
-                                                                <div class="progress mt-2" style="height: 4px; border-radius: 2px;">
-                                                                    <div class="progress-bar <?= $pct_ra >= 100 ? 'bg-success' : 'bg-primary' ?>" role="progressbar" style="width: <?= $pct_ra; ?>%;" aria-valuenow="<?= $pct_ra; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                                <div class="progress mt-2" style="height: 4px; border-radius: 2px; background-color: #f1f5f9;">
+                                                                    <div class="progress-bar <?= $pct_ra >= 100 ? 'bg-success' : 'bg-primary' ?>" role="progressbar" style="width: <?= min(100, $pct_ra); ?>%;" aria-valuenow="<?= $pct_ra; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                                                                 </div>
-                                                                <?php endif; ?>
                                                             </li>
                                                         <?php endforeach; ?>
                                                     </ul>

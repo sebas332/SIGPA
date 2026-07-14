@@ -263,7 +263,7 @@ footer {
                 <div class="mb-3">
                     <div class="custom-input-group">
                         <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" class="custom-form-control" id="contrasena" name="contrasena" placeholder="Nueva Contraseña" required minlength="8" maxlength="30">
+                        <input type="password" class="custom-form-control" id="contrasena" name="contrasena" placeholder="Nueva Contraseña" required minlength="8" maxlength="30" pattern="(?=[A-ZÁÉÍÓÚÑ])(?=.*\d)(?=.*[!@#$%^&*(),.?&quot;:{}|&lt;&gt;[\]\\/_\-+=~'`;]).{8,30}" title="La contraseña debe iniciar con mayúscula, tener de 8 a 30 caracteres, e incluir un número y un carácter especial.">
                         <button type="button" class="btn-toggle-password" id="togglePasswordBtn1" tabindex="-1">
                             <i class="fa-regular fa-eye" id="togglePasswordIcon1"></i>
                         </button>
@@ -348,9 +348,9 @@ function validatePassword() {
     let rulesFailed = [];
     
     if (val.length < 8 || val.length > 30) rulesFailed.push("Tener entre 8 y 30 caracteres.");
-    if (!/^[A-Z]/.test(val)) rulesFailed.push("Iniciar con mayúscula.");
+    if (!/^[A-ZÑÁÉÍÓÚ]/.test(val)) rulesFailed.push("Iniciar con mayúscula.");
     if (!/[0-9]/.test(val)) rulesFailed.push("Contener al menos un número.");
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) rulesFailed.push("Contener un carácter especial.");
+    if (!/[!@#$%^&*(),.?":{}|<>[\]\\/_\-+=~`';]/.test(val)) rulesFailed.push("Contener un carácter especial.");
     
     if (val.length === 0) {
         passwordFeedback.innerHTML = "Mínimo 8 caracteres (A-Z, a-z, 0-9, especial).";

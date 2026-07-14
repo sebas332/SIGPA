@@ -48,16 +48,32 @@ class Competencia {
     }
 
     /**
+     * Obtener una competencia por código
+     * @param string $codigo
+     * @return object|false
+     */
+    public function findByCodigo($codigo) {
+        $codigo_limpio = trim($codigo);
+        $this->db->query("SELECT * FROM competencias WHERE TRIM(codigo) = :codigo");
+        $this->db->bind(':codigo', $codigo_limpio);
+        return $this->db->single();
+    }
+
+    /**
      * Crear una nueva competencia
      * NOTA: Los triggers trg_competencias_bi calcularán horas_a_ejecutar y total_sesiones.
      * @param array $data
      * @return bool
      */
     public function create($data) {
+        $codigo_limpio = trim($data['codigo']);
+        if ($this->findByCodigo($codigo_limpio)) {
+            throw new Exception("Ya existe una competencia registrada con ese código.");
+        }
         $this->db->query("INSERT INTO competencias (nombre, codigo, horas_totales, resultados_totales, porcentaje) 
                           VALUES (:nombre, :codigo, :horas_totales, :resultados_totales, :porcentaje)");
-        $this->db->bind(':nombre', $data['nombre']);
-        $this->db->bind(':codigo', $data['codigo']);
+        $this->db->bind(':nombre', trim($data['nombre']));
+        $this->db->bind(':codigo', $codigo_limpio);
         $this->db->bind(':horas_totales', $data['horas_totales']);
         $this->db->bind(':resultados_totales', $data['resultados_totales']);
         $this->db->bind(':porcentaje', $data['porcentaje']);
@@ -71,11 +87,16 @@ class Competencia {
      * @return bool
      */
     public function update($id, $data) {
+        $codigo_limpio = trim($data['codigo']);
+        $existente = $this->findByCodigo($codigo_limpio);
+        if ($existente && $existente->id_competencia != $id) {
+            throw new Exception("El código ingresado ya está siendo utilizado por otra competencia.");
+        }
         $this->db->query("UPDATE competencias SET nombre = :nombre, codigo = :codigo, 
                           horas_totales = :horas_totales, resultados_totales = :resultados_totales, porcentaje = :porcentaje 
                           WHERE id_competencia = :id");
-        $this->db->bind(':nombre', $data['nombre']);
-        $this->db->bind(':codigo', $data['codigo']);
+        $this->db->bind(':nombre', trim($data['nombre']));
+        $this->db->bind(':codigo', $codigo_limpio);
         $this->db->bind(':horas_totales', $data['horas_totales']);
         $this->db->bind(':resultados_totales', $data['resultados_totales']);
         $this->db->bind(':porcentaje', $data['porcentaje']);

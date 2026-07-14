@@ -170,10 +170,49 @@ class FichaController extends BaseController {
         // Obtener TODAS las competencias asociadas al programa de la ficha (Nuevo Requerimiento)
         $competencias_programa = $this->competenciaModel->getByPrograma($ficha->id_programa);
         $resultados_programa = [];
-        foreach ($competencias_programa as $comp) {
-            $resultados_programa[$comp->id_competencia] = $this->resultadoModel->getByCompetencia($comp->id_competencia);
+        
+        // Nuevo: Obtener configuraciones de la ficha (sesiones y horas requeridas ajustadas)
+        $db = Database::getInstance();
+        $db->query("SELECT id_resultado, sesiones_asignadas_ajustadas, horas_a_ejecutar_ajustadas FROM ficha_resultado_config WHERE numero_ficha = :ficha");
+        $db->bind(':ficha', $ficha->numero_ficha);
+        $configs_raw = $db->resultSet();
+        $config_ra_sesiones = [];
+        $config_ra_horas = [];
+        foreach($configs_raw as $c) {
+            $config_ra_sesiones[$c->id_resultado] = $c->sesiones_asignadas_ajustadas;
+            $config_ra_horas[$c->id_resultado] = $c->horas_a_ejecutar_ajustadas;
         }
 
+        $total_sesiones_requeridas = 0;
+        $total_horas_requeridas = 0;
+
+        foreach ($competencias_programa as $comp) {
+            $ras = $this->resultadoModel->getByCompetencia($comp->id_competencia);
+            foreach($ras as $ra) {
+                // Sesiones
+                $ra->sesiones_requeridas = $config_ra_sesiones[$ra->id_resultado] ?? $ra->sesiones_asignadas ?? 0;
+                $ra->sesiones_realizadas = $progreso_raps[$ra->id_resultado]['sesiones_realizadas'] ?? 0;
+                $ra->sesiones_pendientes = max(0, $ra->sesiones_requeridas - $ra->sesiones_realizadas);
+                
+                // Horas
+                // Si no hay horas configuradas, asume ~6 horas por sesión requerida por defecto
+                $ra->horas_requeridas = $config_ra_horas[$ra->id_resultado] ?? ($ra->sesiones_requeridas * 6);
+                $ra->horas_realizadas = $progreso_raps[$ra->id_resultado]['horas_realizadas'] ?? 0;
+                $ra->horas_pendientes = max(0, $ra->horas_requeridas - $ra->horas_realizadas);
+                
+                $total_sesiones_requeridas += $ra->sesiones_requeridas;
+                $total_horas_requeridas += $ra->horas_requeridas;
+            }
+            $resultados_programa[$comp->id_competencia] = $ras;
+        }
+
+        // Recalcular métricas globales basadas en el currículo exigido, no solo en lo programado
+        $sesiones_pendientes_global = max(0, $total_sesiones_requeridas - $sesiones_realizadas);
+        $porcentaje_avance_global = $total_sesiones_requeridas > 0 ? round(($sesiones_realizadas / $total_sesiones_requeridas) * 100) : 0;
+        
+        $horas_pendientes_global = max(0, $total_horas_requeridas - $horas_realizadas);
+        $porcentaje_avance_horas = $total_horas_requeridas > 0 ? round(($horas_realizadas / $total_horas_requeridas) * 100) : 0;
+        
         $this->render('fichas/show', [
             'titulo' => 'Detalle de Ficha: ' . $ficha->numero_ficha,
             'ficha' => $ficha,
@@ -186,12 +225,16 @@ class FichaController extends BaseController {
             'instructores' => $instructores,
             'current_role' => $_SESSION['current_role'] ?? 'Aprendiz',
             // Métricas
-            'total_sesiones_programadas' => $total_sesiones_programadas,
+            'total_sesiones_programadas' => $total_sesiones_programadas, // Viejo total programado (por si acaso)
+            'total_sesiones_requeridas' => $total_sesiones_requeridas, // Nuevo total requerido por el programa
             'sesiones_realizadas' => $sesiones_realizadas,
-            'sesiones_pendientes' => $sesiones_pendientes,
-            'porcentaje_avance' => $porcentaje_avance,
+            'sesiones_pendientes' => $sesiones_pendientes_global,
+            'porcentaje_avance' => $porcentaje_avance_global,
             'total_horas_programadas' => $total_horas_programadas,
+            'total_horas_requeridas' => $total_horas_requeridas,
             'horas_realizadas' => $horas_realizadas,
+            'horas_pendientes' => $horas_pendientes_global,
+            'porcentaje_avance_horas' => $porcentaje_avance_horas,
             'progreso_raps' => $progreso_raps,
             'competencias_asociadas' => array_keys($competencias_asociadas),
             'resultados_asociados' => $resultados_asociados,

@@ -91,6 +91,13 @@ class ProgramaController extends BaseController {
                 'id_tipo_programa' => $_POST['id_tipo_programa'] ?? 0
             ];
 
+            // Validar que el código no exista
+            if ($this->programaModel->findByCodigo($data['codigo'])) {
+                $_SESSION['flash_error'] = 'Ya existe un programa registrado con ese código.';
+                $this->redirect('dashboard/index#pills-programas');
+                return;
+            }
+
             if ($this->programaModel->create($data)) {
                 $new_id_programa = $this->programaModel->getLastInsertId();
                 $_SESSION['flash_success'] = 'Programa de formación creado exitosamente.';
@@ -144,6 +151,14 @@ class ProgramaController extends BaseController {
                 'duracion_practica' => $_POST['duracion_practica'] ?? 0,
                 'id_tipo_programa' => $_POST['id_tipo_programa'] ?? 0
             ];
+
+            // Validar que el código no exista en OTRO programa
+            $existente = $this->programaModel->findByCodigo($data['codigo']);
+            if ($existente && $existente->id_programa != $id) {
+                $_SESSION['flash_error'] = 'El código ingresado ya está siendo utilizado por otro programa.';
+                $this->redirect('dashboard/index#pills-programas');
+                return;
+            }
 
             if ($this->programaModel->update($id, $data)) {
                 $_SESSION['flash_success'] = 'Programa actualizado exitosamente.';
