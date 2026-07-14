@@ -24,6 +24,22 @@ class UsuarioRol {
     }
 
     /**
+     * Obtener los roles de un usuario
+     * @param int $id_usuario
+     * @return array
+     */
+    public function getRolesByUsuario($id_usuario) {
+        $this->db->query("SELECT id_rol FROM usuario_rol WHERE id_usuario = :id_usuario");
+        $this->db->bind(':id_usuario', $id_usuario);
+        $result = $this->db->resultSet();
+        $roles = [];
+        foreach($result as $r) {
+            $roles[] = $r->id_rol;
+        }
+        return $roles;
+    }
+
+    /**
      * Obtener una asignación por ID
      * @param int $id
      * @return object|false

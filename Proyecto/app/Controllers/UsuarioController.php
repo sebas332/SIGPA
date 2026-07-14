@@ -162,6 +162,12 @@ class UsuarioController extends BaseController {
                 $errores[] = "La contraseña debe tener de 8 a 30 caracteres, iniciar con mayúscula, tener un número y un carácter especial.";
             }
 
+            // Validación de roles: No permitir pasar de Aprendiz a Coordinador
+            $currentRoles = $this->usuarioRolModel->getRolesByUsuario($id);
+            if (in_array(3, $currentRoles) && $id_rol == 1) {
+                $errores[] = "No está permitido cambiar el rol de un Aprendiz directamente a Coordinador.";
+            }
+
             if (!empty($errores)) {
                 $_SESSION['flash_error'] = implode("<br>", $errores);
                 $this->redirect('dashboard/index#pills-usuarios');

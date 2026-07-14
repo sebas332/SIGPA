@@ -10444,26 +10444,22 @@
                             <input type="number" name="documento" id="edit_usr_documento" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Contraseña (Opcional)</label>
-                            <input type="text" name="contrasena" placeholder="Dejar en blanco para no cambiar" class="form-control">
+                            <label class="text-muted small fw-bold mb-1">Teléfono</label>
+                            <input type="text" name="telefono" id="edit_usr_telefono" class="form-control" required>
                         </div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="text-muted small fw-bold mb-1">Teléfono</label>
-                            <input type="text" name="telefono" id="edit_usr_telefono" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
                             <label class="text-muted small fw-bold mb-1">Correo</label>
                             <input type="email" name="correo" id="edit_usr_correo" class="form-control" required>
                         </div>
-                    </div>
-                    <div class="row g-3">
                         <div class="col-md-6">
                             <label class="text-muted small fw-bold mb-1">Titulación</label>
                             <input type="text" name="titulacion" id="edit_usr_titulacion" class="form-control" required>
                         </div>
-                        <div class="col-md-6">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
                             <label class="text-muted small fw-bold mb-1">Rol Principal</label>
                             <select name="id_rol" id="edit_usr_rol" class="form-select" required>
                                 <?php if(isset($roles)): foreach ($roles as $r): ?>
@@ -11216,10 +11212,33 @@ function editarUsuario(id, nom, ape, doc, tel, cor, tit, rolId) {
     document.getElementById('edit_usr_titulacion').value = tit;
     if (rolId && document.getElementById('edit_usr_rol')) {
         document.getElementById('edit_usr_rol').value = rolId;
+        document.getElementById('edit_usr_rol').dataset.originalRol = rolId;
     }
     var modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
     modal.show();
 }
+
+// Interceptar el form de edición de usuario
+document.addEventListener('DOMContentLoaded', function() {
+    const formEditarUsuario = document.querySelector('form[action*="usuarios/update"]');
+    if (formEditarUsuario) {
+        formEditarUsuario.addEventListener('submit', function(e) {
+            const selectRol = document.getElementById('edit_usr_rol');
+            if (selectRol && selectRol.dataset.originalRol == '3' && selectRol.value == '1') {
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acción no permitida',
+                        text: 'No está permitido cambiar el rol de un Aprendiz directamente a Coordinador.'
+                    });
+                } else {
+                    alert('Acción no permitida: No está permitido cambiar el rol de un Aprendiz directamente a Coordinador.');
+                }
+            }
+        });
+    }
+});
 
 // Validaciones para formularios de usuarios (Crear y Editar)
 document.addEventListener("DOMContentLoaded", function () {
