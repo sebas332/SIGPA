@@ -124,15 +124,33 @@ class FichaController extends BaseController {
             }
         }
 
-        // Métricas resumidas
+        // Métricas resumidas y Extracción de progreso por RAP
         $total_sesiones_programadas = 0;
         $sesiones_realizadas = 0;
+        $total_horas_programadas = 0;
+        $horas_realizadas = 0;
+        
+        $progreso_raps = [];
+
         foreach ($programacion as $prog) {
-            $total_sesiones_programadas += (int) ($prog->total_sesiones ?? 0);
-            $sesiones_realizadas += (int) ($prog->sesiones_realizadas ?? 0);
+            $id_ra = (int) $prog->id_resultado_aprendizaje;
+            
+            // Calcular el progreso global (Una sola vez por RAP)
+            if (!isset($progreso_raps[$id_ra])) {
+                $progreso_raps[$id_ra] = [
+                    'sesiones_realizadas' => (int)($prog->sesiones_realizadas ?? 0),
+                    'total_sesiones' => (int)($prog->total_sesiones ?? 0),
+                    'horas_realizadas' => (int)($prog->horas_realizadas ?? 0),
+                    'total_horas' => (int)($prog->total_horas ?? 0)
+                ];
+                $total_sesiones_programadas += $progreso_raps[$id_ra]['total_sesiones'];
+                $sesiones_realizadas += $progreso_raps[$id_ra]['sesiones_realizadas'];
+                $total_horas_programadas += $progreso_raps[$id_ra]['total_horas'];
+                $horas_realizadas += $progreso_raps[$id_ra]['horas_realizadas'];
+            }
         }
         $sesiones_pendientes = max(0, $total_sesiones_programadas - $sesiones_realizadas);
-        $porcentaje_avance = $total_sesiones_programadas > 0 ? round(($sesiones_realizadas / $total_sesiones_programadas) * 100) : 0;
+        $porcentaje_avance = $total_horas_programadas > 0 ? round(($horas_realizadas / $total_horas_programadas) * 100) : 0;
 
         // Extraer competencias y resultados asociados únicos (de programaciones existentes)
         $competencias_asociadas = [];
@@ -172,6 +190,9 @@ class FichaController extends BaseController {
             'sesiones_realizadas' => $sesiones_realizadas,
             'sesiones_pendientes' => $sesiones_pendientes,
             'porcentaje_avance' => $porcentaje_avance,
+            'total_horas_programadas' => $total_horas_programadas,
+            'horas_realizadas' => $horas_realizadas,
+            'progreso_raps' => $progreso_raps,
             'competencias_asociadas' => array_keys($competencias_asociadas),
             'resultados_asociados' => $resultados_asociados,
             // Curriculum completo

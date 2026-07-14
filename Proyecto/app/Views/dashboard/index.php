@@ -2860,7 +2860,7 @@
                                             <th class="py-3">INSTRUCTOR</th>
                                             <th class="py-3">AMBIENTE</th>
                                             <th class="py-3">RAP EVALUADO</th>
-                                            <th class="text-end pe-4 py-3">AVANCE SESIONES</th>
+                                            <th class="text-end pe-4 py-3">AVANCE (SESIONES / HORAS)</th>
                                             <?php if ($current_role === 'Coordinador'): ?>
                                                 <th class="text-end pe-4 py-3">ACCIÓN</th>
                                             <?php endif; ?>
@@ -2874,14 +2874,18 @@
                                             <tr>
                                                 <td class="ps-4"><span class="badge-ficha-table">#<?= $prog->numero_ficha; ?></span></td>
                                                 <td>
-                                                    <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> <?= $prog->nombre_dia; ?></div>
-                                                    <div class="text-muted small"><?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?></div>
+                                                    <div class="fw-bold text-dark small"><i class="fa-regular fa-calendar text-secondary me-1"></i> <?= $prog->nombre_dia; ?> <span class="text-primary"><?= date('d/m/Y', strtotime($prog->fecha_inicio)); ?></span></div>
+                                                    <div class="text-muted small"><i class="fa-regular fa-clock text-secondary me-1"></i> <?= substr($prog->hora_inicio, 0, 5) . ' - ' . substr($prog->hora_fin, 0, 5); ?></div>
                                                 </td>
                                                 <td class="text-dark small fw-medium"><?= $prog->instructor_nombre . ' ' . $prog->instructor_apellido; ?></td>
                                                 <td><span class="badge-ambiente-table"><?= $prog->ambiente_nombre; ?></span></td>
                                                 <td class="text-muted small" style="max-width: 320px;"><?= $prog->ra_descripcion; ?></td>
                                                 <td class="text-end pe-4">
-                                                    <div class="fw-bold text-dark small mb-1"><?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?></div>
+                                                    <div class="fw-bold text-dark mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;">
+                                                        <span class="text-primary"><?= $prog->sesiones_realizadas; ?> / <?= $prog->total_sesiones; ?> SES</span> 
+                                                        <span class="text-muted mx-1">|</span> 
+                                                        <span class="text-info"><?= $prog->horas_realizadas; ?> / <?= $prog->total_horas; ?> HRS</span>
+                                                    </div>
                                                     <div class="progress-sena"><div class="progress-sena-bar" style="width: <?= $pct; ?>%;"></div></div>
                                                 </td>
                                                 <?php if ($current_role === 'Coordinador'): ?>
@@ -12903,7 +12907,7 @@ function renderizarLista() {
                         <th class="py-3">INSTRUCTOR</th>
                         <th class="py-3">AMBIENTE</th>
                         <th class="py-3">RAP EVALUADO</th>
-                        <th class="text-end pe-4 py-3">AVANCE SESIONES</th>
+                        <th class="text-end pe-4 py-3">AVANCE (SESIONES / HORAS)</th>
                         ${currentRole === 'Coordinador' ? '<th class="text-end pe-4 py-3">ACCIÓN</th>' : ''}
                     </tr>
                 </thead>
@@ -12914,19 +12918,24 @@ function renderizarLista() {
         const pct = prog.total_sesiones > 0 ? Math.round((prog.sesiones_realizadas / prog.total_sesiones) * 100) : 75;
         const horaInicio = prog.hora_inicio.substring(0, 5);
         const horaFin = prog.hora_fin.substring(0, 5);
+        const fechaFormateadaList = prog.fecha_inicio.split('-').reverse().join('/');
         
         html += `
             <tr>
                 <td class="ps-4"><span class="badge-ficha-table">#${prog.numero_ficha}</span></td>
                 <td>
-                    <div class="fw-bold text-dark small"><i class="fa-regular fa-clock text-secondary me-1"></i> ${prog.nombre_dia}</div>
-                    <div class="text-muted small">${horaInicio} - ${horaFin}</div>
+                    <div class="fw-bold text-dark small"><i class="fa-regular fa-calendar text-secondary me-1"></i> ${prog.nombre_dia} <span class="text-primary">${fechaFormateadaList}</span></div>
+                    <div class="text-muted small"><i class="fa-regular fa-clock text-secondary me-1"></i> ${horaInicio} - ${horaFin}</div>
                 </td>
                 <td class="text-dark small fw-medium">${prog.instructor_nombre} ${prog.instructor_apellido}</td>
                 <td><span class="badge-ambiente-table">${prog.ambiente_nombre}</span></td>
                 <td class="text-muted small" style="max-width: 320px;">${prog.ra_descripcion}</td>
                 <td class="text-end pe-4">
-                    <div class="fw-bold text-dark small mb-1">${prog.sesiones_realizadas} / ${prog.total_sesiones}</div>
+                    <div class="fw-bold text-dark mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;">
+                        <span class="text-primary">${prog.sesiones_realizadas} / ${prog.total_sesiones} SES</span> 
+                        <span class="text-muted mx-1">|</span> 
+                        <span class="text-info">${prog.horas_realizadas || 0} / ${prog.total_horas || (prog.total_sesiones * 6)} HRS</span>
+                    </div>
                     <div class="progress-sena"><div class="progress-sena-bar" style="width: ${pct}%;"></div></div>
                 </td>
                 ${currentRole === 'Coordinador' ? `

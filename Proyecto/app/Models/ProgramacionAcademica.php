@@ -20,11 +20,17 @@ class ProgramacionAcademica {
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
                           c.nombre as competencia_nombre,
                           COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) as total_sesiones,
+                          (COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6) as total_horas,
                           (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
                            FROM asistencia asi 
                            INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
                            WHERE pa2.numero_ficha = pa.numero_ficha 
-                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas,
+                          ((SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) * 6) as horas_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
@@ -101,11 +107,17 @@ class ProgramacionAcademica {
                           u.apellido as instructor_apellido, a.nombre as ambiente_nombre, d.nombre_dia, 
                           ra.codigo as ra_codigo, c.nombre as competencia_nombre,
                           COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) as total_sesiones,
+                          (COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6) as total_horas,
                           (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
                            FROM asistencia asi 
                            INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
                            WHERE pa2.numero_ficha = pa.numero_ficha 
-                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas,
+                          ((SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) * 6) as horas_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN jornada j ON f.id_jornada = j.id_jornada
@@ -165,11 +177,17 @@ class ProgramacionAcademica {
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
                           c.nombre as competencia_nombre,
                           COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) as total_sesiones,
+                          (COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6) as total_horas,
                           (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
                            FROM asistencia asi 
                            INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
                            WHERE pa2.numero_ficha = pa.numero_ficha 
-                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas,
+                          ((SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) * 6) as horas_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 
@@ -190,11 +208,17 @@ class ProgramacionAcademica {
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
                           c.nombre as competencia_nombre,
                           COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) as total_sesiones,
+                          (COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6) as total_horas,
                           (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
                            FROM asistencia asi 
                            INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
                            WHERE pa2.numero_ficha = pa.numero_ficha 
-                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas,
+                          ((SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) * 6) as horas_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN ficha_aprendiz fa ON fa.numero_ficha = f.numero_ficha
@@ -216,11 +240,17 @@ class ProgramacionAcademica {
                           a.nombre as ambiente_nombre, d.nombre_dia, ra.codigo as ra_codigo, ra.descripcion as ra_descripcion, 
                           c.nombre as competencia_nombre,
                           COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) as total_sesiones,
+                          (COALESCE(frc.sesiones_asignadas_ajustadas, ra.sesiones_asignadas) * 6) as total_horas,
                           (SELECT COUNT(DISTINCT asi.fecha_asistencia) 
                            FROM asistencia asi 
                            INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
                            WHERE pa2.numero_ficha = pa.numero_ficha 
-                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) as sesiones_realizadas,
+                          ((SELECT COUNT(DISTINCT asi.fecha_asistencia) 
+                           FROM asistencia asi 
+                           INNER JOIN programacion_academica pa2 ON asi.id_programacion = pa2.id_programacion 
+                           WHERE pa2.numero_ficha = pa.numero_ficha 
+                             AND pa2.id_resultado_aprendizaje = pa.id_resultado_aprendizaje) * 6) as horas_realizadas
                           FROM programacion_academica pa 
                           INNER JOIN fichas f ON pa.numero_ficha = f.numero_ficha 
                           INNER JOIN usuarios u ON pa.id_usuario = u.id_usuario 

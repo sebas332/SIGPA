@@ -209,9 +209,6 @@
                                         <td class="text-end pe-4">
                                             <?php if ($current_role === 'Coordinador'): ?>
                                                 <div class="d-flex justify-content-end gap-2">
-                                                    <a href="<?= URLROOT; ?>/index.php?route=competencias/validarSesiones&id=<?= $comp->id_competencia; ?>" class="btn-action-blue" title="Validar Sesiones (SP)">
-                                                        <i class="fa-solid fa-gears"></i>
-                                                    </a>
                                                     <button type="button" class="btn-action-green" title="Editar Competencia" onclick="abrirModalEditarCompetencia(<?= $comp->id_competencia; ?>)">
                                                         <i class="fa-solid fa-pen"></i>
                                                     </button>
